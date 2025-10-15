@@ -1,0 +1,221 @@
+"""
+Video service - Video generation and management
+"""
+from typing import List, Optional
+from sqlalchemy.orm import Session
+from sqlalchemy import desc
+
+from app.models.video import Video, VideoStatus, AIModel
+from app.models.user import User
+from app.core.config import settings
+from app.core.exceptions import InsufficientCreditsException, NotFoundException
+from app.schemas.video import VideoGenerateRequest
+
+
+def create_video_generation_task(
+    db: Session,
+    user: User,
+    video_request: VideoGenerateRequest,
+) -> Video:
+    """
+    Create a new video generation task
+
+    Args:
+        db: Database session
+        user: User requesting the video
+        video_request: Video generation request data
+
+    Returns:
+        Created video instance
+
+    Raises:
+        InsufficientCreditsException: If user doesn't have enough credits
+    """
+    # Check if user has enough credits
+    if user.credits < settings.VIDEO_GENERATION_COST:
+        raise InsufficientCreditsException(
+            f"Insufficient credits. Required: {settings.VIDEO_GENERATION_COST}, Available: {user.credits}"
+        )
+
+    # Create video record
+    video = Video(
+        user_id=user.id,
+        prompt=video_request.prompt,
+        model=video_request.model,
+        reference_image_url=video_request.reference_image_url,
+        status=VideoStatus.PENDING,
+    )
+
+    db.add(video)
+
+    # Deduct credits
+    user.credits -= settings.VIDEO_GENERATION_COST
+
+    db.commit()
+    db.refresh(video)
+
+    # TODO: Trigger async video generation task here
+    # For now, we'll simulate by setting to processing status
+    # In production, this would trigger a background job (Celery, etc.)
+
+    return video
+
+
+def get_user_videos(
+    db: Session,
+    user_id: int,
+    skip: int = 0,
+    limit: int = 20,
+    status: Optional[VideoStatus] = None,
+) -> tuple[List[Video], int]:
+    """
+    Get videos for a specific user
+
+    Args:
+        db: Database session
+        user_id: User ID
+        skip: Number of records to skip
+        limit: Maximum number of records to return
+        status: Optional status filter
+
+    Returns:
+        Tuple of (videos list, total count)
+    """
+    query = db.query(Video).filter(Video.user_id == user_id)
+
+    if status:
+        query = query.filter(Video.status == status)
+
+    total = query.count()
+    videos = query.order_by(desc(Video.created_at)).offset(skip).limit(limit).all()
+
+    return videos, total
+
+
+def get_video_by_id(db: Session, video_id: int, user_id: Optional[int] = None) -> Optional[Video]:
+    """
+    Get a video by ID
+
+    Args:
+        db: Database session
+        video_id: Video ID
+        user_id: Optional user ID to verify ownership
+
+    Returns:
+        Video instance or None
+
+    Raises:
+        NotFoundException: If video not found or doesn't belong to user
+    """
+    video = db.query(Video).filter(Video.id == video_id).first()
+
+    if not video:
+        raise NotFoundException(f"Video with id {video_id} not found")
+
+    if user_id and video.user_id != user_id:
+        raise NotFoundException(f"Video with id {video_id} not found")
+
+    return video
+
+
+def delete_video(db: Session, video_id: int, user_id: int) -> bool:
+    """
+    Delete a video
+
+    Args:
+        db: Database session
+        video_id: Video ID
+        user_id: User ID
+
+    Returns:
+        True if deleted successfully
+
+    Raises:
+        NotFoundException: If video not found or doesn't belong to user
+    """
+    video = get_video_by_id(db, video_id, user_id)
+
+    if not video:
+        return False
+
+    db.delete(video)
+    db.commit()
+
+    return True
+
+
+def update_video_status(
+    db: Session,
+    video_id: int,
+    status: VideoStatus,
+    video_url: Optional[str] = None,
+    poster_url: Optional[str] = None,
+    error_message: Optional[str] = None,
+) -> Video:
+    """
+    Update video status and metadata
+
+    Args:
+        db: Database session
+        video_id: Video ID
+        status: New status
+        video_url: Optional video URL
+        poster_url: Optional poster URL
+        error_message: Optional error message
+
+    Returns:
+        Updated video instance
+    """
+    video = get_video_by_id(db, video_id)
+
+    if not video:
+        raise NotFoundException(f"Video with id {video_id} not found")
+
+    video.status = status
+
+    if video_url:
+        video.video_url = video_url
+
+    if poster_url:
+        video.poster_url = poster_url
+
+    if error_message:
+        video.error_message = error_message
+
+    db.commit()
+    db.refresh(video)
+
+    return video
+
+
+# Mock AI model information (replace with real data)
+AI_MODELS_INFO = [
+    {
+        "id": "sora-2",
+        "name": "Sora 2",
+        "version": "Latest",
+        "description": "Most advanced AI video generation model with photorealistic results",
+    },
+    {
+        "id": "sora-1",
+        "name": "Sora 1",
+        "version": "Stable",
+        "description": "Reliable AI video generation with consistent quality",
+    },
+    {
+        "id": "runway-gen3",
+        "name": "Runway Gen-3",
+        "version": "Beta",
+        "description": "High-quality video generation with fast processing",
+    },
+]
+
+
+def get_available_models() -> List[dict]:
+    """
+    Get list of available AI models
+
+    Returns:
+        List of model information
+    """
+    return AI_MODELS_INFO

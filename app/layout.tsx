@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { AuthProvider } from "@/contexts/AuthContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -43,12 +44,21 @@ export const metadata: Metadata = {
     description:
       "Create professional advertising videos in seconds with AI technology.",
     siteName: "AIVideo.DIY",
+    images: [
+      {
+        url: "/og-image.svg",
+        width: 1200,
+        height: 630,
+        alt: "AIVideo.DIY - Create Stunning AI-Generated Videos",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "AIVideo.DIY - AI Video Generation",
     description:
       "Transform your ideas into professional videos with AI-powered technology.",
+    images: ["/og-image.svg"],
   },
   robots: {
     index: true,
@@ -66,7 +76,9 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {children}
+        <AuthProvider>
+          {children}
+        </AuthProvider>
       </body>
     </html>
   );

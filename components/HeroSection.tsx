@@ -2,69 +2,40 @@
 
 import { useState } from "react";
 import { Button } from "./Button";
-import { UploadButton } from "./UploadButton";
 import { VideoPlayer } from "./VideoPlayer";
-import { Sparkles, ChevronLeft, ChevronRight } from "lucide-react";
+import { Wand2, ChevronDown, Sparkles } from "lucide-react";
 import { motion } from "framer-motion";
+import Image from "next/image";
+import { heroVideos, trialImages } from "@/lib/assets";
 
-// Sample video data (placeholder - replace with actual video URLs)
-const sampleVideos = [
-  {
-    id: 1,
-    src: "/videos/sample1.mp4",
-    poster: "/images/poster1.jpg",
-    title: "Product Launch",
-  },
-  {
-    id: 2,
-    src: "/videos/sample2.mp4",
-    poster: "/images/poster2.jpg",
-    title: "Brand Story",
-  },
-  {
-    id: 3,
-    src: "/videos/sample3.mp4",
-    poster: "/images/poster3.jpg",
-    title: "Commercial Ad",
-  },
-];
+// Use imported data
+const sampleVideos = heroVideos;
 
-// Free trial sample images
-const trialImages = [
-  { id: 1, src: "/images/sample1.jpg", alt: "Sample 1" },
-  { id: 2, src: "/images/sample2.jpg", alt: "Sample 2" },
-  { id: 3, src: "/images/sample3.jpg", alt: "Sample 3" },
-  { id: 4, src: "/images/sample4.jpg", alt: "Sample 4" },
+// AI Models for dropdown
+const aiModels = [
+  { id: "sora-2", name: "Sora 2", version: "Latest" },
+  { id: "sora-1", name: "Sora 1", version: "Stable" },
+  { id: "runway-gen3", name: "Runway Gen-3", version: "Beta" },
 ];
 
 export const HeroSection = () => {
   const [prompt, setPrompt] = useState("");
   const [selectedImage, setSelectedImage] = useState<number | null>(null);
   const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
-  const [charCount, setCharCount] = useState(0);
+  const [selectedModel, setSelectedModel] = useState(aiModels[0]);
+  const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false);
   const maxChars = 500;
 
   const handlePromptChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const text = e.target.value;
     if (text.length <= maxChars) {
       setPrompt(text);
-      setCharCount(text.length);
     }
   };
 
   const handleGenerate = () => {
     console.log("Generating video with prompt:", prompt);
     // Add generation logic here
-  };
-
-  const nextVideo = () => {
-    setCurrentVideoIndex((prev) => (prev + 1) % sampleVideos.length);
-  };
-
-  const prevVideo = () => {
-    setCurrentVideoIndex(
-      (prev) => (prev - 1 + sampleVideos.length) % sampleVideos.length
-    );
   };
 
   // Get current video safely
@@ -74,138 +45,213 @@ export const HeroSection = () => {
   }
 
   return (
-    <section className="min-h-screen pt-24 pb-16 px-4 sm:px-6 lg:px-8">
+    <section className="min-h-screen pt-20 sm:pt-24 pb-12 sm:pb-16 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
-        <div className="grid lg:grid-cols-2 gap-12 items-center">
+        <div className="grid lg:grid-cols-2 gap-6 sm:gap-8 lg:gap-12 items-center">
           {/* Left Side - Generation Form */}
           <motion.div
-            initial={{ opacity: 0, x: -50 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.6 }}
-            className="space-y-6"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, ease: "easeOut" }}
+            className="space-y-4 sm:space-y-6 order-2 lg:order-1"
           >
             {/* Heading */}
-            <div className="space-y-4">
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight">
+            <div className="space-y-2 sm:space-y-3 md:space-y-4">
+              <h1 className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">
                 Create Stunning{" "}
-                <span className="text-gradient-purple">AI Videos</span>
+                <span
+                  style={{
+                    background: "linear-gradient(135deg, #7c3aed 0%, #8b5cf6 100%)",
+                    WebkitBackgroundClip: "text",
+                    WebkitTextFillColor: "transparent",
+                    backgroundClip: "text",
+                    display: "inline-block"
+                  }}
+                >
+                  AI Videos
+                </span>
               </h1>
-              <p className="text-lg sm:text-xl text-text-secondary">
+              <p className="text-sm sm:text-lg md:text-xl text-text-secondary leading-relaxed">
                 Transform your ideas into professional advertising videos in
                 seconds with Sora 2 AI technology.
               </p>
             </div>
 
-            {/* Prompt Input */}
-            <div className="space-y-2">
-              <label
-                htmlFor="prompt"
-                className="block text-sm font-medium text-text-primary"
-              >
-                Describe Your Video
-              </label>
-              <div className="relative">
-                <textarea
-                  id="prompt"
-                  value={prompt}
-                  onChange={handlePromptChange}
-                  placeholder="A cinematic product showcase with smooth camera movements, professional lighting, and vibrant colors..."
-                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all resize-none"
-                  rows={4}
-                />
-                <div className="absolute bottom-2 right-2 text-xs text-text-muted">
-                  {charCount}/{maxChars}
+            {/* Integrated Input Card */}
+            <div className="relative bg-white border border-gray-200 rounded-2xl overflow-hidden transition-all duration-300 hover:border-purple-200 hover:shadow-xl hover:shadow-purple-500/10">
+              {/* Card Header */}
+              <div className="flex items-center justify-between px-4 py-3 sm:px-6 sm:py-4 border-b border-gray-100 bg-white">
+                {/* Left: Ads Script Helper - Hidden on mobile */}
+                <div className="hidden sm:flex items-center space-x-2">
+                  <Wand2 className="w-5 h-5 text-purple-600" />
+                  <span className="text-sm font-semibold text-purple-600">
+                    Ads Video Script Helper
+                  </span>
+                </div>
+
+                {/* Right: Model Selector Dropdown - Centered on mobile */}
+                <div className="relative w-full sm:w-auto flex justify-center sm:justify-end">
+                  <button
+                    onClick={() => setIsModelDropdownOpen(!isModelDropdownOpen)}
+                    className="flex items-center justify-center space-x-2 px-3 py-2 sm:px-4 sm:py-2 bg-white border border-gray-200 rounded-full hover:border-purple-300 hover:bg-purple-50/50 transition-all text-sm font-medium min-w-[140px]"
+                  >
+                    <span className="text-text-primary">{selectedModel?.name}</span>
+                    <ChevronDown className={`w-4 h-4 text-text-muted transition-transform ${isModelDropdownOpen ? "rotate-180" : ""}`} />
+                  </button>
+
+                  {/* Dropdown Menu - Full width on mobile */}
+                  {isModelDropdownOpen && (
+                    <div className="absolute right-0 top-full mt-2 w-full sm:w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-20">
+                      {aiModels.map((model) => (
+                        <button
+                          key={model.id}
+                          onClick={() => {
+                            setSelectedModel(model);
+                            setIsModelDropdownOpen(false);
+                          }}
+                          className={`w-full px-4 py-3 text-left hover:bg-purple-50 transition-colors first:rounded-t-lg last:rounded-b-lg ${
+                            selectedModel?.id === model.id ? "bg-purple-50" : ""
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-medium text-text-primary">
+                              {model.name}
+                            </span>
+                            <span className="text-xs text-text-muted">
+                              {model.version}
+                            </span>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
-            </div>
 
-            {/* Free Trial Images */}
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-text-primary">
-                Free Trial Images
-              </label>
-              <div className="grid grid-cols-4 gap-3">
-                {trialImages.map((img) => (
+              {/* Main Input Area */}
+              <div className="p-4 sm:p-6">
+                <div className="relative pb-10">
+                  <textarea
+                    id="prompt"
+                    value={prompt}
+                    onChange={handlePromptChange}
+                    placeholder="Describe your video: A cinematic product showcase with smooth camera movements, professional lighting, and vibrant colors..."
+                    className="w-full px-0 py-0 border-0 focus:outline-none focus:ring-0 resize-none text-sm sm:text-base text-text-primary placeholder:text-text-muted"
+                    rows={3}
+                  />
+                  {/* Generate Button at bottom-right with safe spacing */}
+                  <div className="absolute bottom-0 right-0">
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={handleGenerate}
+                      className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 shadow-md flex items-center gap-1.5 text-xs sm:text-sm"
+                    >
+                      <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                      Generate
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Bottom Toolbar */}
+              <div className="px-4 py-3 sm:px-6 sm:py-4 bg-gray-50/50 border-t border-gray-100">
+                <div className="flex items-center gap-2 sm:gap-3">
+                  {/* Upload Button (moved to left) */}
                   <button
-                    key={img.id}
-                    onClick={() => setSelectedImage(img.id)}
-                    className={`relative aspect-square rounded-lg overflow-hidden border-2 transition-all hover:scale-105 ${
-                      selectedImage === img.id
-                        ? "border-primary ring-2 ring-primary/30"
-                        : "border-gray-200 hover:border-primary/50"
-                    }`}
+                    onClick={() => document.getElementById("file-upload")?.click()}
+                    className="flex-shrink-0 w-16 h-16 sm:w-14 sm:h-14 rounded-lg border-2 border-dashed border-gray-300 hover:border-purple-400 flex items-center justify-center transition-all hover:bg-purple-50"
+                    title="Upload image"
                   >
-                    <div className="w-full h-full bg-gradient-to-br from-purple-100 to-purple-200 flex items-center justify-center">
-                      <span className="text-sm font-medium text-primary">
-                        {img.alt}
-                      </span>
-                    </div>
+                    <svg
+                      className="w-6 h-6 sm:w-6 sm:h-6 text-text-muted"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                      />
+                    </svg>
                   </button>
-                ))}
+                  <input
+                    type="file"
+                    id="file-upload"
+                    className="hidden"
+                    accept="image/*"
+                  />
+
+                  {/* Trial Images Slider with gradient hint */}
+                  <div className="flex-1 relative overflow-hidden">
+                    {/* Gradient hints for scrollability */}
+                    <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-gray-50/90 to-transparent pointer-events-none z-10" />
+                    <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-gray-50/90 to-transparent pointer-events-none z-10" />
+
+                    <div className="overflow-x-auto overflow-y-hidden scrollbar-hide trial-images-slider">
+                      <div className="flex gap-2 py-1">
+                        {trialImages.map((img) => (
+                          <button
+                            key={img.id}
+                            onClick={() => setSelectedImage(img.id)}
+                            className={`relative flex-shrink-0 w-16 h-16 sm:w-14 sm:h-14 rounded-lg overflow-hidden border-2 transition-all hover:scale-105 ${
+                              selectedImage === img.id
+                                ? "border-purple-500 ring-2 ring-purple-300 opacity-100"
+                                : "border-gray-300 hover:border-purple-400 opacity-70 hover:opacity-100"
+                            }`}
+                            title={img.alt}
+                          >
+                            <Image
+                              src={img.src}
+                              alt={img.alt}
+                              fill
+                              className="object-cover"
+                              sizes="64px"
+                            />
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <p className="text-xs text-text-muted mt-2">
+                  <span className="hidden sm:inline">Upload your own or select from {trialImages.length} trial images</span>
+                  <span className="sm:hidden">← Swipe to view more images</span>
+                </p>
               </div>
-            </div>
-
-            {/* Upload Button */}
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-text-primary">
-                Or Upload Your Own
-              </label>
-              <UploadButton className="h-32" />
-            </div>
-
-            {/* Sora 2 Badge & Generate Button */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
-              <div className="flex items-center space-x-2 px-4 py-2 bg-purple-bg rounded-lg border border-primary/20">
-                <Sparkles className="w-5 h-5 text-primary" />
-                <span className="text-sm font-semibold text-primary">
-                  Powered by Sora 2
-                </span>
-              </div>
-
-              <Button
-                variant="primary"
-                size="lg"
-                onClick={handleGenerate}
-                className="flex-1 sm:flex-initial gradient-purple hover:opacity-90"
-              >
-                Generate AI Video
-              </Button>
             </div>
           </motion.div>
 
-          {/* Right Side - Video Carousel */}
+          {/* Right Side - Video Carousel with Decorations */}
           <motion.div
-            initial={{ opacity: 0, x: 50 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="relative"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.1, ease: "easeOut" }}
+            className="relative order-1 lg:order-2"
           >
-            <div className="relative aspect-video rounded-2xl overflow-hidden shadow-2xl">
+            {/* Decorative Background Elements - Hidden on mobile */}
+            <div className="absolute inset-0 -z-10 hidden lg:block">
+              {/* Grid Pattern */}
+              <div className="absolute inset-0 grid-pattern opacity-50" />
+
+              {/* Decorative Orbs */}
+              <div className="decorative-orb w-64 h-64 -top-10 -right-10" />
+              <div className="decorative-orb w-96 h-96 -bottom-20 -left-20 opacity-60" />
+              <div className="decorative-orb w-48 h-48 top-1/2 right-10 opacity-40" />
+            </div>
+
+            {/* Main Video Container */}
+            <div className="relative aspect-video rounded-2xl overflow-hidden shadow-2xl glow-purple">
               <VideoPlayer
                 src={currentVideo.src}
                 poster={currentVideo.poster}
-                autoPlay
+                autoPlay={false}
               />
 
-              {/* Navigation Arrows */}
-              <button
-                onClick={prevVideo}
-                className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/90 backdrop-blur-sm rounded-full p-2 hover:bg-white transition-all hover:scale-110 shadow-lg"
-                aria-label="Previous video"
-              >
-                <ChevronLeft className="w-6 h-6 text-primary" />
-              </button>
-
-              <button
-                onClick={nextVideo}
-                className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/90 backdrop-blur-sm rounded-full p-2 hover:bg-white transition-all hover:scale-110 shadow-lg"
-                aria-label="Next video"
-              >
-                <ChevronRight className="w-6 h-6 text-primary" />
-              </button>
-
-              {/* Video Indicators */}
-              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex space-x-2">
+              {/* Video Indicators (clickable dots for navigation) */}
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex space-x-2 z-10">
                 {sampleVideos.map((_, index) => (
                   <button
                     key={index}
@@ -221,10 +267,29 @@ export const HeroSection = () => {
               </div>
             </div>
 
+            {/* Tech Badges - Show 2 on mobile, 3 on desktop */}
+            <div className="mt-4 sm:mt-6 flex flex-wrap gap-2 sm:gap-3 justify-center">
+              <div className="px-3 py-1.5 sm:px-4 sm:py-2 rounded-full bg-white/95 backdrop-blur-md border border-purple-200 shadow-sm">
+                <span className="text-[10px] sm:text-xs font-semibold text-purple-600 whitespace-nowrap">
+                  4K Resolution
+                </span>
+              </div>
+              <div className="px-3 py-1.5 sm:px-4 sm:py-2 rounded-full bg-white/95 backdrop-blur-md border border-purple-200 shadow-sm">
+                <span className="text-[10px] sm:text-xs font-semibold text-purple-600 whitespace-nowrap">
+                  Professional Quality
+                </span>
+              </div>
+              <div className="hidden sm:block px-4 py-2 rounded-full bg-white/95 backdrop-blur-md border border-purple-200 shadow-sm">
+                <span className="text-xs font-semibold text-purple-600 whitespace-nowrap">
+                  Auto-Generated
+                </span>
+              </div>
+            </div>
+
             {/* Video Title */}
-            <div className="mt-4 text-center">
-              <p className="text-sm text-text-muted">
-                Example: {currentVideo.title}
+            <div className="mt-3 sm:mt-4 text-center">
+              <p className="text-xs sm:text-sm font-medium text-text-secondary">
+                Example: <span className="text-purple-600 font-semibold">{currentVideo.title}</span>
               </p>
             </div>
           </motion.div>

@@ -2,24 +2,69 @@
 
 import { useState } from "react";
 import { Button } from "./Button";
-import { Sparkles, Menu, X } from "lucide-react";
+import { Menu, X, LogOut } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import Image from "next/image";
+import { useAuth } from "@/contexts/AuthContext";
+import { PricingModal } from "./PricingModal";
 
 export const Navbar = () => {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const { user, isAuthenticated, logout, loading } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
+  const [isPricingOpen, setIsPricingOpen] = useState(false);
 
-  const toggleLogin = () => setIsLoggedIn(!isLoggedIn);
+  const handleGoogleLogin = () => {
+    const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+    const redirectUri = `${window.location.origin}/auth/callback`;
+    const scope = 'openid email profile';
+
+    const googleAuthUrl =
+      `https://accounts.google.com/o/oauth2/v2/auth?` +
+      `client_id=${clientId}&` +
+      `redirect_uri=${encodeURIComponent(redirectUri)}&` +
+      `response_type=code&` +
+      `scope=${encodeURIComponent(scope)}&` +
+      `access_type=offline&` +
+      `prompt=consent`;
+
+    window.location.href = googleAuthUrl;
+  };
+
+  const handleLogout = async () => {
+    await logout();
+    setShowUserMenu(false);
+    setIsMobileMenuOpen(false);
+  };
+
+  const handlePricingClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsPricingOpen(true);
+    setIsMobileMenuOpen(false);
+  };
+
+  const handleSubscribe = (planName: string) => {
+    console.log(`Subscribing to ${planName} plan`);
+    // TODO: Integrate with payment system
+    alert(`You selected the ${planName} plan! Payment integration coming soon.`);
+    setIsPricingOpen(false);
+  };
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-200">
+    <>
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo Section */}
           <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-purple flex items-center justify-center">
-              <Sparkles className="w-5 h-5 text-white" />
-            </div>
+            <Image
+              src="/logo.svg"
+              alt="AIVideo.DIY Logo"
+              width={32}
+              height={32}
+              className="w-8 h-8"
+              priority
+            />
             <span className="text-xl font-bold text-text-primary">
               AIVideo.DIY
             </span>
@@ -27,23 +72,80 @@ export const Navbar = () => {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-4">
-            <a
-              href="#pricing"
+            <button
+              onClick={handlePricingClick}
               className="px-4 py-2 text-sm font-medium text-text-secondary hover:text-primary transition-colors"
             >
               Pricing
-            </a>
+            </button>
 
-            {isLoggedIn ? (
-              <button
-                onClick={toggleLogin}
-                className="w-10 h-10 rounded-full bg-gradient-purple flex items-center justify-center text-white font-semibold hover:scale-105 transition-transform"
-                aria-label="User profile"
-              >
-                U
-              </button>
+            {loading ? (
+              <div className="w-10 h-10 rounded-full bg-gray-200 animate-pulse" />
+            ) : isAuthenticated && user ? (
+              <div className="relative">
+                <button
+                  onClick={() => setShowUserMenu(!showUserMenu)}
+                  className="flex items-center space-x-2 sm:space-x-3 px-2 sm:px-3 py-2 rounded-lg hover:bg-purple-bg/50 transition-colors"
+                >
+                  {user.avatar_url ? (
+                    <Image
+                      src={user.avatar_url}
+                      alt={user.name || 'User'}
+                      width={32}
+                      height={32}
+                      className="w-8 h-8 rounded-full"
+                    />
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-gradient-purple flex items-center justify-center text-white font-semibold text-sm">
+                      {user.name?.[0] || user.email[0]?.toUpperCase() || 'U'}
+                    </div>
+                  )}
+                  <div className="text-left">
+                    <div className="hidden sm:block text-sm font-medium text-text-primary">
+                      {user.name || 'User'}
+                    </div>
+                    <div className="text-xs text-text-muted">
+                      {user.credits.toFixed(0)} credits
+                    </div>
+                  </div>
+                </button>
+
+                {/* User Dropdown Menu */}
+                <AnimatePresence>
+                  {showUserMenu && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      transition={{ duration: 0.2 }}
+                      className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2"
+                    >
+                      <div className="px-4 py-2 border-b border-gray-100">
+                        <p className="text-sm font-medium text-text-primary truncate">
+                          {user.email}
+                        </p>
+                        <p className="text-xs text-text-muted mt-1">
+                          Credits: {user.credits.toFixed(1)}
+                        </p>
+                      </div>
+                      <button
+                        onClick={handleLogout}
+                        className="w-full px-4 py-2 text-left text-sm text-text-secondary hover:bg-purple-bg hover:text-primary transition-colors flex items-center space-x-2"
+                      >
+                        <LogOut className="w-4 h-4" />
+                        <span>Logout</span>
+                      </button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
             ) : (
-              <Button variant="primary" size="sm" onClick={toggleLogin}>
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={handleGoogleLogin}
+                className="bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-700 hover:to-purple-600 shadow-md"
+              >
                 Login
               </Button>
             )}
@@ -68,45 +170,64 @@ export const Navbar = () => {
       <AnimatePresence>
         {isMobileMenuOpen && (
           <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.2 }}
-            className="md:hidden border-t border-gray-200 bg-white"
+            initial={{ opacity: 0, maxHeight: 0 }}
+            animate={{ opacity: 1, maxHeight: 400 }}
+            exit={{ opacity: 0, maxHeight: 0 }}
+            transition={{ duration: 0.25, ease: "easeInOut" }}
+            className="md:hidden border-t border-gray-200 bg-white overflow-hidden"
           >
             <div className="px-4 py-4 space-y-3">
-              <a
-                href="#pricing"
-                className="block px-4 py-2 text-sm font-medium text-text-secondary hover:text-primary hover:bg-purple-bg rounded-lg transition-colors"
-                onClick={() => setIsMobileMenuOpen(false)}
+              <button
+                onClick={handlePricingClick}
+                className="w-full text-left px-4 py-2 text-sm font-medium text-text-secondary hover:text-primary hover:bg-purple-bg rounded-lg transition-colors"
               >
                 Pricing
-              </a>
+              </button>
 
-              {isLoggedIn ? (
-                <button
-                  onClick={() => {
-                    toggleLogin();
-                    setIsMobileMenuOpen(false);
-                  }}
-                  className="w-full flex items-center space-x-3 px-4 py-2 rounded-lg hover:bg-purple-bg transition-colors"
-                >
-                  <div className="w-10 h-10 rounded-full bg-gradient-purple flex items-center justify-center text-white font-semibold">
-                    U
+              {loading ? (
+                <div className="h-12 bg-gray-200 rounded-lg animate-pulse" />
+              ) : isAuthenticated && user ? (
+                <div className="space-y-2">
+                  <div className="flex items-center space-x-3 px-4 py-3 bg-purple-bg/30 rounded-lg">
+                    {user.avatar_url ? (
+                      <Image
+                        src={user.avatar_url}
+                        alt={user.name || 'User'}
+                        width={40}
+                        height={40}
+                        className="w-10 h-10 rounded-full"
+                      />
+                    ) : (
+                      <div className="w-10 h-10 rounded-full bg-gradient-purple flex items-center justify-center text-white font-semibold">
+                        {user.name?.[0] || user.email[0]?.toUpperCase() || 'U'}
+                      </div>
+                    )}
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-text-primary">
+                        {user.name || 'User'}
+                      </p>
+                      <p className="text-xs text-text-muted">
+                        {user.credits.toFixed(0)} credits
+                      </p>
+                    </div>
                   </div>
-                  <span className="text-sm font-medium text-text-primary">
-                    Profile
-                  </span>
-                </button>
+                  <button
+                    onClick={handleLogout}
+                    className="w-full px-4 py-2 text-sm text-text-secondary hover:text-primary hover:bg-purple-bg rounded-lg transition-colors flex items-center space-x-2"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    <span>Logout</span>
+                  </button>
+                </div>
               ) : (
                 <Button
                   variant="primary"
                   size="md"
                   onClick={() => {
-                    toggleLogin();
+                    handleGoogleLogin();
                     setIsMobileMenuOpen(false);
                   }}
-                  className="w-full"
+                  className="w-full bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-700 hover:to-purple-600 shadow-md"
                 >
                   Login
                 </Button>
@@ -115,6 +236,14 @@ export const Navbar = () => {
           </motion.div>
         )}
       </AnimatePresence>
-    </nav>
+      </nav>
+
+      {/* Pricing Modal */}
+      <PricingModal
+        isOpen={isPricingOpen}
+        onClose={() => setIsPricingOpen(false)}
+        onSubscribe={handleSubscribe}
+      />
+    </>
   );
 };

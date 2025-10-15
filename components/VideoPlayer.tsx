@@ -41,17 +41,18 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
         muted
         autoPlay={autoPlay}
         playsInline
+        preload="metadata"
       />
       <button
         onClick={togglePlay}
-        className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+        className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 touch-manipulation"
         aria-label={isPlaying ? "Pause video" : "Play video"}
       >
-        <div className="bg-white/90 backdrop-blur-sm rounded-full p-4 hover:bg-white transition-all duration-200 hover:scale-110">
+        <div className="bg-white/90 backdrop-blur-sm rounded-full p-3 sm:p-4 hover:bg-white transition-all duration-200 hover:scale-110">
           {isPlaying ? (
-            <Pause className="w-8 h-8 text-primary" />
+            <Pause className="w-6 h-6 sm:w-8 sm:h-8 text-primary" />
           ) : (
-            <Play className="w-8 h-8 text-primary ml-1" />
+            <Play className="w-6 h-6 sm:w-8 sm:h-8 text-primary ml-0.5 sm:ml-1" />
           )}
         </div>
       </button>

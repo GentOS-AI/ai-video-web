@@ -107,6 +107,11 @@ export const HeroSection = () => {
       return;
     }
 
+    if (prompt.trim().length < 10) {
+      showNotification("Video description must be at least 10 characters long", "warning");
+      return;
+    }
+
     if (selectedImage === null) {
       showNotification("Please select or upload an image", "warning");
       return;

@@ -300,9 +300,9 @@ export const HeroSection = () => {
             </div>
 
             {/* Integrated Input Card */}
-            <div className="relative bg-white border border-gray-200 rounded-2xl overflow-hidden transition-all duration-300 hover:border-purple-200 hover:shadow-xl hover:shadow-purple-500/10">
+            <div className="relative bg-white border border-gray-200 rounded-2xl overflow-visible transition-all duration-300 hover:border-purple-200 hover:shadow-xl hover:shadow-purple-500/10">
               {/* Card Header */}
-              <div className="flex items-center justify-between px-4 py-3 sm:px-6 sm:py-4 border-b border-gray-100 bg-white">
+              <div className="flex items-center justify-between px-4 py-3 sm:px-6 sm:py-4 border-b border-gray-100 bg-white/0">
                 {/* Left: AI Script Generator with Tooltip - Hidden on mobile */}
                 <div className="hidden sm:flex items-center space-x-2 relative">
                   <button
@@ -323,7 +323,7 @@ export const HeroSection = () => {
 
                     {/* Tooltip */}
                     {showHelperTooltip && (
-                      <div className="absolute left-0 top-full mt-2 w-64 bg-purple-50 text-purple-900 text-xs rounded-lg shadow-xl shadow-purple-200/50 border-2 border-purple-300 p-3 z-30 pointer-events-none">
+                      <div className="absolute left-0 top-full mt-2 w-64 bg-purple-50 text-purple-900 text-xs rounded-lg shadow-xl shadow-purple-200/50 border-2 border-purple-300 p-3 z-[9999] pointer-events-none">
                         <div className="relative">
                           {/* Arrow */}
                           <div className="absolute -top-5 left-4 w-0 h-0 border-l-4 border-r-4 border-b-4 border-transparent border-b-purple-50" />

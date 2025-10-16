@@ -10,8 +10,8 @@ export const Footer = () => {
         {/* Purple Divider */}
         <div className="h-1 w-full gradient-purple rounded-full mb-8 sm:mb-12" />
 
-        {/* Footer Content - Single column mobile, 3 columns tablet+ */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-8">
+        {/* Footer Content - Single column mobile, 4 columns tablet+ */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
           {/* Company Info */}
           <div className="space-y-4">
             <div className="flex items-center space-x-2">
@@ -73,7 +73,48 @@ export const Footer = () => {
             </ul>
           </div>
 
-          {/* Social Links */}
+          {/* Resources - New Column */}
+          <div className="space-y-4">
+            <h3 className="text-sm font-semibold text-text-primary uppercase tracking-wider">
+              Resources
+            </h3>
+            <ul className="space-y-2">
+              <li>
+                <a
+                  href="#help"
+                  className="text-sm text-text-secondary hover:text-primary transition-colors"
+                >
+                  Help Center
+                </a>
+              </li>
+              <li>
+                <a
+                  href="#blog"
+                  className="text-sm text-text-secondary hover:text-primary transition-colors"
+                >
+                  Blog
+                </a>
+              </li>
+              <li>
+                <a
+                  href="#api"
+                  className="text-sm text-text-secondary hover:text-primary transition-colors"
+                >
+                  API Docs
+                </a>
+              </li>
+              <li>
+                <a
+                  href="#contact"
+                  className="text-sm text-text-secondary hover:text-primary transition-colors"
+                >
+                  Contact Us
+                </a>
+              </li>
+            </ul>
+          </div>
+
+          {/* Social Links - Now on the right */}
           <div className="space-y-4">
             <h3 className="text-sm font-semibold text-text-primary uppercase tracking-wider">
               Connect With Us

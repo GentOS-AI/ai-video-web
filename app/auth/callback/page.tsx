@@ -44,15 +44,34 @@ function AuthCallbackContent() {
 
         // Redirect to home on success
         router.push('/?login=success');
-      } catch (err) {
+      } catch (err: unknown) {
         console.error('Login error:', err);
-        const errorMessage = err instanceof Error && 'response' in err
-          ? (err as { response?: { data?: { detail?: string } } }).response?.data?.detail
-          : undefined;
-        setError(errorMessage || 'Login failed. Please try again.');
+
+        // Extract detailed error message
+        let errorMessage = 'Login failed. Please try again.';
+
+        if (err && typeof err === 'object') {
+          // Check for Axios error response
+          if ('response' in err) {
+            const axiosErr = err as { response?: { data?: { detail?: string }, status?: number } };
+            if (axiosErr.response?.data?.detail) {
+              errorMessage = `Authentication failed: ${axiosErr.response.data.detail}`;
+            } else if (axiosErr.response?.status === 401) {
+              errorMessage = 'Backend authentication failed. Please check backend logs or ensure Google OAuth is configured correctly.';
+            }
+          }
+          // Check for regular Error
+          else if ('message' in err && typeof (err as Error).message === 'string') {
+            errorMessage = (err as Error).message;
+          }
+        }
+
+        setError(errorMessage);
+        console.error('Detailed error:', errorMessage);
+
         setTimeout(() => {
           router.push('/?error=login_failed');
-        }, 3000);
+        }, 5000); // Give more time to read the error
       }
     };
 

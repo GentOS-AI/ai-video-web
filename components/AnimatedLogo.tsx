@@ -68,12 +68,21 @@ export const AnimatedLogo: React.FC<AnimatedLogoProps> = ({
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
       >
-        {/* Background with rounded corners - 紫色背景 */}
+        <defs>
+          {/* 渐变色定义 - 从黄色到粉色到紫色 */}
+          <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style={{ stopColor: "#eab308", stopOpacity: 1 }} />
+            <stop offset="50%" style={{ stopColor: "#ec4899", stopOpacity: 1 }} />
+            <stop offset="100%" style={{ stopColor: "#9333ea", stopOpacity: 1 }} />
+          </linearGradient>
+        </defs>
+
+        {/* Background with rounded corners - 渐变背景 */}
         <rect
           width="32"
           height="32"
           rx="7"
-          fill="#8b5cf6"
+          fill="url(#logoGradient)"
         />
 
         {/* Play triangle - 白色播放按钮 */}

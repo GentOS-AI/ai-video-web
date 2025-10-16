@@ -109,16 +109,17 @@ export const HeroSection = () => {
             <div className="relative bg-white border border-gray-200 rounded-2xl overflow-hidden transition-all duration-300 hover:border-purple-200 hover:shadow-xl hover:shadow-purple-500/10">
               {/* Card Header */}
               <div className="flex items-center justify-between px-4 py-3 sm:px-6 sm:py-4 border-b border-gray-100 bg-white">
-                {/* Left: Ads Script Helper with Tooltip - Hidden on mobile */}
+                {/* Left: AI Script Generator with Tooltip - Hidden on mobile */}
                 <div className="hidden sm:flex items-center space-x-2 relative">
-                  <div
-                    className="flex items-center space-x-2"
+                  <button
+                    className="flex items-center space-x-2 hover:opacity-80 transition-opacity"
+                    onClick={() => setIsPricingOpen(true)}
                     onMouseEnter={() => setShowHelperTooltip(true)}
                     onMouseLeave={() => setShowHelperTooltip(false)}
                   >
                     <Wand2 className="w-4 h-4 text-purple-600" />
-                    <span className="text-xs font-semibold text-purple-600 cursor-help relative pr-5">
-                      Ads Video Script Helper
+                    <span className="text-xs font-semibold text-purple-600 relative pr-5">
+                      AI Script Generator
 
                       {/* Pro Badge - positioned at top-right with spacing */}
                       <span className="absolute -top-2 -right-1 px-1 py-0.5 bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-[7px] font-bold rounded-sm pointer-events-none">
@@ -128,18 +129,19 @@ export const HeroSection = () => {
 
                     {/* Tooltip */}
                     {showHelperTooltip && (
-                      <div className="absolute left-0 top-full mt-2 w-64 bg-purple-50/95 backdrop-blur-md text-purple-900 text-xs rounded-lg shadow-xl shadow-purple-200/50 border border-purple-200/60 p-3 z-30">
+                      <div className="absolute left-0 top-full mt-2 w-64 bg-purple-50 text-purple-900 text-xs rounded-lg shadow-xl shadow-purple-200/50 border-2 border-purple-300 p-3 z-30 pointer-events-none">
                         <div className="relative">
                           {/* Arrow */}
                           <div className="absolute -top-5 left-4 w-0 h-0 border-l-4 border-r-4 border-b-4 border-transparent border-b-purple-50" />
                           <p className="leading-relaxed">
-                            AI-powered assistant that helps you craft engaging video descriptions.
-                            Simply describe your vision and let AI generate professional advertising videos.
+                            <strong>Click to unlock PRO features!</strong><br/>
+                            AI-powered script generator helps you craft engaging video descriptions.
+                            Get professional results in seconds.
                           </p>
                         </div>
                       </div>
                     )}
-                  </div>
+                  </button>
                 </div>
 
                 {/* Right: Model Selector Dropdown - Centered on mobile */}
@@ -212,25 +214,56 @@ export const HeroSection = () => {
               {/* Bottom Toolbar */}
               <div className="px-4 py-3 sm:px-6 sm:py-4 bg-gray-50/50 border-t border-gray-100">
                 <div className="flex items-center gap-2 sm:gap-3">
-                  {/* Upload Button (moved to left) */}
+                  {/* Upload Button with Selected Image Preview */}
                   <button
                     onClick={() => document.getElementById("file-upload")?.click()}
-                    className="flex-shrink-0 w-16 h-16 sm:w-14 sm:h-14 rounded-lg border-2 border-dashed border-gray-300 hover:border-purple-400 flex items-center justify-center transition-all hover:bg-purple-50"
-                    title="Upload image"
+                    className={`relative flex-shrink-0 rounded-lg transition-all ${
+                      selectedImage !== null
+                        ? "w-20 h-20 sm:w-18 sm:h-18 border-4 border-purple-500 shadow-lg shadow-purple-500/50 ring-4 ring-purple-200 scale-110 hover:scale-115"
+                        : "w-16 h-16 sm:w-14 sm:h-14 border-2 border-dashed border-gray-300 hover:border-purple-400 hover:bg-purple-50"
+                    } flex items-center justify-center overflow-hidden`}
+                    title={selectedImage !== null ? "Selected image - click to change" : "Upload image"}
                   >
-                    <svg
-                      className="w-6 h-6 sm:w-6 sm:h-6 text-text-muted"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                      />
-                    </svg>
+                    {selectedImage !== null ? (
+                      <>
+                        {/* Selected Image Thumbnail */}
+                        <Image
+                          src={trialImages.find(img => img.id === selectedImage)?.src || ""}
+                          alt="Selected"
+                          fill
+                          className="object-cover"
+                          sizes="80px"
+                        />
+
+                        {/* Checkmark Badge */}
+                        <div className="absolute -top-2 -right-2 w-7 h-7 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center shadow-lg border-2 border-white z-10">
+                          <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                          </svg>
+                        </div>
+
+                        {/* Pulsing Glow Effect */}
+                        <div className="absolute inset-0 bg-purple-500/20 animate-pulse pointer-events-none" />
+
+                        {/* Corner Accent */}
+                        <div className="absolute top-0 left-0 w-3 h-3 bg-purple-500 rounded-br-lg" />
+                        <div className="absolute bottom-0 right-0 w-3 h-3 bg-purple-500 rounded-tl-lg" />
+                      </>
+                    ) : (
+                      <svg
+                        className="w-6 h-6 sm:w-6 sm:h-6 text-text-muted"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                        />
+                      </svg>
+                    )}
                   </button>
                   <input
                     type="file"
@@ -272,7 +305,7 @@ export const HeroSection = () => {
                   </div>
                 </div>
                 <p className="text-xs text-text-muted mt-2">
-                  <span className="hidden sm:inline">Upload your own or select from {trialImages.length} trial images</span>
+                  <span className="hidden sm:inline">Upload or select an image to start your free trial.</span>
                   <span className="sm:hidden">← Swipe to view more images</span>
                 </p>
               </div>
@@ -325,17 +358,17 @@ export const HeroSection = () => {
             {/* Tech Badges - Show 2 on mobile, 3 on desktop */}
             <div className="mt-4 sm:mt-6 flex flex-wrap gap-2 sm:gap-3 justify-center">
               <div className="px-3 py-1.5 sm:px-4 sm:py-2 rounded-full bg-white/95 backdrop-blur-md border border-purple-200 shadow-sm">
-                <span className="text-[10px] sm:text-xs font-semibold text-purple-600 whitespace-nowrap">
+                <span className="text-[10px] sm:text-xs font-semibold text-purple-400 whitespace-nowrap">
                   4K Resolution
                 </span>
               </div>
               <div className="px-3 py-1.5 sm:px-4 sm:py-2 rounded-full bg-white/95 backdrop-blur-md border border-purple-200 shadow-sm">
-                <span className="text-[10px] sm:text-xs font-semibold text-purple-600 whitespace-nowrap">
+                <span className="text-[10px] sm:text-xs font-semibold text-purple-400 whitespace-nowrap">
                   Professional Quality
                 </span>
               </div>
               <div className="hidden sm:block px-4 py-2 rounded-full bg-white/95 backdrop-blur-md border border-purple-200 shadow-sm">
-                <span className="text-xs font-semibold text-purple-600 whitespace-nowrap">
+                <span className="text-xs font-semibold text-purple-400 whitespace-nowrap">
                   Auto-Generated
                 </span>
               </div>
@@ -344,7 +377,7 @@ export const HeroSection = () => {
             {/* Video Title */}
             <div className="mt-3 sm:mt-4 text-center">
               <p className="text-xs sm:text-sm font-medium text-text-secondary">
-                Example: <span className="text-purple-600 font-semibold">{currentVideo.title}</span>
+                Example: <span className="text-purple-400 font-semibold">{currentVideo.title}</span>
               </p>
             </div>
           </motion.div>

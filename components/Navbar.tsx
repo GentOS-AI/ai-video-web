@@ -4,9 +4,10 @@ import { useState } from "react";
 import { Button } from "./Button";
 import { Menu, X, LogOut } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import Image from "next/image";
 import { useAuth } from "@/contexts/AuthContext";
 import { PricingModal } from "./PricingModal";
+import { AnimatedLogo } from "./AnimatedLogo";
+import Image from "next/image";
 
 export const Navbar = () => {
   const { user, isAuthenticated, logout, loading } = useAuth();
@@ -57,14 +58,7 @@ export const Navbar = () => {
         <div className="flex items-center justify-between h-16">
           {/* Logo Section */}
           <div className="flex items-center space-x-2">
-            <Image
-              src="/logo.svg"
-              alt="AdsVideo Logo"
-              width={32}
-              height={32}
-              className="w-8 h-8"
-              priority
-            />
+            <AnimatedLogo size={32} />
             <span className="text-xl font-bold text-text-primary">
               AdsVideo
             </span>

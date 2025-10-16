@@ -1,5 +1,5 @@
 import { Twitter, Github, Linkedin, Mail } from "lucide-react";
-import Image from "next/image";
+import { AnimatedLogo } from "./AnimatedLogo";
 
 export const Footer = () => {
   const currentYear = new Date().getFullYear();
@@ -15,13 +15,7 @@ export const Footer = () => {
           {/* Company Info */}
           <div className="space-y-4">
             <div className="flex items-center space-x-2">
-              <Image
-                src="/logo.svg"
-                alt="AdsVideo Logo"
-                width={32}
-                height={32}
-                className="w-8 h-8"
-              />
+              <AnimatedLogo size={32} />
               <span className="text-xl font-bold text-text-primary">
                 AdsVideo
               </span>

@@ -44,6 +44,21 @@ class Settings(BaseSettings):
     SORA_API_KEY: str = ""
     RUNWAY_API_KEY: str = ""
 
+    # OpenAI Configuration
+    OPENAI_API_KEY: str = ""  # From .env
+
+    # Redis & Celery
+    REDIS_URL: str = "redis://localhost:6379/0"
+
+    # Video Generation Settings
+    VIDEO_OUTPUT_DIR: str = "./uploads/videos"
+    SORA_MODEL: str = "sora-2-image-to-video"
+    SORA_DURATION: int = 6  # seconds
+    SORA_RESOLUTION: str = "1280x720"  # Landscape format
+
+    # Mock Mode for Testing
+    USE_MOCK_SORA: bool = True  # Set to False to use real OpenAI API
+
     # Credits
     DEFAULT_USER_CREDITS: float = 100.0
     VIDEO_GENERATION_COST: float = 10.0

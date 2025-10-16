@@ -33,9 +33,23 @@ def generate_video(
     Create a new video generation task
 
     Requires authentication and sufficient credits
+
+    This endpoint:
+    1. Creates a video record in database
+    2. Deducts credits from user account
+    3. Triggers async Celery task for video generation
+    4. Returns immediately with pending status
     """
     try:
+        # Create video record and deduct credits
         video = video_service.create_video_generation_task(db, current_user, video_request)
+
+        # Trigger async video generation task
+        from app.tasks.video_generation import generate_video_task
+        generate_video_task.delay(video.id)
+
+        print(f"✅ Video generation task queued for video_id: {video.id}")
+
         return video
     except InsufficientCreditsException as e:
         raise HTTPException(

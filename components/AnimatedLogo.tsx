@@ -25,15 +25,15 @@ export const AnimatedLogo: React.FC<AnimatedLogoProps> = ({
         xmlns="http://www.w3.org/2000/svg"
       >
         <defs>
-          {/* Premium gradient for main shape */}
+          {/* Subtle gray gradient for professional look */}
           <linearGradient id="mainGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" style={{ stopColor: "#7C3AED", stopOpacity: 1 }} />
-            <stop offset="100%" style={{ stopColor: "#EC4899", stopOpacity: 1 }} />
+            <stop offset="0%" style={{ stopColor: "#4B5563", stopOpacity: 1 }} />
+            <stop offset="100%" style={{ stopColor: "#6B7280", stopOpacity: 1 }} />
           </linearGradient>
 
-          {/* Glow filter */}
+          {/* Subtle glow filter */}
           <filter id="glow">
-            <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+            <feGaussianBlur stdDeviation="1" result="coloredBlur"/>
             <feMerge>
               <feMergeNode in="coloredBlur"/>
               <feMergeNode in="SourceGraphic"/>
@@ -48,14 +48,6 @@ export const AnimatedLogo: React.FC<AnimatedLogoProps> = ({
           rx="8"
           fill="url(#mainGradient)"
           filter="url(#glow)"
-          animate={{
-            boxShadow: [
-              "0 0 20px rgba(124, 58, 237, 0.3)",
-              "0 0 30px rgba(236, 72, 153, 0.4)",
-              "0 0 20px rgba(124, 58, 237, 0.3)"
-            ]
-          }}
-          transition={{ duration: 3, repeat: Infinity }}
         />
 
         {/* Play triangle */}

@@ -4,10 +4,14 @@ import { useState, useEffect, useRef } from "react";
 import { Button } from "./Button";
 import { VideoPlayer } from "./VideoPlayer";
 import { PricingModal } from "./PricingModal";
-import { Wand2, Sparkles } from "lucide-react";
+import { Toast, type ToastType } from "./Toast";
+import { Wand2, Sparkles, Loader2, AlertCircle } from "lucide-react";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import { heroVideos, trialImages } from "@/lib/assets";
+import { videoService } from "@/lib/api/services";
+import type { Video } from "@/lib/api/services";
+import { useAuth } from "@/contexts/AuthContext";
 
 // Use imported data
 const sampleVideos = heroVideos;
@@ -20,6 +24,7 @@ const aiModels = [
 ];
 
 export const HeroSection = () => {
+  const { user, isAuthenticated, refreshUser } = useAuth();
   const [prompt, setPrompt] = useState("");
   const [selectedImage, setSelectedImage] = useState<number | null>(null);
   const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
@@ -30,6 +35,25 @@ export const HeroSection = () => {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const maxChars = 500;
 
+  // Video generation states
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generatedVideo, setGeneratedVideo] = useState<Video | null>(null);
+  const [generationError, setGenerationError] = useState<string | null>(null);
+  const [generationProgress, setGenerationProgress] = useState<string>("Starting...");
+  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Toast notification state
+  const [toastMessage, setToastMessage] = useState<string>("");
+  const [toastType, setToastType] = useState<ToastType>("info");
+  const [showToast, setShowToast] = useState(false);
+
+  // Helper function to show toast
+  const showNotification = (message: string, type: ToastType = "info") => {
+    setToastMessage(message);
+    setToastType(type);
+    setShowToast(true);
+  };
+
   const handlePromptChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const text = e.target.value;
     if (text.length <= maxChars) {
@@ -37,15 +61,132 @@ export const HeroSection = () => {
     }
   };
 
-  const handleGenerate = () => {
-    console.log("Generating video with prompt:", prompt);
-    // Add generation logic here
+  const handleGenerate = async () => {
+    // Validation with Toast notifications
+    if (!isAuthenticated) {
+      showNotification("Please login to generate videos", "warning");
+      return;
+    }
+
+    if (!prompt.trim()) {
+      showNotification("Please enter a video description", "warning");
+      return;
+    }
+
+    if (selectedImage === null) {
+      showNotification("Please select or upload an image", "warning");
+      return;
+    }
+
+    // Get selected image URL
+    const selectedImageData = trialImages.find(img => img.id === selectedImage);
+    if (!selectedImageData) {
+      showNotification("Selected image not found", "error");
+      return;
+    }
+
+    try {
+      setIsGenerating(true);
+      setGenerationError(null);
+      setGenerationProgress("Starting video generation...");
+      console.log("🎬 Generating video with:", {
+        prompt,
+        model: selectedModel.id,
+        imageUrl: selectedImageData.src,
+      });
+
+      // Call video generation API
+      const video = await videoService.generate(
+        prompt,
+        selectedModel.id,
+        selectedImageData.src
+      );
+
+      console.log("✅ Video generation task created:", video);
+      setGenerationProgress("Video generation in progress... This may take 2-5 minutes.");
+
+      // Start polling for status
+      startPolling(video.id);
+
+      // Refresh user credits
+      await refreshUser();
+
+    } catch (error: unknown) {
+      console.error("❌ Video generation failed:", error);
+      if (error instanceof Error) {
+        setGenerationError(error.message || "Failed to generate video");
+      } else {
+        setGenerationError("Failed to generate video");
+      }
+      setIsGenerating(false);
+    }
   };
+
+  const startPolling = (videoId: number) => {
+    // Clear any existing polling
+    if (pollingIntervalRef.current) {
+      clearInterval(pollingIntervalRef.current);
+    }
+
+    // Poll every 5 seconds
+    pollingIntervalRef.current = setInterval(async () => {
+      try {
+        const video = await videoService.getVideo(videoId);
+        console.log("📊 Video status:", video.status);
+
+        if (video.status === "completed") {
+          console.log("🎉 Video generation completed!");
+          setGeneratedVideo(video);
+          setIsGenerating(false);
+          setGenerationProgress("Video generated successfully!");
+
+          // Show success notification
+          showNotification("Video generated successfully! 🎉", "success");
+
+          // Stop polling
+          if (pollingIntervalRef.current) {
+            clearInterval(pollingIntervalRef.current);
+            pollingIntervalRef.current = null;
+          }
+
+          // Refresh user credits
+          await refreshUser();
+
+        } else if (video.status === "failed") {
+          console.error("❌ Video generation failed:", video.error_message);
+          setGenerationError(video.error_message || "Video generation failed");
+          setIsGenerating(false);
+
+          // Stop polling
+          if (pollingIntervalRef.current) {
+            clearInterval(pollingIntervalRef.current);
+            pollingIntervalRef.current = null;
+          }
+
+        } else if (video.status === "processing") {
+          setGenerationProgress("Processing video... Almost there!");
+        }
+
+      } catch (error: unknown) {
+        console.error("❌ Error checking video status:", error);
+        // Don't stop polling on temporary errors
+      }
+    }, 5000); // Check every 5 seconds
+  };
+
+  // Cleanup polling on unmount
+  useEffect(() => {
+    return () => {
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+      }
+    };
+  }, []);
 
   const handleSubscribe = (planName: string) => {
     console.log(`Subscribing to ${planName} plan`);
     // TODO: Integrate with payment system
-    alert(`You selected the ${planName} plan! Payment integration coming soon.`);
+    showNotification(`You selected the ${planName} plan! Payment integration coming soon.`, "info");
     setIsPricingOpen(false);
   };
 
@@ -73,8 +214,8 @@ export const HeroSection = () => {
   }
 
   return (
-    <section className="pt-20 sm:pt-24 pb-12 sm:pb-16 px-4 sm:px-6 lg:px-8">
-      <div className="w-full md:max-w-7xl mx-auto">
+    <section className="pt-20 sm:pt-24 pb-12 sm:pb-16">
+      <div className="w-full md:max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid lg:grid-cols-2 gap-6 sm:gap-8 lg:gap-12 items-center">
           {/* Left Side - Generation Form */}
           <motion.div
@@ -87,15 +228,7 @@ export const HeroSection = () => {
             <div className="space-y-2 sm:space-y-3 md:space-y-4">
               <h1 className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">
                 Create Stunning{" "}
-                <span
-                  style={{
-                    background: "linear-gradient(135deg, #7c3aed 0%, #8b5cf6 100%)",
-                    WebkitBackgroundClip: "text",
-                    WebkitTextFillColor: "transparent",
-                    backgroundClip: "text",
-                    display: "inline-block"
-                  }}
-                >
+                <span className="bg-gradient-to-r from-purple-600 to-purple-500 bg-clip-text text-transparent">
                   AI Videos
                 </span>
               </h1>
@@ -202,14 +335,42 @@ export const HeroSection = () => {
                       variant="primary"
                       size="sm"
                       onClick={handleGenerate}
-                      className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 shadow-md flex items-center gap-1.5 text-xs sm:text-sm"
+                      disabled={isGenerating}
+                      className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 shadow-md flex items-center gap-1.5 text-xs sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                      Generate
+                      {isGenerating ? (
+                        <>
+                          <Loader2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-spin" />
+                          Generating...
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                          Generate
+                        </>
+                      )}
                     </Button>
                   </div>
                 </div>
               </div>
+
+              {/* Generation Status/Error Messages */}
+              {(isGenerating || generationError) && (
+                <div className="px-4 py-3 sm:px-6 sm:py-4 bg-gray-50 border-t border-gray-100">
+                  {isGenerating && (
+                    <div className="flex items-center gap-2 text-sm text-purple-600">
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>{generationProgress}</span>
+                    </div>
+                  )}
+                  {generationError && (
+                    <div className="flex items-center gap-2 text-sm text-red-600">
+                      <AlertCircle className="w-4 h-4" />
+                      <span>{generationError}</span>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Bottom Toolbar */}
               <div className="px-4 py-3 sm:px-6 sm:py-4 bg-gray-50/50 border-t border-gray-100">
@@ -332,34 +493,57 @@ export const HeroSection = () => {
 
             {/* Main Video Container */}
             <div className="relative aspect-video rounded-2xl overflow-hidden shadow-2xl glow-purple">
-              <VideoPlayer
-                src={currentVideo.src}
-                poster={currentVideo.poster}
-                autoPlay={false}
-              />
+              {/* Show generated video if available */}
+              {generatedVideo && generatedVideo.video_url ? (
+                <VideoPlayer
+                  src={`${process.env.NEXT_PUBLIC_API_URL?.replace('/api/v1', '')}${generatedVideo.video_url}`}
+                  poster={generatedVideo.poster_url || undefined}
+                  autoPlay={true}
+                />
+              ) : isGenerating ? (
+                /* Loading state */
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-purple-100 to-pink-100">
+                  <Loader2 className="w-16 h-16 text-purple-600 animate-spin mb-4" />
+                  <p className="text-purple-600 font-semibold text-lg mb-2">
+                    Generating your video...
+                  </p>
+                  <p className="text-purple-500 text-sm text-center px-4">
+                    {generationProgress}
+                  </p>
+                </div>
+              ) : (
+                /* Default sample video */
+                <VideoPlayer
+                  src={currentVideo.src}
+                  poster={currentVideo.poster}
+                  autoPlay={false}
+                />
+              )}
 
-              {/* Video Indicators (clickable dots for navigation) */}
-              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex space-x-2 z-10">
-                {sampleVideos.map((_, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setCurrentVideoIndex(index)}
-                    className={`w-2 h-2 rounded-full transition-all ${
-                      index === currentVideoIndex
-                        ? "bg-white w-8"
-                        : "bg-white/50 hover:bg-white/75"
-                    }`}
-                    aria-label={`Go to video ${index + 1}`}
-                  />
-                ))}
-              </div>
+              {/* Video Indicators (only show for sample videos) */}
+              {!generatedVideo && !isGenerating && (
+                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex space-x-2 z-10">
+                  {sampleVideos.map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setCurrentVideoIndex(index)}
+                      className={`w-2 h-2 rounded-full transition-all ${
+                        index === currentVideoIndex
+                          ? "bg-white w-8"
+                          : "bg-white/50 hover:bg-white/75"
+                      }`}
+                      aria-label={`Go to video ${index + 1}`}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Tech Badges - Show 2 on mobile, 3 on desktop */}
             <div className="mt-4 sm:mt-6 flex flex-wrap gap-2 sm:gap-3 justify-center">
               <div className="px-3 py-1.5 sm:px-4 sm:py-2 rounded-full bg-white/95 backdrop-blur-md border border-purple-200 shadow-sm">
                 <span className="text-[10px] sm:text-xs font-semibold text-purple-400 whitespace-nowrap">
-                  4K Resolution
+                  {generatedVideo ? "1280x720" : "4K Resolution"}
                 </span>
               </div>
               <div className="px-3 py-1.5 sm:px-4 sm:py-2 rounded-full bg-white/95 backdrop-blur-md border border-purple-200 shadow-sm">
@@ -369,7 +553,7 @@ export const HeroSection = () => {
               </div>
               <div className="hidden sm:block px-4 py-2 rounded-full bg-white/95 backdrop-blur-md border border-purple-200 shadow-sm">
                 <span className="text-xs font-semibold text-purple-400 whitespace-nowrap">
-                  Auto-Generated
+                  {generatedVideo ? "AI Generated" : "Auto-Generated"}
                 </span>
               </div>
             </div>
@@ -377,7 +561,15 @@ export const HeroSection = () => {
             {/* Video Title */}
             <div className="mt-3 sm:mt-4 text-center">
               <p className="text-xs sm:text-sm font-medium text-text-secondary">
-                Example: <span className="text-purple-400 font-semibold">{currentVideo.title}</span>
+                {generatedVideo ? (
+                  <>
+                    Your Video: <span className="text-purple-400 font-semibold">Generated with Sora 2</span>
+                  </>
+                ) : (
+                  <>
+                    Example: <span className="text-purple-400 font-semibold">{currentVideo.title}</span>
+                  </>
+                )}
               </p>
             </div>
           </motion.div>
@@ -389,6 +581,15 @@ export const HeroSection = () => {
         isOpen={isPricingOpen}
         onClose={() => setIsPricingOpen(false)}
         onSubscribe={handleSubscribe}
+      />
+
+      {/* Toast Notification */}
+      <Toast
+        message={toastMessage}
+        type={toastType}
+        isVisible={showToast}
+        onClose={() => setShowToast(false)}
+        duration={3000}
       />
     </section>
   );

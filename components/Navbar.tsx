@@ -6,7 +6,6 @@ import { Menu, X, LogOut } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import { PricingModal } from "./PricingModal";
-import { AnimatedLogo } from "./AnimatedLogo";
 import Image from "next/image";
 
 export const Navbar = () => {
@@ -54,13 +53,15 @@ export const Navbar = () => {
   return (
     <>
       <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-200">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="w-full md:max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo Section */}
-          <div className="flex items-center space-x-2">
-            <AnimatedLogo size={32} />
-            <span className="text-xl font-bold text-text-primary">
-              AdsVideo
+          <div className="flex items-center">
+            <span className="text-xl font-bold flex items-center gap-0.5">
+              <span className="bg-gradient-to-r from-yellow-500 via-pink-500 to-purple-600 bg-clip-text text-transparent">
+                Ads
+              </span>
+              <span className="text-text-primary">Video.co</span>
             </span>
           </div>
 

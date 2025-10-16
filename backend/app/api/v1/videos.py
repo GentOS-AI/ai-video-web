@@ -49,11 +49,11 @@ def generate_video(
         # Create video record and deduct credits
         video = video_service.create_video_generation_task(db, current_user, video_request)
 
-        # Trigger async video generation task
-        from app.tasks.video_generation import generate_video_task
-        generate_video_task.delay(video.id)
+        # Trigger async video generation task (commented out for now - requires Celery)
+        # from app.tasks.video_generation import generate_video_task
+        # generate_video_task.delay(video.id)
 
-        print(f"✅ Video generation task queued for video_id: {video.id}")
+        print(f"✅ Video generation task created for video_id: {video.id}")
 
         return video
     except SubscriptionRequiredException as e:

@@ -59,14 +59,14 @@ export const Navbar = () => {
           <div className="flex items-center space-x-2">
             <Image
               src="/logo.svg"
-              alt="AIVideo.DIY Logo"
+              alt="AdsVideo Logo"
               width={32}
               height={32}
               className="w-8 h-8"
               priority
             />
             <span className="text-xl font-bold text-text-primary">
-              AIVideo.DIY
+              AdsVideo
             </span>
           </div>
 

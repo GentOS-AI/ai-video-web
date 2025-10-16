@@ -20,7 +20,7 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "AIVideo.DIY - Create Stunning AI-Generated Videos in Seconds",
+  title: "AdsVideo - Create Stunning AI-Generated Videos in Seconds",
   description:
     "Transform your ideas into professional advertising videos with AI-powered Sora 2 technology. Perfect for marketers, businesses, and content creators.",
   keywords: [
@@ -33,29 +33,29 @@ export const metadata: Metadata = {
     "automated video",
     "professional videos",
   ],
-  authors: [{ name: "AIVideo.DIY" }],
-  creator: "AIVideo.DIY",
-  publisher: "AIVideo.DIY",
+  authors: [{ name: "AdsVideo" }],
+  creator: "AdsVideo",
+  publisher: "AdsVideo",
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: "https://aivideo.diy",
-    title: "AIVideo.DIY - AI-Powered Video Generation",
+    url: "https://adsvideo.ai",
+    title: "AdsVideo - AI-Powered Video Generation",
     description:
       "Create professional advertising videos in seconds with AI technology.",
-    siteName: "AIVideo.DIY",
+    siteName: "AdsVideo",
     images: [
       {
         url: "/og-image.svg",
         width: 1200,
         height: 630,
-        alt: "AIVideo.DIY - Create Stunning AI-Generated Videos",
+        alt: "AdsVideo - Create Stunning AI-Generated Videos",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "AIVideo.DIY - AI Video Generation",
+    title: "AdsVideo - AI Video Generation",
     description:
       "Transform your ideas into professional videos with AI-powered technology.",
     images: ["/og-image.svg"],

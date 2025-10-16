@@ -17,13 +17,13 @@ export const Footer = () => {
             <div className="flex items-center space-x-2">
               <Image
                 src="/logo.svg"
-                alt="AIVideo.DIY Logo"
+                alt="AdsVideo Logo"
                 width={32}
                 height={32}
                 className="w-8 h-8"
               />
               <span className="text-xl font-bold text-text-primary">
-                AIVideo.DIY
+                AdsVideo
               </span>
             </div>
             <p className="text-sm text-text-secondary">
@@ -120,7 +120,7 @@ export const Footer = () => {
         {/* Copyright */}
         <div className="mt-12 pt-8 border-t border-gray-200">
           <p className="text-center text-sm text-text-muted">
-            {currentYear} AIVideo.DIY. All rights reserved.
+            {currentYear} AdsVideo. All rights reserved.
           </p>
         </div>
       </div>

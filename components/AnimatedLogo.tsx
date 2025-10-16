@@ -25,15 +25,15 @@ export const AnimatedLogo: React.FC<AnimatedLogoProps> = ({
         xmlns="http://www.w3.org/2000/svg"
       >
         <defs>
-          {/* Subtle gray gradient for professional look */}
+          {/* Brand purple gradient */}
           <linearGradient id="mainGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" style={{ stopColor: "#4B5563", stopOpacity: 1 }} />
-            <stop offset="100%" style={{ stopColor: "#6B7280", stopOpacity: 1 }} />
+            <stop offset="0%" style={{ stopColor: "#8b5cf6", stopOpacity: 1 }} />
+            <stop offset="100%" style={{ stopColor: "#7c3aed", stopOpacity: 1 }} />
           </linearGradient>
 
-          {/* Subtle glow filter */}
+          {/* Purple glow filter */}
           <filter id="glow">
-            <feGaussianBlur stdDeviation="1" result="coloredBlur"/>
+            <feGaussianBlur stdDeviation="1.5" result="coloredBlur"/>
             <feMerge>
               <feMergeNode in="coloredBlur"/>
               <feMergeNode in="SourceGraphic"/>
@@ -41,11 +41,11 @@ export const AnimatedLogo: React.FC<AnimatedLogoProps> = ({
           </filter>
         </defs>
 
-        {/* Background with modern rounded square */}
+        {/* Background with rounded corners */}
         <motion.rect
           width="32"
           height="32"
-          rx="8"
+          rx="7"
           fill="url(#mainGradient)"
           filter="url(#glow)"
         />

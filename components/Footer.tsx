@@ -1,4 +1,5 @@
 import { Twitter, Github, Linkedin, Mail } from "lucide-react";
+import { AnimatedLogo } from "./AnimatedLogo";
 
 export const Footer = () => {
   const currentYear = new Date().getFullYear();
@@ -13,7 +14,8 @@ export const Footer = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
           {/* Company Info */}
           <div className="space-y-4">
-            <div className="flex items-center">
+            <div className="flex items-center space-x-2">
+              <AnimatedLogo size={32} />
               <span className="text-xl font-bold flex items-center gap-0.5">
                 <span className="bg-gradient-to-r from-yellow-500 via-pink-500 to-purple-600 bg-clip-text text-transparent">
                   Ads

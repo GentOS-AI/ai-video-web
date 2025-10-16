@@ -45,3 +45,15 @@ class ExternalAPIException(AIVideoException):
     """External API error exception"""
     def __init__(self, message: str = "External API error"):
         super().__init__(message, status_code=503)
+
+
+class SubscriptionRequiredException(AIVideoException):
+    """Subscription required exception"""
+    def __init__(self, message: str = "Subscription required to access this feature"):
+        super().__init__(message, status_code=403)
+
+
+class SubscriptionExpiredException(AIVideoException):
+    """Subscription expired exception"""
+    def __init__(self, message: str = "Your subscription has expired"):
+        super().__init__(message, status_code=403)

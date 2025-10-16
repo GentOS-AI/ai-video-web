@@ -61,7 +61,7 @@ class Settings(BaseSettings):
 
     # Credits
     DEFAULT_USER_CREDITS: float = 100.0
-    VIDEO_GENERATION_COST: float = 10.0
+    VIDEO_GENERATION_COST: float = 100.0  # Changed from 10.0 to 100.0
 
     model_config = SettingsConfigDict(
         env_file=".env",

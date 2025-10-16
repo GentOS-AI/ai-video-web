@@ -16,6 +16,13 @@ class User(Base):
     name = Column(String(255), nullable=True)
     avatar_url = Column(String(500), nullable=True)
     credits = Column(Float, default=100.0)  # Initial credits for new users
+
+    # Subscription fields
+    subscription_plan = Column(String(50), default="free")  # free, basic, pro
+    subscription_status = Column(String(20), default="active")  # active, cancelled, expired
+    subscription_start_date = Column(DateTime, nullable=True)
+    subscription_end_date = Column(DateTime, nullable=True)
+
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -23,4 +30,4 @@ class User(Base):
     videos = relationship("Video", back_populates="user", cascade="all, delete-orphan")
 
     def __repr__(self):
-        return f"<User(id={self.id}, email={self.email}, name={self.name})>"
+        return f"<User(id={self.id}, email={self.email}, name={self.name}, subscription={self.subscription_plan})>"

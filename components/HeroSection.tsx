@@ -24,7 +24,7 @@ const aiModels = [
 ];
 
 export const HeroSection = () => {
-  const { user, isAuthenticated, refreshUser } = useAuth();
+  const { isAuthenticated, user, refreshUser } = useAuth();
   const [prompt, setPrompt] = useState("");
   const [selectedImage, setSelectedImage] = useState<number | null>(null);
   const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
@@ -68,6 +68,31 @@ export const HeroSection = () => {
       return;
     }
 
+    // Check if user has a subscription
+    if (!user || user.subscription_plan === 'free') {
+      showNotification("Subscription required. Please upgrade to generate videos!", "warning");
+      setIsPricingOpen(true); // Open pricing modal
+      return;
+    }
+
+    // Check if subscription is active
+    if (user.subscription_status !== 'active') {
+      showNotification("Your subscription has expired. Please renew to continue.", "warning");
+      setIsPricingOpen(true);
+      return;
+    }
+
+    // Check subscription expiry date
+    if (user.subscription_end_date) {
+      const expiryDate = new Date(user.subscription_end_date);
+      const now = new Date();
+      if (expiryDate < now) {
+        showNotification("Your subscription has expired. Please renew to continue.", "warning");
+        setIsPricingOpen(true);
+        return;
+      }
+    }
+
     if (!prompt.trim()) {
       showNotification("Please enter a video description", "warning");
       return;
@@ -75,6 +100,13 @@ export const HeroSection = () => {
 
     if (selectedImage === null) {
       showNotification("Please select or upload an image", "warning");
+      return;
+    }
+
+    // Check if user has enough credits (100 credits required)
+    if (user.credits < 100) {
+      showNotification(`Insufficient credits. You have ${user.credits} credits, but need 100 credits to generate a video.`, "error");
+      setIsPricingOpen(true);
       return;
     }
 
@@ -91,14 +123,14 @@ export const HeroSection = () => {
       setGenerationProgress("Starting video generation...");
       console.log("🎬 Generating video with:", {
         prompt,
-        model: selectedModel.id,
+        model: selectedModel?.id || 'sora-2',
         imageUrl: selectedImageData.src,
       });
 
       // Call video generation API
       const video = await videoService.generate(
         prompt,
-        selectedModel.id,
+        selectedModel?.id || 'sora-2',
         selectedImageData.src
       );
 
@@ -215,8 +247,8 @@ export const HeroSection = () => {
 
   return (
     <section className="pt-20 sm:pt-24 pb-12 sm:pb-16">
-      <div className="w-full md:max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid lg:grid-cols-2 gap-6 sm:gap-8 lg:gap-12 items-center">
+      <div className="w-full md:max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
+        <div className="grid lg:grid-cols-2 gap-6 sm:gap-8 lg:gap-12 items-end">
           {/* Left Side - Generation Form */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -539,39 +571,87 @@ export const HeroSection = () => {
               )}
             </div>
 
-            {/* Tech Badges - Show 2 on mobile, 3 on desktop */}
-            <div className="mt-4 sm:mt-6 flex flex-wrap gap-2 sm:gap-3 justify-center">
-              <div className="px-3 py-1.5 sm:px-4 sm:py-2 rounded-full bg-white/95 backdrop-blur-md border border-purple-200 shadow-sm">
-                <span className="text-[10px] sm:text-xs font-semibold text-purple-400 whitespace-nowrap">
+            {/* Tech Badges - Smaller size */}
+            <div className="mt-4 sm:mt-6 flex flex-wrap gap-1.5 sm:gap-2 justify-center">
+              <div className="px-2 py-1 sm:px-2.5 sm:py-1 rounded-full bg-white/95 backdrop-blur-md border border-purple-200 shadow-sm">
+                <span className="text-[9px] sm:text-[10px] font-semibold text-purple-600 whitespace-nowrap">
                   {generatedVideo ? "1280x720" : "4K Resolution"}
                 </span>
               </div>
-              <div className="px-3 py-1.5 sm:px-4 sm:py-2 rounded-full bg-white/95 backdrop-blur-md border border-purple-200 shadow-sm">
-                <span className="text-[10px] sm:text-xs font-semibold text-purple-400 whitespace-nowrap">
+              <div className="px-2 py-1 sm:px-2.5 sm:py-1 rounded-full bg-white/95 backdrop-blur-md border border-purple-200 shadow-sm">
+                <span className="text-[9px] sm:text-[10px] font-semibold text-purple-600 whitespace-nowrap">
                   Professional Quality
                 </span>
               </div>
-              <div className="hidden sm:block px-4 py-2 rounded-full bg-white/95 backdrop-blur-md border border-purple-200 shadow-sm">
-                <span className="text-xs font-semibold text-purple-400 whitespace-nowrap">
+              <div className="hidden sm:block px-2.5 py-1 rounded-full bg-white/95 backdrop-blur-md border border-purple-200 shadow-sm">
+                <span className="text-[10px] font-semibold text-purple-600 whitespace-nowrap">
                   {generatedVideo ? "AI Generated" : "Auto-Generated"}
                 </span>
               </div>
             </div>
 
             {/* Video Title */}
-            <div className="mt-3 sm:mt-4 text-center">
+            <div className="mt-4 sm:mt-5 text-center">
               <p className="text-xs sm:text-sm font-medium text-text-secondary">
                 {generatedVideo ? (
                   <>
-                    Your Video: <span className="text-purple-400 font-semibold">Generated with Sora 2</span>
+                    Your Video: <span className="text-purple-600 font-semibold">Generated with Sora 2</span>
                   </>
                 ) : (
                   <>
-                    Example: <span className="text-purple-400 font-semibold">{currentVideo.title}</span>
+                    Example: <span className="text-purple-600 font-semibold">{currentVideo.title}</span>
                   </>
                 )}
               </p>
             </div>
+
+            {/* User Reviews / Social Proof - Reduced padding */}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.3 }}
+              className="mt-5 sm:mt-8 flex items-center justify-center gap-3 sm:gap-4 px-4 py-3 rounded-lg"
+            >
+              {/* User Avatars */}
+              <div className="flex -space-x-2">
+                <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full border-2 border-white bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white text-xs font-bold shadow-sm">
+                  A
+                </div>
+                <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full border-2 border-white bg-gradient-to-br from-blue-400 to-cyan-400 flex items-center justify-center text-white text-xs font-bold shadow-sm">
+                  M
+                </div>
+                <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full border-2 border-white bg-gradient-to-br from-green-400 to-emerald-400 flex items-center justify-center text-white text-xs font-bold shadow-sm">
+                  S
+                </div>
+                <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full border-2 border-white bg-gradient-to-br from-orange-400 to-red-400 flex items-center justify-center text-white text-xs font-bold shadow-sm">
+                  J
+                </div>
+                <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full border-2 border-white bg-gradient-to-br from-indigo-400 to-purple-400 flex items-center justify-center text-white text-xs font-bold shadow-sm">
+                  K
+                </div>
+              </div>
+
+              {/* Divider */}
+              <div className="h-6 w-px bg-gray-300"></div>
+
+              {/* Rating and Text */}
+              <div className="flex flex-col items-start">
+                <div className="flex items-center gap-1 mb-0.5">
+                  {[...Array(5)].map((_, i) => (
+                    <svg
+                      key={i}
+                      className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-400 fill-current"
+                      viewBox="0 0 20 20"
+                    >
+                      <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
+                    </svg>
+                  ))}
+                </div>
+                <p className="text-xs sm:text-sm font-semibold text-gray-700">
+                  <span className="text-purple-600">7,635</span> creators trust us
+                </p>
+              </div>
+            </motion.div>
           </motion.div>
         </div>
       </div>

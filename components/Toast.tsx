@@ -29,6 +29,7 @@ export const Toast = ({
 
       return () => clearTimeout(timer);
     }
+    return undefined;
   }, [isVisible, duration, onClose]);
 
   // Icon mapping

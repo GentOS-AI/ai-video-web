@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "./Button";
 import { Menu, X, LogOut } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import { PricingModal } from "./PricingModal";
+import { AnimatedLogo } from "./AnimatedLogo";
 import Image from "next/image";
 
 export const Navbar = () => {
@@ -13,6 +14,7 @@ export const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [isPricingOpen, setIsPricingOpen] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement>(null);
 
   const handleGoogleLogin = () => {
     const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
@@ -50,13 +52,31 @@ export const Navbar = () => {
     setIsPricingOpen(false);
   };
 
+  // Handle click outside to close user menu
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+        setShowUserMenu(false);
+      }
+    };
+
+    if (showUserMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showUserMenu]);
+
   return (
     <>
       <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-200">
       <div className="w-full md:max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo Section */}
-          <div className="flex items-center">
+          <div className="flex items-center space-x-2">
+            <AnimatedLogo size={32} />
             <span className="text-xl font-bold flex items-center gap-0.5">
               <span className="bg-gradient-to-r from-yellow-500 via-pink-500 to-purple-600 bg-clip-text text-transparent">
                 Ads
@@ -77,7 +97,7 @@ export const Navbar = () => {
             {loading ? (
               <div className="w-10 h-10 rounded-full bg-gray-200 animate-pulse" />
             ) : isAuthenticated && user ? (
-              <div className="relative">
+              <div className="relative" ref={userMenuRef}>
                 <button
                   onClick={() => setShowUserMenu(!showUserMenu)}
                   className="flex items-center space-x-2 sm:space-x-3 px-2 sm:px-3 py-2 rounded-lg hover:bg-purple-bg/50 transition-colors"
@@ -96,8 +116,19 @@ export const Navbar = () => {
                     </div>
                   )}
                   <div className="text-left">
-                    <div className="hidden sm:block text-sm font-medium text-text-primary">
-                      {user.name || 'User'}
+                    <div className="hidden sm:flex items-center gap-2">
+                      <span className="text-sm font-medium text-text-primary">
+                        {user.name || 'User'}
+                      </span>
+                      {user.subscription_plan !== 'free' && (
+                        <span className={`px-2 py-0.5 text-[10px] font-bold rounded-md ${
+                          user.subscription_plan === 'pro'
+                            ? 'bg-gradient-to-r from-yellow-400 to-orange-500 text-white'
+                            : 'bg-gradient-to-r from-blue-400 to-blue-600 text-white'
+                        }`}>
+                          {user.subscription_plan.toUpperCase()}
+                        </span>
+                      )}
                     </div>
                     <div className="text-xs text-text-muted">
                       {user.credits.toFixed(0)} credits
@@ -116,10 +147,21 @@ export const Navbar = () => {
                       className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2"
                     >
                       <div className="px-4 py-2 border-b border-gray-100">
-                        <p className="text-sm font-medium text-text-primary truncate">
-                          {user.email}
-                        </p>
-                        <p className="text-xs text-text-muted mt-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <p className="text-sm font-medium text-text-primary truncate">
+                            {user.email}
+                          </p>
+                          {user.subscription_plan !== 'free' && (
+                            <span className={`px-1.5 py-0.5 text-[9px] font-bold rounded ${
+                              user.subscription_plan === 'pro'
+                                ? 'bg-gradient-to-r from-yellow-400 to-orange-500 text-white'
+                                : 'bg-gradient-to-r from-blue-400 to-blue-600 text-white'
+                            }`}>
+                              {user.subscription_plan.toUpperCase()}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-text-muted">
                           Credits: {user.credits.toFixed(1)}
                         </p>
                       </div>
@@ -198,9 +240,20 @@ export const Navbar = () => {
                       </div>
                     )}
                     <div className="flex-1">
-                      <p className="text-sm font-medium text-text-primary">
-                        {user.name || 'User'}
-                      </p>
+                      <div className="flex items-center gap-2 mb-1">
+                        <p className="text-sm font-medium text-text-primary">
+                          {user.name || 'User'}
+                        </p>
+                        {user.subscription_plan !== 'free' && (
+                          <span className={`px-1.5 py-0.5 text-[9px] font-bold rounded ${
+                            user.subscription_plan === 'pro'
+                              ? 'bg-gradient-to-r from-yellow-400 to-orange-500 text-white'
+                              : 'bg-gradient-to-r from-blue-400 to-blue-600 text-white'
+                          }`}>
+                            {user.subscription_plan.toUpperCase()}
+                          </span>
+                        )}
+                      </div>
                       <p className="text-xs text-text-muted">
                         {user.credits.toFixed(0)} credits
                       </p>

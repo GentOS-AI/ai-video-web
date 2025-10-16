@@ -12,6 +12,10 @@ export interface User {
   avatar_url: string | null;
   credits: number;
   created_at: string;
+  subscription_plan: 'free' | 'basic' | 'pro';
+  subscription_status: 'active' | 'cancelled' | 'expired';
+  subscription_start_date: string | null;
+  subscription_end_date: string | null;
 }
 
 export interface TokenResponse {

@@ -2,13 +2,19 @@
 Video service - Video generation and management
 """
 from typing import List, Optional
+from datetime import datetime
 from sqlalchemy.orm import Session
 from sqlalchemy import desc
 
 from app.models.video import Video, VideoStatus, AIModel
 from app.models.user import User
 from app.core.config import settings
-from app.core.exceptions import InsufficientCreditsException, NotFoundException
+from app.core.exceptions import (
+    InsufficientCreditsException,
+    NotFoundException,
+    SubscriptionRequiredException,
+    SubscriptionExpiredException,
+)
 from app.schemas.video import VideoGenerateRequest
 
 
@@ -29,8 +35,28 @@ def create_video_generation_task(
         Created video instance
 
     Raises:
+        SubscriptionRequiredException: If user doesn't have a subscription
+        SubscriptionExpiredException: If user's subscription has expired
         InsufficientCreditsException: If user doesn't have enough credits
     """
+    # Check if user has a subscription
+    if user.subscription_plan == "free":
+        raise SubscriptionRequiredException(
+            "Subscription required. Please upgrade to generate videos."
+        )
+
+    # Check if subscription is active
+    if user.subscription_status != "active":
+        raise SubscriptionExpiredException(
+            "Your subscription is not active. Please renew your subscription."
+        )
+
+    # Check subscription expiry date
+    if user.subscription_end_date and user.subscription_end_date < datetime.utcnow():
+        raise SubscriptionExpiredException(
+            "Your subscription has expired. Please renew to continue."
+        )
+
     # Check if user has enough credits
     if user.credits < settings.VIDEO_GENERATION_COST:
         raise InsufficientCreditsException(

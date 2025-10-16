@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "./Button";
 import { VideoPlayer } from "./VideoPlayer";
-import { Wand2, ChevronDown, Sparkles } from "lucide-react";
+import { PricingModal } from "./PricingModal";
+import { Wand2, Sparkles } from "lucide-react";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import { heroVideos, trialImages } from "@/lib/assets";
@@ -24,6 +25,9 @@ export const HeroSection = () => {
   const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
   const [selectedModel, setSelectedModel] = useState(aiModels[0]);
   const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false);
+  const [showHelperTooltip, setShowHelperTooltip] = useState(false);
+  const [isPricingOpen, setIsPricingOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const maxChars = 500;
 
   const handlePromptChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -38,6 +42,30 @@ export const HeroSection = () => {
     // Add generation logic here
   };
 
+  const handleSubscribe = (planName: string) => {
+    console.log(`Subscribing to ${planName} plan`);
+    // TODO: Integrate with payment system
+    alert(`You selected the ${planName} plan! Payment integration coming soon.`);
+    setIsPricingOpen(false);
+  };
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsModelDropdownOpen(false);
+      }
+    };
+
+    if (isModelDropdownOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isModelDropdownOpen]);
+
   // Get current video safely
   const currentVideo = sampleVideos[currentVideoIndex];
   if (!currentVideo) {
@@ -45,8 +73,8 @@ export const HeroSection = () => {
   }
 
   return (
-    <section className="min-h-screen pt-20 sm:pt-24 pb-12 sm:pb-16 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto">
+    <section className="pt-20 sm:pt-24 pb-12 sm:pb-16 px-4 sm:px-6 lg:px-8">
+      <div className="w-full md:max-w-7xl mx-auto">
         <div className="grid lg:grid-cols-2 gap-6 sm:gap-8 lg:gap-12 items-center">
           {/* Left Side - Generation Form */}
           <motion.div
@@ -81,27 +109,54 @@ export const HeroSection = () => {
             <div className="relative bg-white border border-gray-200 rounded-2xl overflow-hidden transition-all duration-300 hover:border-purple-200 hover:shadow-xl hover:shadow-purple-500/10">
               {/* Card Header */}
               <div className="flex items-center justify-between px-4 py-3 sm:px-6 sm:py-4 border-b border-gray-100 bg-white">
-                {/* Left: Ads Script Helper - Hidden on mobile */}
-                <div className="hidden sm:flex items-center space-x-2">
-                  <Wand2 className="w-5 h-5 text-purple-600" />
-                  <span className="text-sm font-semibold text-purple-600">
-                    Ads Video Script Helper
-                  </span>
+                {/* Left: Ads Script Helper with Tooltip - Hidden on mobile */}
+                <div className="hidden sm:flex items-center space-x-2 relative">
+                  <div
+                    className="flex items-center space-x-2"
+                    onMouseEnter={() => setShowHelperTooltip(true)}
+                    onMouseLeave={() => setShowHelperTooltip(false)}
+                  >
+                    <Wand2 className="w-4 h-4 text-purple-600" />
+                    <span className="text-xs font-semibold text-purple-600 cursor-help relative pr-5">
+                      Ads Video Script Helper
+
+                      {/* Pro Badge - positioned at top-right with spacing */}
+                      <span className="absolute -top-2 -right-1 px-1 py-0.5 bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-[7px] font-bold rounded-sm pointer-events-none">
+                        PRO
+                      </span>
+                    </span>
+
+                    {/* Tooltip */}
+                    {showHelperTooltip && (
+                      <div className="absolute left-0 top-full mt-2 w-64 bg-purple-50/95 backdrop-blur-md text-purple-900 text-xs rounded-lg shadow-xl shadow-purple-200/50 border border-purple-200/60 p-3 z-30">
+                        <div className="relative">
+                          {/* Arrow */}
+                          <div className="absolute -top-5 left-4 w-0 h-0 border-l-4 border-r-4 border-b-4 border-transparent border-b-purple-50" />
+                          <p className="leading-relaxed">
+                            AI-powered assistant that helps you craft engaging video descriptions.
+                            Simply describe your vision and let AI generate professional advertising videos.
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 {/* Right: Model Selector Dropdown - Centered on mobile */}
-                <div className="relative w-full sm:w-auto flex justify-center sm:justify-end">
+                <div
+                  ref={dropdownRef}
+                  className="relative w-full sm:w-auto flex justify-center sm:justify-end"
+                >
                   <button
                     onClick={() => setIsModelDropdownOpen(!isModelDropdownOpen)}
-                    className="flex items-center justify-center space-x-2 px-3 py-2 sm:px-4 sm:py-2 bg-white border border-gray-200 rounded-full hover:border-purple-300 hover:bg-purple-50/50 transition-all text-sm font-medium min-w-[140px]"
+                    className="flex items-center justify-center px-2.5 py-1.5 sm:px-3 sm:py-1.5 bg-white border border-gray-200 rounded-full hover:border-purple-300 hover:bg-purple-50/50 transition-all text-xs font-medium"
                   >
                     <span className="text-text-primary">{selectedModel?.name}</span>
-                    <ChevronDown className={`w-4 h-4 text-text-muted transition-transform ${isModelDropdownOpen ? "rotate-180" : ""}`} />
                   </button>
 
                   {/* Dropdown Menu - Full width on mobile */}
                   {isModelDropdownOpen && (
-                    <div className="absolute right-0 top-full mt-2 w-full sm:w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-20">
+                    <div className="absolute right-0 top-full mt-2 w-full sm:w-44 bg-white border border-gray-200 rounded-lg shadow-lg z-20">
                       {aiModels.map((model) => (
                         <button
                           key={model.id}
@@ -109,15 +164,15 @@ export const HeroSection = () => {
                             setSelectedModel(model);
                             setIsModelDropdownOpen(false);
                           }}
-                          className={`w-full px-4 py-3 text-left hover:bg-purple-50 transition-colors first:rounded-t-lg last:rounded-b-lg ${
+                          className={`w-full px-3 py-2.5 text-left hover:bg-purple-50 transition-colors first:rounded-t-lg last:rounded-b-lg ${
                             selectedModel?.id === model.id ? "bg-purple-50" : ""
                           }`}
                         >
                           <div className="flex items-center justify-between">
-                            <span className="text-sm font-medium text-text-primary">
+                            <span className="text-xs font-medium text-text-primary">
                               {model.name}
                             </span>
-                            <span className="text-xs text-text-muted">
+                            <span className="text-[10px] text-text-muted">
                               {model.version}
                             </span>
                           </div>
@@ -295,6 +350,13 @@ export const HeroSection = () => {
           </motion.div>
         </div>
       </div>
+
+      {/* Pricing Modal */}
+      <PricingModal
+        isOpen={isPricingOpen}
+        onClose={() => setIsPricingOpen(false)}
+        onSubscribe={handleSubscribe}
+      />
     </section>
   );
 };

@@ -9,6 +9,7 @@ import { showcaseVideos } from "@/lib/assets";
 export const ShowcaseSection = () => {
   const [hoveredId, setHoveredId] = useState<number | null>(null);
   const [currentPage, setCurrentPage] = useState(0);
+  const [playingVideos, setPlayingVideos] = useState<Set<number>>(new Set());
 
   // Calculate pagination - 6 videos per page (2 rows x 3 columns)
   const videosPerPage = 6;
@@ -24,6 +25,18 @@ export const ShowcaseSection = () => {
 
   const prevPage = () => {
     setCurrentPage((prev) => (prev - 1 + totalPages) % totalPages);
+  };
+
+  const handlePlayStateChange = (videoId: number, isPlaying: boolean) => {
+    setPlayingVideos((prev) => {
+      const newSet = new Set(prev);
+      if (isPlaying) {
+        newSet.add(videoId);
+      } else {
+        newSet.delete(videoId);
+      }
+      return newSet;
+    });
   };
 
   return (
@@ -75,60 +88,82 @@ export const ShowcaseSection = () => {
             transition={{ duration: 0.3, ease: "easeOut" }}
             className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-8"
           >
-            {currentVideos.map((video, index) => (
-              <motion.div
-                key={video.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: index * 0.05, ease: "easeOut" }}
-                className="group"
-                onMouseEnter={() => setHoveredId(video.id)}
-                onMouseLeave={() => setHoveredId(null)}
-              >
-                <div className="relative bg-white rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2">
-                  {/* Video Container */}
-                  <div className="relative aspect-video bg-gradient-to-br from-purple-100 to-purple-200">
-                    {/* Real Video Player */}
-                    <VideoPlayer
-                      src={video.src}
-                      poster={video.poster}
-                      autoPlay={false}
-                    />
+            {currentVideos.map((video, index) => {
+              const isHovered = hoveredId === video.id;
+              const isPlaying = playingVideos.has(video.id);
 
-                    {/* Purple Gradient Overlay on Hover */}
+              return (
+                <motion.div
+                  key={video.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4, delay: index * 0.05, ease: "easeOut" }}
+                  className="group"
+                  onMouseEnter={() => setHoveredId(video.id)}
+                  onMouseLeave={() => setHoveredId(null)}
+                >
+                  <div className="relative rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2">
+                    {/* Video Container with aspect ratio */}
+                    <div className="relative aspect-video bg-gradient-to-br from-purple-100 to-purple-200">
+                      <VideoPlayer
+                        src={video.src}
+                        poster={video.poster}
+                        autoPlay={false}
+                        onPlayStateChange={(playing) => handlePlayStateChange(video.id, playing)}
+                      >
+                        {/* Purple Gradient Overlay on Hover */}
+                        <div
+                          className={`absolute inset-0 bg-gradient-to-t from-primary/80 via-primary/40 to-transparent transition-opacity duration-300 pointer-events-none z-10 ${
+                            isHovered ? "opacity-100" : "opacity-0"
+                          }`}
+                        />
+
+                        {/* Category Badge */}
+                        <div className="absolute top-3 left-3 px-3 py-1 bg-white/90 backdrop-blur-sm rounded-full z-10">
+                          <span className="text-xs font-semibold text-primary">
+                            {video.category}
+                          </span>
+                        </div>
+
+                        {/* Title and Description Overlay - Hidden when playing */}
+                        <div
+                          className={`absolute bottom-0 left-0 right-0 z-20 p-3 sm:p-4
+                                      bg-gradient-to-t from-black/80 via-black/60 to-transparent
+                                      transition-all duration-300 ${
+                                        isPlaying ? "opacity-0 translate-y-2" : "opacity-100 translate-y-0"
+                                      }`}
+                        >
+                          {/* Title - Always visible when not playing */}
+                          <h3 className="text-white font-bold text-sm sm:text-base mb-1 drop-shadow-lg">
+                            {video.title}
+                          </h3>
+
+                          {/* Description - Only visible on hover */}
+                          <div
+                            className={`transition-all duration-300 overflow-hidden ${
+                              isHovered && !isPlaying
+                                ? "max-h-20 opacity-100 mt-1"
+                                : "max-h-0 opacity-0 mt-0"
+                            }`}
+                          >
+                            <p className="text-white/90 text-xs sm:text-sm line-clamp-2 drop-shadow-md">
+                              {video.description}
+                            </p>
+                          </div>
+                        </div>
+                      </VideoPlayer>
+                    </div>
+
+                    {/* Hover Effect Border */}
                     <div
-                      className={`absolute inset-0 bg-gradient-to-t from-primary/80 via-primary/40 to-transparent transition-opacity duration-300 pointer-events-none ${
-                        hoveredId === video.id ? "opacity-100" : "opacity-0"
+                      className={`absolute inset-0 border-2 border-primary rounded-xl transition-opacity duration-300 pointer-events-none ${
+                        isHovered ? "opacity-100" : "opacity-0"
                       }`}
                     />
-
-                    {/* Category Badge */}
-                    <div className="absolute top-3 left-3 px-3 py-1 bg-white/90 backdrop-blur-sm rounded-full z-10">
-                      <span className="text-xs font-semibold text-primary">
-                        {video.category}
-                      </span>
-                    </div>
                   </div>
-
-                  {/* Content */}
-                  <div className="p-4 sm:p-6 space-y-1 sm:space-y-2">
-                    <h3 className="text-base sm:text-lg font-bold text-text-primary group-hover:text-primary transition-colors">
-                      {video.title}
-                    </h3>
-                    <p className="text-xs sm:text-sm text-text-secondary line-clamp-2">
-                      {video.description}
-                    </p>
-                  </div>
-
-                  {/* Hover Effect Border */}
-                  <div
-                    className={`absolute inset-0 border-2 border-primary rounded-xl transition-opacity duration-300 pointer-events-none ${
-                      hoveredId === video.id ? "opacity-100" : "opacity-0"
-                    }`}
-                  />
-                </div>
-              </motion.div>
-            ))}
+                </motion.div>
+              );
+            })}
           </motion.div>
 
           {/* Pagination Dots */}

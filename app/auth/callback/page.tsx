@@ -4,7 +4,7 @@
  */
 'use client';
 
-import { useEffect, useState, Suspense } from 'react';
+import { useEffect, useState, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -13,8 +13,14 @@ function AuthCallbackContent() {
   const searchParams = useSearchParams();
   const { login } = useAuth();
   const [error, setError] = useState<string | null>(null);
+  const hasHandledCallback = useRef(false);
 
   useEffect(() => {
+    if (hasHandledCallback.current) {
+      return;
+    }
+    hasHandledCallback.current = true;
+
     const handleCallback = async () => {
       const code = searchParams.get('code');
       const errorParam = searchParams.get('error');

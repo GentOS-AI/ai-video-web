@@ -159,11 +159,33 @@ html {
   }
 }
 
-/* Prevent text selection on touch targets */
+/* Prevent text selection on touch targets and add pointer cursor */
 button,
-a {
+a,
+[role="button"],
+label[for],
+input[type="checkbox"],
+input[type="radio"] {
   -webkit-tap-highlight-color: transparent;
   -webkit-touch-callout: none;
+  cursor: pointer;
+}
+
+/* Disabled elements should have not-allowed cursor */
+button:disabled,
+a:disabled,
+button[disabled],
+a[disabled] {
+  cursor: not-allowed;
+}
+
+/* Input fields should have text cursor */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="search"],
+textarea {
+  cursor: text;
 }
 
 /* Improve touch target sizes on mobile */

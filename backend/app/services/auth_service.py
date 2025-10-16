@@ -42,7 +42,10 @@ async def exchange_code_for_token(code: str, redirect_uri: str) -> Dict[str, Any
         response = await client.post(token_endpoint, data=data)
 
         if response.status_code != 200:
-            raise AuthenticationException("Failed to exchange code for token")
+            # Log detailed error from Google
+            error_detail = response.text
+            print(f"Google OAuth token exchange failed: {error_detail}")
+            raise AuthenticationException(f"Failed to exchange code for token: {error_detail}")
 
         return response.json()
 

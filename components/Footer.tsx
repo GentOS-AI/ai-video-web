@@ -40,14 +40,6 @@ export const Footer = () => {
             <ul className="space-y-2">
               <li>
                 <a
-                  href="#about"
-                  className="text-sm text-text-secondary hover:text-primary transition-colors"
-                >
-                  About Us
-                </a>
-              </li>
-              <li>
-                <a
                   href="#pricing"
                   className="text-sm text-text-secondary hover:text-primary transition-colors"
                 >
@@ -56,18 +48,10 @@ export const Footer = () => {
               </li>
               <li>
                 <a
-                  href="#terms"
+                  href="#about"
                   className="text-sm text-text-secondary hover:text-primary transition-colors"
                 >
-                  Terms of Service
-                </a>
-              </li>
-              <li>
-                <a
-                  href="#privacy"
-                  className="text-sm text-text-secondary hover:text-primary transition-colors"
-                >
-                  Privacy Policy
+                  About Us
                 </a>
               </li>
             </ul>
@@ -93,22 +77,6 @@ export const Footer = () => {
                   className="text-sm text-text-secondary hover:text-primary transition-colors"
                 >
                   Blog
-                </a>
-              </li>
-              <li>
-                <a
-                  href="#api"
-                  className="text-sm text-text-secondary hover:text-primary transition-colors"
-                >
-                  API Docs
-                </a>
-              </li>
-              <li>
-                <a
-                  href="#contact"
-                  className="text-sm text-text-secondary hover:text-primary transition-colors"
-                >
-                  Contact Us
                 </a>
               </li>
             </ul>

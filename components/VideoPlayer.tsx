@@ -63,10 +63,11 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
 
       <button
         onClick={togglePlay}
-        className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 touch-manipulation z-30"
+        className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-200 touch-manipulation z-30"
         aria-label={isPlaying ? "Pause video" : "Play video"}
+        style={{ willChange: "opacity" }}
       >
-        <div className="bg-white/90 backdrop-blur-sm rounded-full p-3 sm:p-4 hover:bg-white transition-all duration-200 hover:scale-110">
+        <div className="bg-white/95 rounded-full p-3 sm:p-4 hover:bg-white transition-all duration-150 hover:scale-105" style={{ willChange: "transform" }}>
           {isPlaying ? (
             <Pause className="w-6 h-6 sm:w-8 sm:h-8 text-primary" />
           ) : (

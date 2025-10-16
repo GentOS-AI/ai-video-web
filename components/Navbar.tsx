@@ -211,15 +211,16 @@ export const Navbar = () => {
         </div>
       </div>
 
-      {/* Mobile Menu */}
+      {/* Mobile Menu - Optimized Animation */}
       <AnimatePresence>
         {isMobileMenuOpen && (
           <motion.div
-            initial={{ opacity: 0, maxHeight: 0 }}
-            animate={{ opacity: 1, maxHeight: 400 }}
-            exit={{ opacity: 0, maxHeight: 0 }}
-            transition={{ duration: 0.25, ease: "easeInOut" }}
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
             className="md:hidden border-t border-gray-200 bg-white overflow-hidden"
+            style={{ willChange: "height, opacity" }}
           >
             <div className="px-4 py-4 space-y-3">
               <button

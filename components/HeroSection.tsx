@@ -326,12 +326,12 @@ export const HeroSection = () => {
                       </span>
                     </span>
 
-                    {/* Tooltip */}
+                    {/* Tooltip - 显示在上方 */}
                     {showHelperTooltip && (
-                      <div className="absolute left-0 top-full mt-2 w-64 bg-purple-50 text-purple-900 text-xs rounded-lg shadow-xl shadow-purple-200/50 border-2 border-purple-300 p-3 z-[9999] pointer-events-none">
+                      <div className="absolute left-0 bottom-full mb-2 w-64 bg-purple-50 text-purple-900 text-xs rounded-lg shadow-xl shadow-purple-200/50 border-2 border-purple-300 p-3 z-[9999] pointer-events-none">
                         <div className="relative">
-                          {/* Arrow */}
-                          <div className="absolute -top-5 left-4 w-0 h-0 border-l-4 border-r-4 border-b-4 border-transparent border-b-purple-50" />
+                          {/* Arrow - 指向下方 */}
+                          <div className="absolute -bottom-5 left-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-purple-50" />
                           <p className="leading-relaxed">
                             <strong>Click to unlock PRO features!</strong><br/>
                             AI-powered script generator helps you craft engaging video descriptions.
@@ -470,9 +470,6 @@ export const HeroSection = () => {
                           </svg>
                         </div>
 
-                        {/* Pulsing Glow Effect */}
-                        <div className="absolute inset-0 bg-purple-500/20 animate-pulse pointer-events-none" />
-
                         {/* Corner Accent */}
                         <div className="absolute top-0 left-0 w-3 h-3 bg-purple-500 rounded-br-lg" />
                         <div className="absolute bottom-0 right-0 w-3 h-3 bg-purple-500 rounded-tl-lg" />
@@ -541,26 +538,22 @@ export const HeroSection = () => {
             </div>
           </motion.div>
 
-          {/* Right Side - Video Carousel with Decorations */}
+          {/* Right Side - Video Carousel */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.1, ease: "easeOut" }}
             className="relative order-1 lg:order-2"
+            style={{ willChange: "transform, opacity" }}
           >
-            {/* Decorative Background Elements - Hidden on mobile */}
+            {/* Simplified Background - Lightweight gradient */}
             <div className="absolute inset-0 -z-10 hidden lg:block">
-              {/* Grid Pattern */}
-              <div className="absolute inset-0 grid-pattern opacity-50" />
-
-              {/* Decorative Orbs */}
-              <div className="decorative-orb w-64 h-64 -top-10 -right-10" />
-              <div className="decorative-orb w-96 h-96 -bottom-20 -left-20 opacity-60" />
-              <div className="decorative-orb w-48 h-48 top-1/2 right-10 opacity-40" />
+              {/* Subtle gradient background (no blur filter) */}
+              <div className="absolute inset-0 bg-gradient-to-br from-purple-50 via-transparent to-pink-50 opacity-40" />
             </div>
 
             {/* Main Video Container */}
-            <div className="relative aspect-video rounded-2xl overflow-hidden shadow-2xl glow-purple">
+            <div className="relative aspect-video rounded-2xl overflow-hidden shadow-2xl" style={{ willChange: "transform" }}>
               {/* Show generated video if available */}
               {generatedVideo && generatedVideo.video_url ? (
                 <VideoPlayer

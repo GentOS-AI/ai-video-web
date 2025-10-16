@@ -109,41 +109,29 @@ export const PricingModal = ({ isOpen, onClose, onSubscribe }: PricingModalProps
                 <X className="w-5 h-5 text-gray-600" />
               </button>
 
-              {/* Header */}
+              {/* Header - Simplified Animation */}
               <div className="bg-gradient-to-r from-purple-600 to-purple-500 px-4 py-3 sm:px-6 sm:py-4 text-center">
-                <motion.h2
-                  initial={{ opacity: 0, y: -20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.1 }}
-                  className="text-xl sm:text-2xl font-bold text-white mb-1"
-                >
+                <h2 className="text-xl sm:text-2xl font-bold text-white mb-1">
                   Choose Your Plan
-                </motion.h2>
-                <motion.p
-                  initial={{ opacity: 0, y: -20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.2 }}
-                  className="text-xs sm:text-sm text-white/90"
-                >
+                </h2>
+                <p className="text-xs sm:text-sm text-white/90">
                   Unlock the power of AI video generation
-                </motion.p>
+                </p>
               </div>
 
               {/* Pricing Cards */}
               <div className="px-4 py-4 sm:px-6 sm:py-5 bg-gradient-to-b from-white to-purple-50/30">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                  {pricingPlans.map((plan, index) => (
-                    <motion.div
+                  {pricingPlans.map((plan) => (
+                    <div
                       key={plan.name}
-                      initial={{ opacity: 0, y: 30 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.1 + index * 0.1, duration: 0.4 }}
                       onClick={() => handlePlanClick(plan.name)}
-                      className={`relative bg-white rounded-xl overflow-hidden transition-all duration-300 cursor-pointer ${
+                      className={`relative bg-white rounded-xl overflow-hidden transition-all duration-200 cursor-pointer ${
                         selectedPlan === plan.name
                           ? "ring-2 ring-primary shadow-2xl scale-[1.02]"
                           : "border-2 border-gray-200 hover:border-primary/50 shadow-lg hover:shadow-xl"
                       }`}
+                      style={{ willChange: "transform" }}
                     >
                       {/* Popular Badge */}
                       {plan.popular && (
@@ -248,21 +236,15 @@ export const PricingModal = ({ isOpen, onClose, onSubscribe }: PricingModalProps
                               : "border-2 border-gray-300 hover:border-primary hover:text-primary bg-white"
                           }`}
                         >
-                          <span className="sm:hidden">{selectedPlan === plan.name ? "Subscribe" : "Select"}</span>
-                          <span className="hidden sm:inline">{selectedPlan === plan.name ? "Subscribe Now" : `Select ${plan.name}`}</span>
+                          Subscribe Now
                         </Button>
                       </div>
-                    </motion.div>
+                    </div>
                   ))}
                 </div>
 
-                {/* Footer Note */}
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.4 }}
-                  className="text-center mt-6"
-                >
+                {/* Footer Note - Simplified */}
+                <div className="text-center mt-6">
                   <p className="text-xs text-text-muted">
                     All plans include a 14-day money-back guarantee. Cancel anytime.
                   </p>
@@ -272,7 +254,7 @@ export const PricingModal = ({ isOpen, onClose, onSubscribe }: PricingModalProps
                       Contact us
                     </a>
                   </p>
-                </motion.div>
+                </div>
               </div>
             </motion.div>
           </div>

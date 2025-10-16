@@ -1,7 +1,7 @@
 "use client";
 
-import { motion, useScroll, useTransform } from "framer-motion";
-import { useRef } from "react";
+import { motion, useAnimationControls } from "framer-motion";
+import { useEffect, useRef } from "react";
 
 interface AnimatedLogoProps {
   className?: string;
@@ -12,21 +12,54 @@ export const AnimatedLogo: React.FC<AnimatedLogoProps> = ({
   className = "",
   size = 32
 }) => {
-  const logoRef = useRef<HTMLDivElement>(null);
+  const controls = useAnimationControls();
+  const hasAnimated = useRef(false);
+  const lastScrollY = useRef(0);
 
-  // 监听滚动位置
-  const { scrollY } = useScroll();
+  useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
 
-  // 将滚动距离映射为旋转角度（滚动0-500px时旋转0-360度）
-  const rotate = useTransform(scrollY, [0, 500], [0, 360]);
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+
+      // 检测滚动（向上或向下滚动超过 50px）
+      if (Math.abs(currentScrollY - lastScrollY.current) > 50 && !hasAnimated.current) {
+        hasAnimated.current = true;
+
+        // 触发旋转动画
+        controls.start({
+          rotate: 360,
+          transition: { duration: 0.6, ease: "easeInOut" }
+        }).then(() => {
+          // 动画完成后重置状态
+          controls.set({ rotate: 0 });
+
+          // 2秒后允许再次触发
+          timeoutId = setTimeout(() => {
+            hasAnimated.current = false;
+          }, 2000);
+        });
+      }
+
+      lastScrollY.current = currentScrollY;
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    };
+  }, [controls]);
 
   return (
     <motion.div
-      ref={logoRef}
-      className={className}
-      style={{ rotate }}
+      className={`${className} logo-container`}
+      animate={controls}
       whileHover={{ scale: 1.05 }}
-      transition={{ type: "spring", stiffness: 400, damping: 10 }}
+      whileTap={{ scale: 0.95 }}
     >
       <svg
         width={size}
@@ -39,7 +72,7 @@ export const AnimatedLogo: React.FC<AnimatedLogoProps> = ({
         <rect
           width="32"
           height="32"
-          rx="10"
+          rx="7"
           fill="#8b5cf6"
         />
 

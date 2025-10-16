@@ -18,7 +18,12 @@ from app.schemas.video import (
 from app.models.user import User
 from app.models.video import VideoStatus
 from app.services import video_service
-from app.core.exceptions import InsufficientCreditsException, NotFoundException
+from app.core.exceptions import (
+    InsufficientCreditsException,
+    NotFoundException,
+    SubscriptionRequiredException,
+    SubscriptionExpiredException,
+)
 
 router = APIRouter()
 
@@ -51,6 +56,16 @@ def generate_video(
         print(f"✅ Video generation task queued for video_id: {video.id}")
 
         return video
+    except SubscriptionRequiredException as e:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=str(e),
+        )
+    except SubscriptionExpiredException as e:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=str(e),
+        )
     except InsufficientCreditsException as e:
         raise HTTPException(
             status_code=status.HTTP_402_PAYMENT_REQUIRED,

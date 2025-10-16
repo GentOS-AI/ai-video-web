@@ -10,7 +10,7 @@ from app.models.video import VideoStatus, AIModel
 class VideoGenerateRequest(BaseModel):
     """Schema for video generation request"""
     prompt: str = Field(..., min_length=10, max_length=500, description="Video generation prompt")
-    model: AIModel = Field(default=AIModel.SORA_2, description="AI model to use")
+    model: str = Field(default="sora-2", description="AI model to use")
     reference_image_url: Optional[str] = Field(None, description="Reference image URL")
 
 

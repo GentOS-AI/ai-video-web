@@ -1,4 +1,4 @@
-# AIVideo.DIY Backend API
+# AdsVideo Backend API
 
 基于 FastAPI 的 AI 视频生成后端服务。
 
@@ -6,10 +6,13 @@
 
 - ✅ **Google OAuth 2.0 登录** - 安全的用户认证
 - ✅ **JWT Token 认证** - 无状态会话管理
+- ✅ **订阅系统** - Free/Basic/Pro 三级订阅管理
+- ✅ **积分系统** - 视频生成消费100积分/次
 - ✅ **视频生成管理** - 创建、查询、删除视频任务
+- ✅ **Mock Sora 2 API** - 模拟视频生成用于开发测试
 - ✅ **首页数据 API** - 展示视频、试用图片、轮播视频
 - ✅ **文件上传** - 参考图片上传和验证
-- ✅ **用户积分系统** - 视频生成消费积分
+- ✅ **最近用户展示** - 真实用户头像和动态计数
 - ✅ **SQLite 数据库** - 易于部署，可升级到 PostgreSQL
 - ✅ **自动化 API 文档** - Swagger UI 和 ReDoc
 
@@ -84,6 +87,10 @@ uvicorn app.main:app --reload --port 8000
 | name | String | 用户名 |
 | avatar_url | String | 头像 URL |
 | credits | Float | 剩余积分 (默认 100) |
+| subscription_plan | String | 订阅计划 (free/basic/pro) |
+| subscription_status | String | 订阅状态 (active/cancelled/expired) |
+| subscription_start_date | DateTime | 订阅开始日期 |
+| subscription_end_date | DateTime | 订阅结束日期 |
 | created_at | DateTime | 创建时间 |
 | updated_at | DateTime | 更新时间 |
 
@@ -142,6 +149,7 @@ uvicorn app.main:app --reload --port 8000
 - `GET /api/v1/users/profile` - 获取用户资料
 - `PATCH /api/v1/users/profile` - 更新用户资料
 - `GET /api/v1/users/credits` - 获取剩余积分
+- `GET /api/v1/users/recent` - 获取最近5个用户(公开接口)
 
 ### 视频 (Videos)
 - `POST /api/v1/videos/generate` - 生成视频 (需认证)
@@ -232,6 +240,30 @@ backend/
 └── README.md
 ```
 
+### 订阅系统配置
+
+#### 订阅等级
+- **Free**: 无法生成视频(用于试用和体验)
+- **Basic**: 可以生成视频,基础积分
+- **Pro**: 可以生成视频,更多积分和功能
+
+#### 积分消耗
+- 默认用户积分: 100.0
+- 视频生成成本: 100.0 积分/次
+
+#### 验证逻辑
+视频生成时会进行以下验证:
+1. 用户必须登录
+2. 订阅计划不能是 "free"
+3. 订阅状态必须是 "active"
+4. 订阅未过期
+5. 积分 >= 100
+
+#### 异常处理
+- `SubscriptionRequiredException` (403) - 需要订阅
+- `SubscriptionExpiredException` (403) - 订阅已过期
+- `InsufficientCreditsException` (402) - 积分不足
+
 ### 添加新的 API 端点
 
 1. 在 `app/schemas/` 创建 Pydantic 模型
@@ -303,32 +335,60 @@ CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
 - 将前端地址添加到 `ALLOWED_ORIGINS`
 - 确保前端使用正确的协议 (http/https)
 
+## 当前开发状态
+
+### 已完成 ✅
+- ✅ Google OAuth 2.0 登录集成
+- ✅ JWT Token 认证系统
+- ✅ 订阅系统 (Free/Basic/Pro)
+- ✅ 积分系统 (100积分/视频)
+- ✅ 前后端双重验证
+- ✅ 用户头像展示
+- ✅ Mock Sora 2 API (开发测试)
+- ✅ 异常处理和友好错误提示
+
+### 开发中 🚧
+- 🚧 真实 Sora 2 API 集成
+- 🚧 Celery 后台任务队列
+- 🚧 支付系统集成
+
+### 待开发 📋
+- ⏳ WebSocket 实时状态推送
+- ⏳ 视频预览和下载
+- ⏳ 用户视频历史管理
+- ⏳ 管理后台
+
 ## 后续开发建议
 
 1. **实现真实的 AI 视频生成**
-   - 集成 Sora/Runway API
-   - 实现后台任务队列 (Celery/Redis)
+   - 集成 OpenAI Sora 2 API
+   - 移除 Celery 依赖或安装 Celery
+   - 实现后台任务队列
    - 添加 WebSocket 实时状态推送
 
-2. **完善用户系统**
+2. **完善订阅系统**
+   - Stripe/PayPal 支付集成
+   - 订阅自动续费
+   - 积分购买功能
+   - 订阅到期提醒
+
+3. **完善用户系统**
    - 添加邮箱验证
    - 实现密码重置
    - 用户权限管理
-
-3. **支付集成**
-   - Stripe/PayPal 支付
-   - 积分购买系统
-   - 订阅计划
+   - 用户使用统计
 
 4. **性能优化**
    - 添加 Redis 缓存
    - 数据库查询优化
+   - 升级到 PostgreSQL
    - CDN 静态资源
 
 5. **监控和日志**
    - Sentry 错误追踪
    - 日志聚合 (ELK/Datadog)
    - 性能监控
+   - 用户行为分析
 
 ## 许可证
 

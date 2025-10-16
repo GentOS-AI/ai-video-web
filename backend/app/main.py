@@ -20,13 +20,22 @@ app = FastAPI(
     redoc_url="/redoc",
 )
 
-# CORS middleware
+# CORS middleware - Allow all origins in development
+# IMPORTANT: Must be added BEFORE any routes
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.ALLOWED_ORIGINS,
+    allow_origins=[
+        "http://localhost:3000",
+        "http://localhost:8080",
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:8080",
+        "http://localhost:8000",  # For Swagger UI
+    ],
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     allow_headers=["*"],
+    expose_headers=["*"],  # For SSE headers
+    max_age=3600,  # Cache preflight requests for 1 hour
 )
 
 

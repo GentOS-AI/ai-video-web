@@ -12,6 +12,7 @@ import { heroVideos, trialImages } from "@/lib/assets";
 import { videoService, userService } from "@/lib/api/services";
 import type { Video, RecentUsersResponse } from "@/lib/api/services";
 import { useAuth } from "@/contexts/AuthContext";
+import { useVideoStream } from "@/lib/hooks/useVideoStream";
 
 // Lazy load PricingModal since it's only shown on user interaction
 const PricingModal = dynamic(
@@ -46,7 +47,30 @@ export const HeroSection = () => {
   const [generatedVideo, setGeneratedVideo] = useState<Video | null>(null);
   const [generationError, setGenerationError] = useState<string | null>(null);
   const [generationProgress, setGenerationProgress] = useState<string>("Starting...");
-  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const [streamingVideoId, setStreamingVideoId] = useState<number | null>(null);
+
+  // Use SSE Hook for real-time progress updates
+  const { messages, isConnected, lastMessage } = useVideoStream({
+    videoId: streamingVideoId,
+    onComplete: (videoUrl) => {
+      console.log('🎉 Video completed via SSE:', videoUrl);
+      setGeneratedVideo({
+        ...generatedVideo,
+        video_url: videoUrl,
+        status: 'completed'
+      } as Video);
+      setIsGenerating(false);
+      setStreamingVideoId(null);
+      showNotification("Video generated successfully! 🎉", "success");
+      refreshUser();
+    },
+    onError: (error) => {
+      console.error('❌ SSE stream error:', error);
+      setGenerationError(error);
+      setIsGenerating(false);
+      setStreamingVideoId(null);
+    }
+  });
 
   // Toast notification state
   const [toastMessage, setToastMessage] = useState<string>("");
@@ -138,21 +162,21 @@ export const HeroSection = () => {
       console.log("🎬 Generating video with:", {
         prompt,
         model: selectedModel?.id || 'sora-2',
-        imageUrl: selectedImageData.src,
+        imageUrl: selectedImageData.highResSrc,  // Use high-res version for AI
       });
 
-      // Call video generation API
+      // Call video generation API with high-resolution image
       const video = await videoService.generate(
         prompt,
         selectedModel?.id || 'sora-2',
-        selectedImageData.src
+        selectedImageData.highResSrc  // Use 1280x720 instead of 400x400
       );
 
       console.log("✅ Video generation task created:", video);
-      setGenerationProgress("Video generation in progress... This may take 2-5 minutes.");
+      setGenerationProgress("Connecting to processing stream...");
 
-      // Start polling for status
-      startPolling(video.id);
+      // Start SSE connection for real-time updates (replaces polling)
+      setStreamingVideoId(video.id);
 
       // Refresh user credits
       await refreshUser();
@@ -168,66 +192,12 @@ export const HeroSection = () => {
     }
   };
 
-  const startPolling = (videoId: number) => {
-    // Clear any existing polling
-    if (pollingIntervalRef.current) {
-      clearInterval(pollingIntervalRef.current);
-    }
-
-    // Poll every 5 seconds
-    pollingIntervalRef.current = setInterval(async () => {
-      try {
-        const video = await videoService.getVideo(videoId);
-        console.log("📊 Video status:", video.status);
-
-        if (video.status === "completed") {
-          console.log("🎉 Video generation completed!");
-          setGeneratedVideo(video);
-          setIsGenerating(false);
-          setGenerationProgress("Video generated successfully!");
-
-          // Show success notification
-          showNotification("Video generated successfully! 🎉", "success");
-
-          // Stop polling
-          if (pollingIntervalRef.current) {
-            clearInterval(pollingIntervalRef.current);
-            pollingIntervalRef.current = null;
-          }
-
-          // Refresh user credits
-          await refreshUser();
-
-        } else if (video.status === "failed") {
-          console.error("❌ Video generation failed:", video.error_message);
-          setGenerationError(video.error_message || "Video generation failed");
-          setIsGenerating(false);
-
-          // Stop polling
-          if (pollingIntervalRef.current) {
-            clearInterval(pollingIntervalRef.current);
-            pollingIntervalRef.current = null;
-          }
-
-        } else if (video.status === "processing") {
-          setGenerationProgress("Processing video... Almost there!");
-        }
-
-      } catch (error: unknown) {
-        console.error("❌ Error checking video status:", error);
-        // Don't stop polling on temporary errors
-      }
-    }, 5000); // Check every 5 seconds
-  };
-
-  // Cleanup polling on unmount
+  // Update progress text based on SSE messages
   useEffect(() => {
-    return () => {
-      if (pollingIntervalRef.current) {
-        clearInterval(pollingIntervalRef.current);
-      }
-    };
-  }, []);
+    if (lastMessage?.message) {
+      setGenerationProgress(lastMessage.message);
+    }
+  }, [lastMessage]);
 
   // Fetch recent users on mount
   useEffect(() => {
@@ -424,9 +394,30 @@ export const HeroSection = () => {
               {(isGenerating || generationError) && (
                 <div className="px-4 py-3 sm:px-6 sm:py-4 bg-gray-50 border-t border-gray-100">
                   {isGenerating && (
-                    <div className="flex items-center gap-2 text-sm text-purple-600">
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>{generationProgress}</span>
+                    <div className="space-y-2">
+                      {/* Current Step with Connection Status */}
+                      <div className="flex items-center gap-2 text-sm text-purple-600">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span className="flex-1">{generationProgress}</span>
+                        {isConnected && (
+                          <span className="flex items-center gap-1 text-xs text-green-600">
+                            <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                            Connected
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Historical Log Messages (Optional - Shows last 5 steps) */}
+                      {messages.length > 0 && (
+                        <div className="mt-2 space-y-1 max-h-32 overflow-y-auto text-xs text-gray-600 bg-white rounded-lg p-2 border border-gray-200">
+                          {messages.slice(-5).map((msg, index) => (
+                            <div key={index} className="flex items-start gap-2 py-0.5">
+                              <span className="text-purple-500 font-mono text-[10px] mt-0.5">[{msg.step}]</span>
+                              <span className="flex-1">{msg.message}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   )}
                   {generationError && (
@@ -588,12 +579,13 @@ export const HeroSection = () => {
                     <button
                       key={index}
                       onClick={() => setCurrentVideoIndex(index)}
-                      className={`w-2 h-2 rounded-full transition-all ${
+                      className={`rounded-full transition-all cursor-pointer ${
                         index === currentVideoIndex
-                          ? "bg-white w-8"
-                          : "bg-white/50 hover:bg-white/75"
+                          ? "bg-white w-8 h-2 shadow-lg"
+                          : "bg-white/60 hover:bg-white/90 w-2 h-2 hover:scale-150"
                       }`}
                       aria-label={`Go to video ${index + 1}`}
+                      title={`Switch to video ${index + 1}`}
                     />
                   ))}
                 </div>

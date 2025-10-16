@@ -338,35 +338,150 @@ CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
 ## 当前开发状态
 
 ### 已完成 ✅
+
+#### 核心功能
+- ✅ **OpenAI Sora 2 API 真实集成** - 完整的AI视频生成管道
+- ✅ **Celery + Redis 异步任务队列** - 支持后台视频生成
+- ✅ **Server-Sent Events (SSE)** - 实时进度推送
 - ✅ Google OAuth 2.0 登录集成
 - ✅ JWT Token 认证系统
 - ✅ 订阅系统 (Free/Basic/Pro)
-- ✅ 积分系统 (100积分/视频)
-- ✅ 前后端双重验证
-- ✅ 用户头像展示
-- ✅ Mock Sora 2 API (开发测试)
+- ✅ 积分系统 (10积分/视频)
+- ✅ 用户头像展示和最近用户统计
 - ✅ 异常处理和友好错误提示
 
-### 开发中 🚧
-- 🚧 真实 Sora 2 API 集成
-- 🚧 Celery 后台任务队列
-- 🚧 支付系统集成
+#### 视频生成系统
+- ✅ **真实 Sora 2 API 调用**
+  - 支持 `sora-2` 和 `sora-2-pro` 模型
+  - 支持 4s, 8s, 12s 视频时长
+  - 1280x720 高清输出
+  - 图片到视频(Image-to-Video)生成
+
+- ✅ **异步任务处理**
+  - Celery worker 后台执行
+  - Redis 消息队列
+  - 自动重试机制 (最多3次)
+  - 任务状态持久化
+
+- ✅ **实时进度反馈**
+  - SSE 流式推送
+  - 7步详细进度日志
+  - 错误实时通知
+  - 完成自动刷新
+
+- ✅ **视频文件管理**
+  - 使用 OpenAI SDK `download_content()` API
+  - 流式下载支持
+  - 本地文件存储
+  - 数据库元数据持久化
+  - 自动生成访问URL
+
+#### API集成细节
+```python
+# Sora 2 API 调用示例
+response = client.videos.create(
+    prompt="描述性文字提示",
+    input_reference=image_file,  # (filename, BytesIO, "image/jpeg")
+    model="sora-2",
+    seconds=4,  # 4, 8, or 12
+    size="1280x720"
+)
+
+# 轮询状态
+job = client.videos.retrieve(video_id)
+# job.status: queued -> in_progress -> completed
+
+# 下载视频
+video_content = client.videos.download_content(job_id)
+```
+
+### 技术架构更新
+
+```
+┌─────────────┐      ┌──────────────┐      ┌────────────┐
+│   FastAPI   │──1──>│    Celery    │──2──>│  OpenAI    │
+│  (Web API)  │      │   Worker     │      │  Sora 2    │
+└─────────────┘      └──────────────┘      └────────────┘
+       │                    │                      │
+       │                    │                      │
+    SSE推送              Redis队列            视频生成
+       │                    │                      │
+       v                    v                      v
+┌─────────────┐      ┌──────────────┐      ┌────────────┐
+│   前端UI    │<─────│   SQLite     │<─────│  本地存储  │
+│  (Next.js)  │      │   Database   │      │  (uploads) │
+└─────────────┘      └──────────────┘      └────────────┘
+```
+
+### 环境配置
+
+#### 必需服务
+```bash
+# 1. Redis (消息队列)
+brew install redis
+brew services start redis
+
+# 2. Python依赖
+pip install fastapi uvicorn sqlalchemy celery redis openai httpx
+
+# 3. 启动服务
+# Terminal 1: FastAPI
+uvicorn app.main:app --reload --port 8000
+
+# Terminal 2: Celery Worker
+celery -A app.core.celery_app worker --loglevel=info
+```
+
+#### 环境变量 (.env)
+```bash
+# OpenAI API
+OPENAI_API_KEY=sk-proj-xxx...  # 真实的 OpenAI API 密钥
+USE_MOCK_SORA=false             # 使用真实API
+
+# Redis & Celery
+REDIS_URL=redis://localhost:6379/0
+
+# 其他配置
+DATABASE_URL=sqlite:///./aivideo.db
+GOOGLE_CLIENT_ID=your-client-id
+GOOGLE_CLIENT_SECRET=your-client-secret
+JWT_SECRET_KEY=your-jwt-secret
+```
+
+### 已解决的技术问题 ✅
+
+1. ✅ **OpenAI API参数适配**
+   - 正确使用 `input_reference` (而非 `image`)
+   - 正确使用 `seconds` (而非 `duration`)
+   - 正确的MIME type: `(filename, BytesIO, "image/jpeg")`
+
+2. ✅ **模型名称修正**
+   - `sora-2-image-to-video` → `sora-2` ✅
+   - 支持的模型: `sora-2`, `sora-2-pro`
+
+3. ✅ **视频时长规范**
+   - ❌ 不支持: 3s, 6s
+   - ✅ 支持: 4s, 8s, 12s
+
+4. ✅ **视频下载方法**
+   - ❌ 不存在: `job_status.output_url`
+   - ✅ 正确方法: `client.videos.download_content(job_id)`
+   - ✅ 处理流式响应: `HttpxBinaryResponseContent`
+
+5. ✅ **高分辨率输入**
+   - 前端展示: 400x400 (快速加载)
+   - AI生成: 1280x720 (高清,16:9)
 
 ### 待开发 📋
-- ⏳ WebSocket 实时状态推送
-- ⏳ 视频预览和下载
-- ⏳ 用户视频历史管理
+- ⏳ 支付系统集成 (Stripe/PayPal)
+- ⏳ 批量视频生成
+- ⏳ 视频编辑和剪辑功能
 - ⏳ 管理后台
+- ⏳ 视频分享和嵌入
 
 ## 后续开发建议
 
-1. **实现真实的 AI 视频生成**
-   - 集成 OpenAI Sora 2 API
-   - 移除 Celery 依赖或安装 Celery
-   - 实现后台任务队列
-   - 添加 WebSocket 实时状态推送
-
-2. **完善订阅系统**
+1. **完善订阅系统**
    - Stripe/PayPal 支付集成
    - 订阅自动续费
    - 积分购买功能

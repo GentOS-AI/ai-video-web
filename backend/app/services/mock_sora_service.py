@@ -8,7 +8,7 @@ import asyncio
 import uuid
 import shutil
 import os
-from typing import Dict
+from typing import Dict, Optional
 from pathlib import Path
 
 from app.core.config import settings
@@ -29,16 +29,18 @@ class MockSoraVideoGenerator:
         prompt: str,
         image_url: str,
         output_filename: str,
+        video_id: Optional[int] = None,  # For SSE logging
         max_wait_seconds: int = 1200,
     ) -> Dict:
         """
-        Mock video generation - simulates the entire workflow
+        Mock video generation - simulates the entire workflow with SSE logging
 
         This method simulates:
         1. Image download and encoding
         2. API call to Sora 2
         3. Status polling
         4. Video download
+        5. SSE log streaming (if video_id provided)
 
         But instead of calling the real API, it:
         - Uses a sample video file
@@ -49,6 +51,7 @@ class MockSoraVideoGenerator:
             prompt: Text description (logged but not used)
             image_url: Source image URL (logged but not used)
             output_filename: Filename to save video
+            video_id: Optional video ID for SSE logging
             max_wait_seconds: Not used in mock (always completes in 10s)
 
         Returns:
@@ -59,6 +62,12 @@ class MockSoraVideoGenerator:
                 "video_url": "/uploads/videos/xxx.mp4"
             }
         """
+        # Initialize SSE logger if video_id provided
+        logger = None
+        if video_id:
+            from app.utils.sse_logger import SSELogger
+            logger = SSELogger(video_id)
+
         print("\n" + "="*60)
         print("🎬 [MOCK] Starting MOCK Video Generation")
         print("="*60)
@@ -74,40 +83,67 @@ class MockSoraVideoGenerator:
         print()
 
         try:
-            # Step 1: Simulate image download
-            print("📥 [MOCK] Step 1: Downloading image...")
+            # Step 1: Validate parameters
+            print("📥 [MOCK] Step 1: Validating parameters...")
+            if logger:
+                logger.publish(1, "🔍 Validating request parameters...")
+            await asyncio.sleep(1)
+            print("✅ [MOCK] Parameters validated")
+            print()
+
+            # Step 2: Simulate image download
+            print("📥 [MOCK] Step 2: Downloading and processing image...")
+            if logger:
+                logger.publish(2, "📸 Downloading and processing reference image...")
             await asyncio.sleep(1)
             print("✅ [MOCK] Image downloaded and encoded to base64")
+            if logger:
+                logger.publish(2, "✅ Image processed successfully")
             print()
 
-            # Step 2: Simulate API call
-            print("🚀 [MOCK] Step 2: Calling OpenAI Sora 2 API...")
+            # Step 3: Simulate API call
+            print("🚀 [MOCK] Step 3: Calling OpenAI Sora 2 API...")
+            if logger:
+                logger.publish(3, f"🤖 Calling OpenAI Sora 2 API (model: {self.model})...")
             job_id = f"mock_job_{uuid.uuid4().hex[:8]}"
+            await asyncio.sleep(1)
             print(f"✅ [MOCK] Video generation job submitted")
             print(f"   Job ID: {job_id}")
+            if logger:
+                logger.publish(3, f"✅ Video job submitted (Job ID: {job_id})")
             print()
 
-            # Step 3: Simulate processing time (10 seconds with progress)
-            print("⏳ [MOCK] Step 3: Processing video (simulated 10s)...")
-            for i in range(10):
+            # Step 4: Simulate AI processing
+            print("⏳ [MOCK] Step 4: Waiting for AI processing...")
+            if logger:
+                logger.publish(4, "⏳ Waiting for AI processing (this may take 2-5 minutes)...")
+            await asyncio.sleep(2)
+            print()
+
+            # Step 5: Simulate processing time (8 seconds with progress)
+            print("⏳ [MOCK] Step 5: Processing video (simulated 8s)...")
+            for i in range(8):
                 await asyncio.sleep(1)
-                progress = (i + 1) * 10
-                print(f"   Progress: {progress}% ({i+1}/10)")
+                progress = 30 + (i + 1) * 7  # 30% -> 86%
+                print(f"   Progress: {progress}% ({i+1}/8)")
+                if logger and i % 2 == 0:  # Update every 2 seconds
+                    logger.publish_progress(5, f"⏳ Processing video... ({i+1}/8s elapsed)", progress)
 
             print("✅ [MOCK] Video generation completed!")
             print()
 
-            # Step 4: Prepare output path
-            print("📁 [MOCK] Step 4: Preparing output directory...")
+            # Step 6: Download video
+            print("📥 [MOCK] Step 6: Downloading generated video...")
+            if logger:
+                logger.publish(6, "💾 Downloading generated video...")
+            await asyncio.sleep(1)
+
+            # Prepare output path
             output_dir = Path(settings.VIDEO_OUTPUT_DIR)
             output_dir.mkdir(parents=True, exist_ok=True)
             output_path = output_dir / output_filename
             print(f"   Output directory: {output_dir}")
             print(f"   Output file: {output_path}")
-            print()
-
-            # Step 5: Copy sample video or create placeholder
-            print("📥 [MOCK] Step 5: Copying sample video...")
 
             # Try to find a sample video from multiple locations
             sample_video_locations = [
@@ -135,15 +171,27 @@ class MockSoraVideoGenerator:
 
             # Get file size
             file_size = os.path.getsize(output_path)
-            print(f"✅ [MOCK] Video file ready:")
+            print(f"✅ [MOCK] Video file downloaded:")
             print(f"   Path: {output_path}")
             print(f"   Size: {file_size / 1024:.2f} KB")
             print()
 
-            # Step 6: Return success result
+            # Step 7: Save to storage
+            print("📦 [MOCK] Step 7: Saving video to storage...")
+            if logger:
+                logger.publish(7, "📦 Saving video to storage...")
+            await asyncio.sleep(0.5)
+            print("✅ [MOCK] Video saved successfully")
+            print()
+
+            # Step 8: Complete
             video_url_relative = f"/uploads/videos/{output_filename}"
             print("🎉 [MOCK] Video generation completed successfully!")
             print(f"   Video URL: {video_url_relative}")
+
+            if logger:
+                logger.publish_completion(video_url_relative, str(output_path))
+
             print("="*60)
             print()
 
@@ -154,14 +202,24 @@ class MockSoraVideoGenerator:
             }
 
         except Exception as e:
+            import traceback
             print(f"\n❌ [MOCK] Error during mock generation: {e}")
+            print(traceback.format_exc())
             print("="*60)
             print()
+
+            if logger:
+                logger.publish_error(f"Mock generation error: {str(e)}")
 
             return {
                 "status": "failed",
                 "error_message": f"Mock generation error: {str(e)}",
             }
+
+        finally:
+            # Close logger
+            if logger:
+                logger.close()
 
 
 # Singleton instance

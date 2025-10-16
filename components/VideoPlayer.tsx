@@ -8,6 +8,7 @@ interface VideoPlayerProps {
   poster?: string;
   className?: string;
   autoPlay?: boolean;
+  preload?: "none" | "metadata" | "auto";
   onPlayStateChange?: (isPlaying: boolean) => void;
   children?: React.ReactNode;
 }
@@ -17,6 +18,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   poster,
   className = "",
   autoPlay = false,
+  preload = "metadata",
   onPlayStateChange,
   children,
 }) => {
@@ -53,7 +55,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
         muted
         autoPlay={autoPlay}
         playsInline
-        preload="metadata"
+        preload={preload}
       />
 
       {/* Custom overlay content (title, description, etc) */}

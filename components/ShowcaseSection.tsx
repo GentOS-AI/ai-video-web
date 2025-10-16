@@ -109,6 +109,7 @@ export const ShowcaseSection = () => {
                         src={video.src}
                         poster={video.poster}
                         autoPlay={false}
+                        preload="none"
                         onPlayStateChange={(playing) => handlePlayStateChange(video.id, playing)}
                       >
                         {/* Purple Gradient Overlay on Hover */}

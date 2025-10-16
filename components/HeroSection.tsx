@@ -1,17 +1,23 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import dynamic from "next/dynamic";
 import { Button } from "./Button";
 import { VideoPlayer } from "./VideoPlayer";
-import { PricingModal } from "./PricingModal";
 import { Toast, type ToastType } from "./Toast";
 import { Wand2, Sparkles, Loader2, AlertCircle } from "lucide-react";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import { heroVideos, trialImages } from "@/lib/assets";
-import { videoService } from "@/lib/api/services";
-import type { Video } from "@/lib/api/services";
+import { videoService, userService } from "@/lib/api/services";
+import type { Video, RecentUsersResponse } from "@/lib/api/services";
 import { useAuth } from "@/contexts/AuthContext";
+
+// Lazy load PricingModal since it's only shown on user interaction
+const PricingModal = dynamic(
+  () => import("./PricingModal").then((mod) => ({ default: mod.PricingModal })),
+  { ssr: false }
+);
 
 // Use imported data
 const sampleVideos = heroVideos;
@@ -46,6 +52,9 @@ export const HeroSection = () => {
   const [toastMessage, setToastMessage] = useState<string>("");
   const [toastType, setToastType] = useState<ToastType>("info");
   const [showToast, setShowToast] = useState(false);
+
+  // Recent users state
+  const [recentUsers, setRecentUsers] = useState<RecentUsersResponse | null>(null);
 
   // Helper function to show toast
   const showNotification = (message: string, type: ToastType = "info") => {
@@ -213,6 +222,26 @@ export const HeroSection = () => {
         clearInterval(pollingIntervalRef.current);
       }
     };
+  }, []);
+
+  // Fetch recent users on mount
+  useEffect(() => {
+    const fetchRecentUsers = async () => {
+      try {
+        const data = await userService.getRecentUsers();
+        setRecentUsers(data);
+      } catch (error) {
+        console.error("Failed to fetch recent users:", error);
+        // Use fallback data if API fails
+        setRecentUsers({
+          recent_users: [],
+          total_count: 135,
+          display_count: 7635,
+        });
+      }
+    };
+
+    fetchRecentUsers();
   }, []);
 
   const handleSubscribe = (planName: string) => {
@@ -426,6 +455,7 @@ export const HeroSection = () => {
                           fill
                           className="object-cover"
                           sizes="80px"
+                          loading="lazy"
                         />
 
                         {/* Checkmark Badge */}
@@ -490,6 +520,7 @@ export const HeroSection = () => {
                               fill
                               className="object-cover"
                               sizes="64px"
+                              loading="lazy"
                             />
                           </button>
                         ))}
@@ -614,21 +645,48 @@ export const HeroSection = () => {
             >
               {/* User Avatars */}
               <div className="flex -space-x-2">
-                <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full border-2 border-white bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white text-xs font-bold shadow-sm">
-                  A
-                </div>
-                <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full border-2 border-white bg-gradient-to-br from-blue-400 to-cyan-400 flex items-center justify-center text-white text-xs font-bold shadow-sm">
-                  M
-                </div>
-                <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full border-2 border-white bg-gradient-to-br from-green-400 to-emerald-400 flex items-center justify-center text-white text-xs font-bold shadow-sm">
-                  S
-                </div>
-                <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full border-2 border-white bg-gradient-to-br from-orange-400 to-red-400 flex items-center justify-center text-white text-xs font-bold shadow-sm">
-                  J
-                </div>
-                <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full border-2 border-white bg-gradient-to-br from-indigo-400 to-purple-400 flex items-center justify-center text-white text-xs font-bold shadow-sm">
-                  K
-                </div>
+                {recentUsers && recentUsers.recent_users.length > 0 ? (
+                  recentUsers.recent_users.map((user) => (
+                    <div
+                      key={user.id}
+                      className="w-8 h-8 sm:w-9 sm:h-9 rounded-full border-2 border-white shadow-sm overflow-hidden"
+                      title={user.name || user.email}
+                    >
+                      {user.avatar_url ? (
+                        <Image
+                          src={user.avatar_url}
+                          alt={user.name || user.email}
+                          width={36}
+                          height={36}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white text-xs font-bold">
+                          {user.name?.[0] || user.email[0]?.toUpperCase() || 'U'}
+                        </div>
+                      )}
+                    </div>
+                  ))
+                ) : (
+                  // Fallback avatars
+                  <>
+                    <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full border-2 border-white bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white text-xs font-bold shadow-sm">
+                      A
+                    </div>
+                    <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full border-2 border-white bg-gradient-to-br from-blue-400 to-cyan-400 flex items-center justify-center text-white text-xs font-bold shadow-sm">
+                      M
+                    </div>
+                    <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full border-2 border-white bg-gradient-to-br from-green-400 to-emerald-400 flex items-center justify-center text-white text-xs font-bold shadow-sm">
+                      S
+                    </div>
+                    <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full border-2 border-white bg-gradient-to-br from-orange-400 to-red-400 flex items-center justify-center text-white text-xs font-bold shadow-sm">
+                      J
+                    </div>
+                    <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full border-2 border-white bg-gradient-to-br from-indigo-400 to-purple-400 flex items-center justify-center text-white text-xs font-bold shadow-sm">
+                      K
+                    </div>
+                  </>
+                )}
               </div>
 
               {/* Divider */}
@@ -648,7 +706,9 @@ export const HeroSection = () => {
                   ))}
                 </div>
                 <p className="text-xs sm:text-sm font-semibold text-gray-700">
-                  <span className="text-purple-600">7,635</span> creators trust us
+                  <span className="text-purple-600">
+                    {recentUsers?.display_count.toLocaleString() || '7,635'}
+                  </span> creators trust us
                 </p>
               </div>
             </motion.div>

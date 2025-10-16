@@ -1,13 +1,19 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import dynamic from "next/dynamic";
 import { Button } from "./Button";
 import { Menu, X, LogOut } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
-import { PricingModal } from "./PricingModal";
 import { AnimatedLogo } from "./AnimatedLogo";
 import Image from "next/image";
+
+// Lazy load PricingModal since it's only shown on user interaction
+const PricingModal = dynamic(
+  () => import("./PricingModal").then((mod) => ({ default: mod.PricingModal })),
+  { ssr: false }
+);
 
 export const Navbar = () => {
   const { user, isAuthenticated, logout, loading } = useAuth();
@@ -109,6 +115,8 @@ export const Navbar = () => {
                       width={32}
                       height={32}
                       className="w-8 h-8 rounded-full"
+                      loading="lazy"
+                      sizes="32px"
                     />
                   ) : (
                     <div className="w-8 h-8 rounded-full bg-gradient-purple flex items-center justify-center text-white font-semibold text-sm">
@@ -233,6 +241,8 @@ export const Navbar = () => {
                         width={40}
                         height={40}
                         className="w-10 h-10 rounded-full"
+                        loading="lazy"
+                        sizes="40px"
                       />
                     ) : (
                       <div className="w-10 h-10 rounded-full bg-gradient-purple flex items-center justify-center text-white font-semibold">

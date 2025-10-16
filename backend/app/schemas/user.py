@@ -2,7 +2,7 @@
 User schemas for API requests and responses
 """
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
 from pydantic import BaseModel, EmailStr, Field
 
 
@@ -61,3 +61,21 @@ class UserCreditsResponse(BaseModel):
     """Schema for user credits response"""
     credits: float
     user_id: int
+
+
+class RecentUserInfo(BaseModel):
+    """Schema for recent user info (minimal data for display)"""
+    id: int
+    name: Optional[str] = None
+    avatar_url: Optional[str] = None
+    email: str
+
+    class Config:
+        from_attributes = True
+
+
+class RecentUsersResponse(BaseModel):
+    """Schema for recent users response"""
+    recent_users: List[RecentUserInfo]
+    total_count: int
+    display_count: int

@@ -60,6 +60,19 @@ export interface TrialImage {
   order: number;
 }
 
+export interface RecentUserInfo {
+  id: number;
+  name: string | null;
+  avatar_url: string | null;
+  email: string;
+}
+
+export interface RecentUsersResponse {
+  recent_users: RecentUserInfo[];
+  total_count: number;
+  display_count: number;
+}
+
 // Authentication Service
 export const authService = {
   /**
@@ -271,6 +284,14 @@ export const userService = {
    */
   async getCredits() {
     const { data } = await apiClient.get('/users/credits');
+    return data;
+  },
+
+  /**
+   * Get recent users (public endpoint)
+   */
+  async getRecentUsers(): Promise<RecentUsersResponse> {
+    const { data } = await apiClient.get<RecentUsersResponse>('/users/recent');
     return data;
   },
 };

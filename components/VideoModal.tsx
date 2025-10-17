@@ -63,10 +63,10 @@ export const VideoModal = ({ video, isOpen, onClose }: VideoModalProps) => {
             {/* Close Button - Floating top-right */}
             <button
               onClick={onClose}
-              className="absolute -top-12 right-0 sm:-top-14 sm:-right-14 p-2 sm:p-3 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md transition-all duration-200 group z-10"
+              className="absolute -top-8 right-0 sm:-top-10 sm:-right-10 p-1.5 sm:p-2 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md transition-all duration-200 group z-10"
               aria-label="Close video"
             >
-              <X className="w-6 h-6 sm:w-7 sm:h-7 text-white group-hover:rotate-90 transition-transform duration-200" />
+              <X className="w-5 h-5 sm:w-6 sm:h-6 text-white group-hover:rotate-90 transition-transform duration-200" />
             </button>
 
             {/* Video Player - Clean, borderless design */}

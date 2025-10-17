@@ -24,7 +24,7 @@ export default function AboutPage() {
         <section className="pt-32 sm:pt-40 pb-12 px-4 sm:px-6 lg:px-8">
           <div className="max-w-4xl mx-auto text-center">
             <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-6">
-              About <span className="text-gradient-purple">AdsVideo</span>
+              About <span className="text-gradient-purple-pink">Ads</span><span className="text-purple-500">Video</span>
             </h1>
             <p className="text-xl text-gray-600 leading-relaxed">
               We're on a mission to democratize professional video creation,

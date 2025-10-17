@@ -248,6 +248,13 @@ export const Navbar = () => {
             style={{ willChange: "height, opacity" }}
           >
             <div className="px-4 py-4 space-y-3">
+              <Link
+                href="/about"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="block w-full text-left px-4 py-2 text-sm font-medium text-text-secondary hover:text-primary hover:bg-purple-bg rounded-lg transition-colors"
+              >
+                About
+              </Link>
               <button
                 onClick={handlePricingClick}
                 className="w-full text-left px-4 py-2 text-sm font-medium text-text-secondary hover:text-primary hover:bg-purple-bg rounded-lg transition-colors"

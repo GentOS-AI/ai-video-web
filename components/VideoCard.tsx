@@ -16,6 +16,26 @@ import {
 import type { Video } from "@/lib/services/videoService";
 import { getRelativeTime } from "@/lib/services/videoService";
 
+// Helper function to convert relative URLs to absolute URLs
+const getAbsoluteUrl = (url: string | null | undefined): string | null => {
+  if (!url) return null;
+
+  // If already absolute URL (starts with http:// or https://), return as is
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    return url;
+  }
+
+  // Convert relative URL to absolute by prepending backend base URL
+  const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+  // Remove /api/v1 suffix if present in API_BASE
+  const baseUrl = API_BASE.replace(/\/api\/v1$/, '');
+
+  // Ensure URL starts with /
+  const path = url.startsWith('/') ? url : `/${url}`;
+
+  return `${baseUrl}${path}`;
+};
+
 interface VideoCardProps {
   video: Video;
   onPlay: (video: Video) => void;
@@ -60,6 +80,11 @@ export const VideoCard = ({ video, onPlay, onDelete, onRetry }: VideoCardProps) 
   const statusInfo = statusConfig[video.status];
   const StatusIcon = statusInfo.icon;
 
+  // Convert URLs to absolute paths
+  const posterUrl = getAbsoluteUrl(video.poster_url);
+  const referenceImageUrl = getAbsoluteUrl(video.reference_image_url);
+  const videoUrl = getAbsoluteUrl(video.video_url);
+
   const handleDelete = () => {
     // Delegate to parent component which will show confirm dialog
     onDelete(video.id);
@@ -84,20 +109,22 @@ export const VideoCard = ({ video, onPlay, onDelete, onRetry }: VideoCardProps) 
     >
       {/* Thumbnail / Preview */}
       <div className="relative aspect-video bg-gray-100 group cursor-pointer" onClick={() => video.status === 'completed' && onPlay(video)}>
-        {video.status === 'completed' && video.video_url ? (
+        {video.status === 'completed' && videoUrl ? (
           <>
-            {video.poster_url && !imageError ? (
+            {posterUrl && !imageError ? (
+              // Priority 1: Use poster image if available
               <Image
-                src={video.poster_url}
+                src={posterUrl}
                 alt={video.prompt}
                 fill
                 className="object-cover"
                 onError={() => setImageError(true)}
                 sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
               />
-            ) : video.reference_image_url && !imageError ? (
+            ) : referenceImageUrl && !imageError ? (
+              // Priority 2: Use reference image as fallback
               <Image
-                src={video.reference_image_url}
+                src={referenceImageUrl}
                 alt={video.prompt}
                 fill
                 className="object-cover opacity-60"
@@ -105,6 +132,24 @@ export const VideoCard = ({ video, onPlay, onDelete, onRetry }: VideoCardProps) 
                 sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
               />
             ) : (
+              // Priority 3: Use video first frame as thumbnail
+              <video
+                src={videoUrl}
+                className="w-full h-full object-cover"
+                muted
+                playsInline
+                preload="metadata"
+                onError={() => {
+                  // If video also fails, show placeholder
+                  setImageError(true);
+                }}
+              >
+                {/* Fallback if video fails to load */}
+              </video>
+            )}
+
+            {/* Priority 4: Show placeholder only if everything fails */}
+            {imageError && (
               <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-purple-100 to-purple-50">
                 <Film className="w-16 h-16 text-purple-300" />
               </div>

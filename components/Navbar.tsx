@@ -16,11 +16,18 @@ const PricingModal = dynamic(
   { ssr: false }
 );
 
+// Lazy load CreditsModal
+const CreditsModal = dynamic(
+  () => import("./CreditsModal").then((mod) => ({ default: mod.CreditsModal })),
+  { ssr: false }
+);
+
 export const Navbar = () => {
   const { user, isAuthenticated, logout, loading } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [isPricingOpen, setIsPricingOpen] = useState(false);
+  const [isCreditsModalOpen, setIsCreditsModalOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
 
   const handleGoogleLogin = () => {
@@ -59,6 +66,12 @@ export const Navbar = () => {
     setIsPricingOpen(false);
   };
 
+  const handleAddCredits = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsCreditsModalOpen(true);
+    setShowUserMenu(false);
+  };
+
   // Handle click outside to close user menu
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -82,7 +95,7 @@ export const Navbar = () => {
       <div className="w-full md:max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo Section */}
-          <div className="flex items-center space-x-2">
+          <Link href="/" className="flex items-center space-x-2 cursor-pointer hover:opacity-80 transition-opacity">
             <AnimatedLogo size={32} />
             <span className="text-xl font-bold flex items-center gap-0.5">
               <span className="text-purple-600">
@@ -90,10 +103,16 @@ export const Navbar = () => {
               </span>
               <span className="text-text-primary">Video.co</span>
             </span>
-          </div>
+          </Link>
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-4">
+            <Link
+              href="/about"
+              className="px-4 py-2 text-sm font-medium text-text-secondary hover:text-primary transition-colors"
+            >
+              About
+            </Link>
             <button
               onClick={handlePricingClick}
               className="px-4 py-2 text-sm font-medium text-text-secondary hover:text-primary transition-colors"
@@ -156,23 +175,20 @@ export const Navbar = () => {
                       className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2"
                     >
                       <div className="px-4 py-2 border-b border-gray-100">
-                        <div className="flex items-center gap-2 mb-1">
-                          <p className="text-sm font-medium text-text-primary truncate">
-                            {user.email}
-                          </p>
-                          {user.subscription_plan !== 'free' && (
-                            <span className={`px-1.5 py-0.5 text-[9px] font-bold rounded ${
-                              user.subscription_plan === 'pro'
-                                ? 'bg-gradient-to-r from-yellow-400 to-orange-500 text-white'
-                                : 'bg-gradient-to-r from-blue-400 to-blue-600 text-white'
-                            }`}>
-                              {user.subscription_plan.toUpperCase()}
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-xs text-text-muted">
-                          Credits: {user.credits.toFixed(1)}
+                        <p className="text-sm font-medium text-text-primary truncate mb-1">
+                          {user.email}
                         </p>
+                        <div className="flex items-center justify-between">
+                          <p className="text-xs text-text-muted">
+                            Credits: {user.credits.toFixed(0)}
+                          </p>
+                          <button
+                            onClick={handleAddCredits}
+                            className="px-2 py-0.5 text-[10px] font-bold bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-full hover:from-green-600 hover:to-emerald-600 transition-all shadow-sm hover:shadow-md"
+                          >
+                            Add
+                          </button>
+                        </div>
                       </div>
                       <Link
                         href="/my-videos"
@@ -319,6 +335,12 @@ export const Navbar = () => {
         isOpen={isPricingOpen}
         onClose={() => setIsPricingOpen(false)}
         onSubscribe={handleSubscribe}
+      />
+
+      {/* Credits Modal */}
+      <CreditsModal
+        isOpen={isCreditsModalOpen}
+        onClose={() => setIsCreditsModalOpen(false)}
       />
     </>
   );

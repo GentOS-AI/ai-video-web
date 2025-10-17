@@ -3,21 +3,38 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { VideoPlayer } from "./VideoPlayer";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Grid, Package, Shirt, Coffee, Home, Car, Laptop } from "lucide-react";
 import { showcaseVideos } from "@/lib/assets";
 
 export const ShowcaseSection = () => {
   const [hoveredId, setHoveredId] = useState<number | null>(null);
   const [currentPage, setCurrentPage] = useState(0);
   const [playingVideos, setPlayingVideos] = useState<Set<number>>(new Set());
+  const [selectedCategory, setSelectedCategory] = useState<string>("All");
+
+  // Category buttons configuration
+  const categories = [
+    { name: "All", icon: Grid },
+    { name: "Product", icon: Package },
+    { name: "Fashion", icon: Shirt },
+    { name: "F&B", icon: Coffee },
+    { name: "Real Estate", icon: Home },
+    { name: "Automotive", icon: Car },
+    { name: "Tech", icon: Laptop },
+  ];
+
+  // Filter videos by category
+  const filteredVideos = selectedCategory === "All"
+    ? showcaseVideos
+    : showcaseVideos.filter(video => video.category === selectedCategory);
 
   // Calculate pagination - 6 videos per page (2 rows x 3 columns)
   const videosPerPage = 6;
-  const totalPages = Math.ceil(showcaseVideos.length / videosPerPage);
+  const totalPages = Math.ceil(filteredVideos.length / videosPerPage);
 
   // Get current page videos
   const startIndex = currentPage * videosPerPage;
-  const currentVideos = showcaseVideos.slice(startIndex, startIndex + videosPerPage);
+  const currentVideos = filteredVideos.slice(startIndex, startIndex + videosPerPage);
 
   const nextPage = () => {
     setCurrentPage((prev) => (prev + 1) % totalPages);
@@ -58,6 +75,38 @@ export const ShowcaseSection = () => {
             See what&apos;s possible with our AI video generation technology.
             Professional results in seconds.
           </p>
+        </motion.div>
+
+        {/* Category Filter Buttons */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+          className="flex flex-wrap justify-center gap-2 sm:gap-3 mb-8 sm:mb-12 px-4"
+        >
+          {categories.map((category) => {
+            const Icon = category.icon;
+            const isActive = selectedCategory === category.name;
+
+            return (
+              <button
+                key={category.name}
+                onClick={() => {
+                  setSelectedCategory(category.name);
+                  setCurrentPage(0); // Reset to first page when changing category
+                }}
+                className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg font-medium text-sm transition-all ${
+                  isActive
+                    ? "bg-gradient-purple text-white shadow-lg shadow-purple-500/25 scale-105"
+                    : "bg-white text-gray-600 border border-gray-200 hover:border-purple-300 hover:text-purple-600 hover:shadow-md"
+                }`}
+              >
+                <Icon className="w-4 h-4" />
+                <span>{category.name}</span>
+              </button>
+            );
+          })}
         </motion.div>
 
         {/* Carousel Container */}

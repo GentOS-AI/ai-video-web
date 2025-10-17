@@ -1,8 +1,25 @@
+"use client";
+
+import { useState } from "react";
+import dynamic from "next/dynamic";
 import { Twitter, Github, Linkedin, Mail } from "lucide-react";
 import { AnimatedLogo } from "./AnimatedLogo";
 
+// Lazy load PricingModal
+const PricingModal = dynamic(
+  () => import("./PricingModal").then((mod) => ({ default: mod.PricingModal })),
+  { ssr: false }
+);
+
 export const Footer = () => {
   const currentYear = new Date().getFullYear();
+  const [isPricingOpen, setIsPricingOpen] = useState(false);
+
+  const handleSubscribe = (planName: string) => {
+    console.log(`Selected ${planName} plan`);
+    alert(`You selected the ${planName} plan! Payment integration coming soon.`);
+    setIsPricingOpen(false);
+  };
 
   return (
     <footer className="bg-white border-t border-gray-200">
@@ -36,16 +53,16 @@ export const Footer = () => {
             </h3>
             <ul className="space-y-2">
               <li>
-                <a
-                  href="#pricing"
-                  className="text-sm text-text-secondary hover:text-primary transition-colors"
+                <button
+                  onClick={() => setIsPricingOpen(true)}
+                  className="text-sm text-text-secondary hover:text-primary transition-colors text-left"
                 >
                   Pricing
-                </a>
+                </button>
               </li>
               <li>
                 <a
-                  href="#about"
+                  href="/about"
                   className="text-sm text-text-secondary hover:text-primary transition-colors"
                 >
                   About Us
@@ -62,7 +79,7 @@ export const Footer = () => {
             <ul className="space-y-2">
               <li>
                 <a
-                  href="#help"
+                  href="/help"
                   className="text-sm text-text-secondary hover:text-primary transition-colors"
                 >
                   Help Center
@@ -70,7 +87,7 @@ export const Footer = () => {
               </li>
               <li>
                 <a
-                  href="#blog"
+                  href="/blog"
                   className="text-sm text-text-secondary hover:text-primary transition-colors"
                 >
                   Blog
@@ -130,6 +147,13 @@ export const Footer = () => {
           </p>
         </div>
       </div>
+
+      {/* Pricing Modal */}
+      <PricingModal
+        isOpen={isPricingOpen}
+        onClose={() => setIsPricingOpen(false)}
+        onSubscribe={handleSubscribe}
+      />
     </footer>
   );
 };

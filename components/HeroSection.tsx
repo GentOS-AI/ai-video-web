@@ -4,7 +4,6 @@ import { useState, useEffect, useRef } from "react";
 import dynamic from "next/dynamic";
 import { Button } from "./Button";
 import { VideoPlayer } from "./VideoPlayer";
-import { Toast, type ToastType } from "./Toast";
 import { Wand2, Sparkles, Loader2, AlertCircle } from "lucide-react";
 import { motion } from "framer-motion";
 import Image from "next/image";
@@ -12,6 +11,7 @@ import { heroVideos, trialImages } from "@/lib/assets";
 import { videoService, userService } from "@/lib/api/services";
 import type { Video, RecentUsersResponse } from "@/lib/api/services";
 import { useAuth } from "@/contexts/AuthContext";
+import { useNotification } from "@/contexts/NotificationContext";
 import { useVideoStream } from "@/lib/hooks/useVideoStream";
 
 // Lazy load PricingModal since it's only shown on user interaction
@@ -32,6 +32,7 @@ const aiModels = [
 
 export const HeroSection = () => {
   const { isAuthenticated, user, refreshUser } = useAuth();
+  const { showToast } = useNotification();
   const [prompt, setPrompt] = useState("");
   const [selectedImage, setSelectedImage] = useState<number | null>(null);
   const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
@@ -61,7 +62,7 @@ export const HeroSection = () => {
       } as Video);
       setIsGenerating(false);
       setStreamingVideoId(null);
-      showNotification("Video generated successfully! 🎉", "success");
+      showToast("Video generated successfully! 🎉", "success");
       refreshUser();
     },
     onError: (error) => {
@@ -72,20 +73,8 @@ export const HeroSection = () => {
     }
   });
 
-  // Toast notification state
-  const [toastMessage, setToastMessage] = useState<string>("");
-  const [toastType, setToastType] = useState<ToastType>("info");
-  const [showToast, setShowToast] = useState(false);
-
   // Recent users state
   const [recentUsers, setRecentUsers] = useState<RecentUsersResponse | null>(null);
-
-  // Helper function to show toast
-  const showNotification = (message: string, type: ToastType = "info") => {
-    setToastMessage(message);
-    setToastType(type);
-    setShowToast(true);
-  };
 
   const handlePromptChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const text = e.target.value;
@@ -97,20 +86,20 @@ export const HeroSection = () => {
   const handleGenerate = async () => {
     // Validation with Toast notifications
     if (!isAuthenticated) {
-      showNotification("Please login to generate videos", "warning");
+      showToast("Please login to generate videos", "warning");
       return;
     }
 
     // Check if user has a subscription
     if (!user || user.subscription_plan === 'free') {
-      showNotification("Subscription required. Please upgrade to generate videos!", "warning");
+      showToast("Subscription required. Please upgrade to generate videos!", "warning");
       setIsPricingOpen(true); // Open pricing modal
       return;
     }
 
     // Check if subscription is active
     if (user.subscription_status !== 'active') {
-      showNotification("Your subscription has expired. Please renew to continue.", "warning");
+      showToast("Your subscription has expired. Please renew to continue.", "warning");
       setIsPricingOpen(true);
       return;
     }
@@ -120,30 +109,30 @@ export const HeroSection = () => {
       const expiryDate = new Date(user.subscription_end_date);
       const now = new Date();
       if (expiryDate < now) {
-        showNotification("Your subscription has expired. Please renew to continue.", "warning");
+        showToast("Your subscription has expired. Please renew to continue.", "warning");
         setIsPricingOpen(true);
         return;
       }
     }
 
     if (!prompt.trim()) {
-      showNotification("Please enter a video description", "warning");
+      showToast("Please enter a video description", "warning");
       return;
     }
 
     if (prompt.trim().length < 10) {
-      showNotification("Video description must be at least 10 characters long", "warning");
+      showToast("Video description must be at least 10 characters long", "warning");
       return;
     }
 
     if (selectedImage === null) {
-      showNotification("Please select or upload an image", "warning");
+      showToast("Please select or upload an image", "warning");
       return;
     }
 
     // Check if user has enough credits (100 credits required)
     if (user.credits < 100) {
-      showNotification(`Insufficient credits. You have ${user.credits} credits, but need 100 credits to generate a video.`, "error");
+      showToast(`Insufficient credits. You have ${user.credits} credits, but need 100 credits to generate a video.`, "error");
       setIsPricingOpen(true);
       return;
     }
@@ -151,7 +140,7 @@ export const HeroSection = () => {
     // Get selected image URL
     const selectedImageData = trialImages.find(img => img.id === selectedImage);
     if (!selectedImageData) {
-      showNotification("Selected image not found", "error");
+      showToast("Selected image not found", "error");
       return;
     }
 
@@ -222,7 +211,7 @@ export const HeroSection = () => {
   const handleSubscribe = (planName: string) => {
     console.log(`Subscribing to ${planName} plan`);
     // TODO: Integrate with payment system
-    showNotification(`You selected the ${planName} plan! Payment integration coming soon.`, "info");
+    showToast(`You selected the ${planName} plan! Payment integration coming soon.`, "info");
     setIsPricingOpen(false);
   };
 
@@ -711,15 +700,6 @@ export const HeroSection = () => {
         isOpen={isPricingOpen}
         onClose={() => setIsPricingOpen(false)}
         onSubscribe={handleSubscribe}
-      />
-
-      {/* Toast Notification */}
-      <Toast
-        message={toastMessage}
-        type={toastType}
-        isVisible={showToast}
-        onClose={() => setShowToast(false)}
-        duration={3000}
       />
     </section>
   );

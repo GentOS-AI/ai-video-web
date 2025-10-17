@@ -295,3 +295,22 @@ export const userService = {
     return data;
   },
 };
+
+// Credits Service
+export const creditsService = {
+  /**
+   * Purchase credits package
+   */
+  async purchaseCredits(purchaseData: {
+    package: string;
+    payment_method: string;
+  }): Promise<{
+    success: boolean;
+    new_balance: number;
+    transaction_id: string;
+    message: string;
+  }> {
+    const { data } = await apiClient.post('/credits/purchase', purchaseData);
+    return data;
+  },
+};

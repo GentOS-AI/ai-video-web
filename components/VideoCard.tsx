@@ -56,23 +56,13 @@ const statusConfig = {
 
 export const VideoCard = ({ video, onPlay, onDelete, onRetry }: VideoCardProps) => {
   const [imageError, setImageError] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
 
   const statusInfo = statusConfig[video.status];
   const StatusIcon = statusInfo.icon;
 
-  const handleDelete = async () => {
-    if (!confirm('Are you sure you want to delete this video?')) {
-      return;
-    }
-
-    setIsDeleting(true);
-    try {
-      await onDelete(video.id);
-    } catch (error) {
-      setIsDeleting(false);
-      console.error('Delete failed:', error);
-    }
+  const handleDelete = () => {
+    // Delegate to parent component which will show confirm dialog
+    onDelete(video.id);
   };
 
   const handleRetry = async () => {
@@ -87,15 +77,10 @@ export const VideoCard = ({ video, onPlay, onDelete, onRetry }: VideoCardProps) 
     <motion.div
       layout
       initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: isDeleting ? 0.5 : 1, y: 0 }}
+      animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.9 }}
       transition={{ duration: 0.3 }}
-      className={`
-        bg-white rounded-xl shadow-md overflow-hidden
-        border border-gray-200 hover:shadow-xl
-        transition-all duration-300
-        ${isDeleting ? 'pointer-events-none' : ''}
-      `}
+      className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200 hover:shadow-xl transition-all duration-300"
     >
       {/* Thumbnail / Preview */}
       <div className="relative aspect-video bg-gray-100 group cursor-pointer" onClick={() => video.status === 'completed' && onPlay(video)}>
@@ -194,33 +179,41 @@ export const VideoCard = ({ video, onPlay, onDelete, onRetry }: VideoCardProps) 
 
         {/* Actions */}
         <div className="flex items-center gap-2 pt-2 border-t border-gray-100">
-          {video.status === 'completed' && (
-            <button
-              onClick={() => onPlay(video)}
-              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium"
-            >
-              <Play className="w-4 h-4" />
-              Play
-            </button>
-          )}
+          {/* Play Button - Always visible, disabled for non-completed status */}
+          <button
+            onClick={() => video.status === 'completed' && onPlay(video)}
+            disabled={video.status !== 'completed'}
+            className={`
+              flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium
+              transition-colors
+              ${video.status === 'completed'
+                ? 'bg-purple-600 text-white hover:bg-purple-700 cursor-pointer'
+                : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+              }
+            `}
+          >
+            <Play className="w-4 h-4" />
+            Play
+          </button>
 
+          {/* Retry Button - Only for failed videos */}
           {video.status === 'failed' && (
             <button
               onClick={handleRetry}
-              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium"
+              className="flex items-center justify-center gap-1.5 px-3 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium"
             >
               <RotateCcw className="w-4 h-4" />
               Retry
             </button>
           )}
 
+          {/* Delete Button - Always visible */}
           <button
             onClick={handleDelete}
-            disabled={isDeleting}
-            className="flex items-center justify-center gap-1.5 px-3 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors text-sm font-medium disabled:opacity-50"
+            className="flex items-center justify-center gap-1.5 px-3 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors text-sm font-medium"
           >
             <Trash2 className="w-4 h-4" />
-            {isDeleting ? 'Deleting...' : 'Delete'}
+            Delete
           </button>
         </div>
       </div>

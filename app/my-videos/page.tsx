@@ -2,20 +2,20 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Video as VideoIcon, Loader2, Film } from "lucide-react";
+import { ArrowLeft, Video as VideoIcon, Loader2, Film, RefreshCw } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { Navbar } from "@/components/Navbar";
-import { Footer } from "@/components/Footer";
+import { useNotification } from "@/contexts/NotificationContext";
 import { VideoCard } from "@/components/VideoCard";
 import { VideoModal } from "@/components/VideoModal";
 import { VideoStatusFilter, type VideoStatusType } from "@/components/VideoStatusFilter";
 import { getUserVideos, deleteVideo, retryVideo, type Video } from "@/lib/services/videoService";
-import { Toast } from "@/components/Toast";
 
 export default function MyVideosPage() {
   const router = useRouter();
-  const { isAuthenticated, loading: authLoading } = useAuth();
+  const { isAuthenticated, loading: authLoading, user } = useAuth();
+  const { showToast, showConfirm } = useNotification();
 
   const [videos, setVideos] = useState<Video[]>([]);
   const [loading, setLoading] = useState(true);
@@ -26,18 +26,9 @@ export default function MyVideosPage() {
 
   const [page, setPage] = useState(1);
   const [totalVideos, setTotalVideos] = useState(0);
-  const [hasMore, setHasMore] = useState(true);
 
-  // Toast state
-  const [toastMessage, setToastMessage] = useState<string>("");
-  const [toastType, setToastType] = useState<"success" | "error" | "info" | "warning">("info");
-  const [showToast, setShowToast] = useState(false);
-
-  const showNotification = (message: string, type: "success" | "error" | "info" | "warning" = "info") => {
-    setToastMessage(message);
-    setToastType(type);
-    setShowToast(true);
-  };
+  // Refresh countdown state
+  const [refreshCountdown, setRefreshCountdown] = useState(10);
 
   // Calculate status counts
   const statusCounts = {
@@ -62,15 +53,14 @@ export default function MyVideosPage() {
 
       setVideos(response.videos);
       setTotalVideos(response.total);
-      setHasMore(response.videos.length === response.page_size);
     } catch (err) {
       console.error('Failed to fetch videos:', err);
       setError('Failed to load videos. Please try again.');
-      showNotification('Failed to load videos', 'error');
+      showToast('Failed to load videos', 'error');
     } finally {
       setLoading(false);
     }
-  }, [page, activeStatus]);
+  }, [page, activeStatus, showToast]);
 
   // Initial fetch
   useEffect(() => {
@@ -84,20 +74,38 @@ export default function MyVideosPage() {
     }
   }, [isAuthenticated, authLoading, router, fetchVideos]);
 
-  // Auto-refresh for processing videos
+  // Auto-refresh for processing videos with countdown
   useEffect(() => {
     const hasProcessingVideos = videos.some(
       v => v.status === 'pending' || v.status === 'processing'
     );
 
-    if (!hasProcessingVideos) return;
+    if (!hasProcessingVideos) {
+      setRefreshCountdown(10);
+      return;
+    }
 
-    const interval = setInterval(() => {
+    // Countdown timer (every second)
+    const countdownInterval = setInterval(() => {
+      setRefreshCountdown((prev) => {
+        if (prev <= 1) {
+          return 10; // Reset to 10 seconds
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    // Refresh data (every 10 seconds)
+    const refreshInterval = setInterval(() => {
       console.log('🔄 Refreshing videos with processing status...');
       fetchVideos();
-    }, 10000); // Refresh every 10 seconds
+      setRefreshCountdown(10); // Reset countdown
+    }, 10000);
 
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(countdownInterval);
+      clearInterval(refreshInterval);
+    };
   }, [videos, fetchVideos]);
 
   // Filter videos by active status
@@ -112,30 +120,45 @@ export default function MyVideosPage() {
   };
 
   const handleDelete = async (id: number) => {
-    try {
-      await deleteVideo(id);
-      setVideos(prev => prev.filter(v => v.id !== id));
-      showNotification('Video deleted successfully', 'success');
-    } catch (err) {
-      console.error('Failed to delete video:', err);
-      showNotification('Failed to delete video', 'error');
-    }
+    showConfirm({
+      title: 'Delete Video',
+      message: 'Are you sure you want to delete this video? This action cannot be undone.',
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      confirmVariant: 'danger',
+      onConfirm: async () => {
+        try {
+          await deleteVideo(id);
+          setVideos(prev => prev.filter(v => v.id !== id));
+          showToast('Video deleted successfully', 'success');
+        } catch (err) {
+          console.error('Failed to delete video:', err);
+          showToast('Failed to delete video', 'error');
+        }
+      }
+    });
   };
 
   const handleRetry = async (id: number) => {
     try {
       const updatedVideo = await retryVideo(id);
       setVideos(prev => prev.map(v => v.id === id ? updatedVideo : v));
-      showNotification('Video generation restarted', 'success');
+      showToast('Video generation restarted', 'success');
     } catch (err) {
       console.error('Failed to retry video:', err);
-      showNotification('Failed to retry video generation', 'error');
+      showToast('Failed to retry video generation', 'error');
     }
   };
 
   const handleStatusChange = (status: VideoStatusType) => {
     setActiveStatus(status);
     setPage(1);
+  };
+
+  const handleManualRefresh = async () => {
+    setRefreshCountdown(10); // Reset countdown
+    await fetchVideos();
+    showToast('Video list refreshed', 'success');
   };
 
   if (authLoading) {
@@ -148,9 +171,7 @@ export default function MyVideosPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-purple-50/30">
-      <Navbar />
-
-      <main className="pt-20 pb-12 px-4 sm:px-6 lg:px-8">
+      <main className="pt-8 pb-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           {/* Header */}
           <div className="mb-8">
@@ -163,25 +184,58 @@ export default function MyVideosPage() {
             </button>
 
             <div className="flex items-center gap-4 mb-6">
-              <div className="w-12 h-12 rounded-xl bg-gradient-purple flex items-center justify-center shadow-lg">
-                <VideoIcon className="w-6 h-6 text-white" />
-              </div>
+              {/* User Avatar or Video Icon */}
+              {user?.avatar_url ? (
+                <div className="relative w-12 h-12 rounded-xl overflow-hidden shadow-lg ring-2 ring-purple-100">
+                  <Image
+                    src={user.avatar_url}
+                    alt={user.name || 'User avatar'}
+                    fill
+                    className="object-cover"
+                    sizes="48px"
+                  />
+                </div>
+              ) : (
+                <div className="w-12 h-12 rounded-xl bg-gradient-purple flex items-center justify-center shadow-lg">
+                  <VideoIcon className="w-6 h-6 text-white" />
+                </div>
+              )}
               <div>
                 <h1 className="text-3xl sm:text-4xl font-bold text-gray-900">
                   My Videos
                 </h1>
                 <p className="text-gray-600 mt-1">
-                  Manage your AI-generated videos
+                  {user?.name ? `${user.name}'s video collection` : 'Manage your AI-generated videos'}
                 </p>
               </div>
             </div>
 
-            {/* Status Filter */}
-            <VideoStatusFilter
-              activeStatus={activeStatus}
-              onStatusChange={handleStatusChange}
-              counts={statusCounts}
-            />
+            {/* Status Filter and Refresh Indicator */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 justify-between">
+              <VideoStatusFilter
+                activeStatus={activeStatus}
+                onStatusChange={handleStatusChange}
+                counts={statusCounts}
+              />
+
+              {/* Refresh Button with Countdown */}
+              {videos.some(v => v.status === 'pending' || v.status === 'processing') && (
+                <motion.button
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  onClick={handleManualRefresh}
+                  disabled={loading}
+                  className="flex items-center gap-2 px-4 py-2 bg-purple-50 border border-purple-200 rounded-lg hover:bg-purple-100 hover:border-purple-300 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <RefreshCw
+                    className={`w-4 h-4 text-purple-600 ${loading || refreshCountdown <= 3 ? 'animate-spin' : ''}`}
+                  />
+                  <span className="text-sm font-medium text-purple-700">
+                    {loading ? 'Refreshing...' : `Refresh in ${refreshCountdown}s`}
+                  </span>
+                </motion.button>
+              )}
+            </div>
           </div>
 
           {/* Content */}
@@ -250,8 +304,6 @@ export default function MyVideosPage() {
         </div>
       </main>
 
-      <Footer />
-
       {/* Video Modal */}
       <VideoModal
         video={selectedVideo}
@@ -260,14 +312,6 @@ export default function MyVideosPage() {
           setIsModalOpen(false);
           setSelectedVideo(null);
         }}
-      />
-
-      {/* Toast Notifications */}
-      <Toast
-        message={toastMessage}
-        type={toastType}
-        isVisible={showToast}
-        onClose={() => setShowToast(false)}
       />
     </div>
   );

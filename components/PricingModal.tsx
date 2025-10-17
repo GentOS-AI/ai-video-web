@@ -4,18 +4,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Check, Zap, Crown } from "lucide-react";
 import { Button } from "./Button";
-
-interface PricingPlan {
-  name: string;
-  price: string;
-  period: string;
-  description: string;
-  features: string[];
-  popular?: boolean;
-  icon: React.ReactNode;
-  gradient: string;
-  credits: string;
-}
+import { useTranslations } from "next-intl";
 
 interface PricingModalProps {
   isOpen: boolean;
@@ -23,49 +12,52 @@ interface PricingModalProps {
   onSubscribe?: (plan: string) => void;
 }
 
-const pricingPlans: PricingPlan[] = [
-  {
-    name: "Basic",
-    price: "$19",
-    period: "/month",
-    description: "Perfect for individuals and small projects",
-    credits: "100 credits/month",
-    features: [
-      "100 AI video generations per month",
-      "HD resolution (1080p)",
-      "Basic AI models (Sora 1)",
-      "Standard processing speed",
-      "Email support",
-      "5GB cloud storage",
-    ],
-    icon: <Zap className="w-5 h-5" />,
-    gradient: "from-blue-500 to-cyan-500",
-  },
-  {
-    name: "Pro",
-    price: "$49",
-    period: "/month",
-    description: "Best for professionals and businesses",
-    credits: "500 credits/month",
-    features: [
-      "500 AI video generations per month",
-      "4K resolution support",
-      "All AI models (Sora 2, Runway Gen-3)",
-      "Priority processing (3x faster)",
-      "Priority support (24/7)",
-      "50GB cloud storage",
-      "Custom watermark removal",
-      "Advanced editing tools",
-      "API access",
-    ],
-    popular: true,
-    icon: <Crown className="w-5 h-5" />,
-    gradient: "from-purple-500 to-pink-500",
-  },
-];
-
 export const PricingModal = ({ isOpen, onClose, onSubscribe }: PricingModalProps) => {
+  const t = useTranslations('pricing');
   const [selectedPlan, setSelectedPlan] = useState<string>("Pro");
+
+  // Define pricing plans with translations
+  const pricingPlans = [
+    {
+      name: t('basic.name'),
+      price: t('basic.price'),
+      period: t('basic.period'),
+      description: t('basic.description'),
+      credits: t('monthlyCredits', { count: 100 }),
+      features: [
+        t('basic.feature1'),
+        t('basic.feature2'),
+        t('basic.feature3'),
+        t('basic.feature4'),
+        t('basic.feature5'),
+        t('basic.feature6'),
+      ],
+      icon: <Zap className="w-5 h-5" />,
+      gradient: "from-blue-500 to-cyan-500",
+      popular: false,
+    },
+    {
+      name: t('pro.name'),
+      price: t('pro.price'),
+      period: t('pro.period'),
+      description: t('pro.description'),
+      credits: t('monthlyCredits', { count: 500 }),
+      features: [
+        t('pro.feature1'),
+        t('pro.feature2'),
+        t('pro.feature3'),
+        t('pro.feature4'),
+        t('pro.feature5'),
+        t('pro.feature6'),
+        t('pro.feature7'),
+        t('pro.feature8'),
+        t('pro.feature9'),
+      ],
+      icon: <Crown className="w-5 h-5" />,
+      gradient: "from-purple-500 to-pink-500",
+      popular: true,
+    },
+  ];
 
   const handlePlanClick = (planName: string) => {
     setSelectedPlan(planName);
@@ -112,10 +104,10 @@ export const PricingModal = ({ isOpen, onClose, onSubscribe }: PricingModalProps
               {/* Header - Simplified Animation */}
               <div className="bg-gradient-to-r from-purple-600 to-purple-500 px-4 py-3 sm:px-6 sm:py-4 text-center">
                 <h2 className="text-xl sm:text-2xl font-bold text-white mb-1">
-                  Choose Your Plan
+                  {t('title')}
                 </h2>
                 <p className="text-xs sm:text-sm text-white/90">
-                  Unlock the power of AI video generation
+                  {t('subtitle')}
                 </p>
               </div>
 
@@ -137,7 +129,7 @@ export const PricingModal = ({ isOpen, onClose, onSubscribe }: PricingModalProps
                       {plan.popular && (
                         <div className="absolute top-3 right-3">
                           <div className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-xs font-bold px-2.5 py-1 rounded-full shadow-lg">
-                            POPULAR
+                            {t('popular')}
                           </div>
                         </div>
                       )}
@@ -213,8 +205,8 @@ export const PricingModal = ({ isOpen, onClose, onSubscribe }: PricingModalProps
                                 ))}
                               </div>
                               <p className="text-xs text-text-muted italic ml-6 pt-0.5">
-                                <span className="sm:hidden">+{plan.features.length - 4} more</span>
-                                <span className="hidden sm:inline">+{plan.features.length - 6} more</span>
+                                <span className="sm:hidden">{t('moreFeatures', { count: plan.features.length - 4 })}</span>
+                                <span className="hidden sm:inline">{t('moreFeatures', { count: plan.features.length - 6 })}</span>
                               </p>
                             </>
                           )}
@@ -230,13 +222,13 @@ export const PricingModal = ({ isOpen, onClose, onSubscribe }: PricingModalProps
                           }}
                           className={`w-full text-sm sm:text-base ${
                             selectedPlan === plan.name
-                              ? plan.name === "Pro"
+                              ? plan.popular
                                 ? "bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white shadow-md"
                                 : "bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white shadow-md"
                               : "border-2 border-gray-300 hover:border-primary hover:text-primary bg-white"
                           }`}
                         >
-                          Subscribe Now
+                          {t('subscribeNow')}
                         </Button>
                       </div>
                     </div>
@@ -246,13 +238,16 @@ export const PricingModal = ({ isOpen, onClose, onSubscribe }: PricingModalProps
                 {/* Footer Note - Simplified */}
                 <div className="text-center mt-6">
                   <p className="text-xs text-text-muted">
-                    All plans include a 14-day money-back guarantee. Cancel anytime.
+                    {t('footerGuarantee')}
                   </p>
                   <p className="text-xs text-text-muted mt-1">
-                    Need a custom plan?{" "}
-                    <a href="#contact" className="text-primary hover:underline font-medium">
-                      Contact us
-                    </a>
+                    {t.rich('footerCustomPlan', {
+                      link: (chunks) => (
+                        <a href="#contact" className="text-primary hover:underline font-medium">
+                          {chunks}
+                        </a>
+                      )
+                    })}
                   </p>
                 </div>
               </div>

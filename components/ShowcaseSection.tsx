@@ -5,8 +5,10 @@ import { motion } from "framer-motion";
 import { VideoPlayer } from "./VideoPlayer";
 import { ChevronLeft, ChevronRight, Grid, Package, Shirt, Coffee, Home, Car, Laptop } from "lucide-react";
 import { showcaseVideos } from "@/lib/assets";
+import { useTranslations } from "next-intl";
 
 export const ShowcaseSection = () => {
+  const t = useTranslations('showcase');
   const [hoveredId, setHoveredId] = useState<number | null>(null);
   const [currentPage, setCurrentPage] = useState(0);
   const [playingVideos, setPlayingVideos] = useState<Set<number>>(new Set());
@@ -14,13 +16,13 @@ export const ShowcaseSection = () => {
 
   // Category buttons configuration
   const categories = [
-    { name: "All", icon: Grid },
-    { name: "Product", icon: Package },
-    { name: "Fashion", icon: Shirt },
-    { name: "F&B", icon: Coffee },
-    { name: "Real Estate", icon: Home },
-    { name: "Automotive", icon: Car },
-    { name: "Tech", icon: Laptop },
+    { name: "All", label: t('categoryAll'), icon: Grid },
+    { name: "Product", label: t('categoryProduct'), icon: Package },
+    { name: "Fashion", label: t('categoryFashion'), icon: Shirt },
+    { name: "F&B", label: t('categoryFB'), icon: Coffee },
+    { name: "Real Estate", label: t('categoryRealEstate'), icon: Home },
+    { name: "Automotive", label: t('categoryAutomotive'), icon: Car },
+    { name: "Tech", label: t('categoryTech'), icon: Laptop },
   ];
 
   // Filter videos by category
@@ -68,12 +70,12 @@ export const ShowcaseSection = () => {
           className="text-center mb-8 sm:mb-16 space-y-2 sm:space-y-4"
         >
           <h2 className="text-2xl sm:text-4xl lg:text-5xl font-bold text-text-primary">
-            AI-Generated{" "}
-            <span className="text-gradient-purple">Video Showcase</span>
+            {t.rich('title', {
+              purple: (chunks) => <span className="text-gradient-purple">{chunks}</span>
+            })}
           </h2>
           <p className="text-sm sm:text-lg text-text-secondary max-w-2xl mx-auto px-4">
-            See what&apos;s possible with our AI video generation technology.
-            Professional results in seconds.
+            {t('subtitle')}
           </p>
         </motion.div>
 
@@ -103,7 +105,7 @@ export const ShowcaseSection = () => {
                 }`}
               >
                 <Icon className="w-4 h-4" />
-                <span>{category.name}</span>
+                <span>{category.label}</span>
               </button>
             );
           })}
@@ -244,14 +246,14 @@ export const ShowcaseSection = () => {
           className="mt-12 sm:mt-16 text-center"
         >
           <p className="text-sm sm:text-base text-text-secondary mb-4 sm:mb-6 px-4">
-            Ready to create your own stunning videos?
+            {t('ctaText')}
           </p>
           <a
             href="#hero"
             className="inline-flex items-center justify-center px-6 py-3 sm:px-8 sm:py-4 text-base sm:text-lg font-medium text-white bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 rounded-lg transition-all hover:scale-105 shadow-lg shadow-purple-500/25"
           >
-            <span className="sm:hidden">Start Free</span>
-            <span className="hidden sm:inline">Get Started Free</span>
+            <span className="sm:hidden">{t('ctaButtonMobile')}</span>
+            <span className="hidden sm:inline">{t('ctaButton')}</span>
           </a>
         </motion.div>
       </div>

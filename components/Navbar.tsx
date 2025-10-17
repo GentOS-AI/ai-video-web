@@ -3,12 +3,15 @@
 import { useState, useEffect, useRef } from "react";
 import dynamic from "next/dynamic";
 import { Button } from "./Button";
-import { Menu, X, LogOut, Film } from "lucide-react";
+import { Menu, X, LogOut, Film, Languages, Check } from "lucide-react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import { AnimatedLogo } from "./AnimatedLogo";
 import Image from "next/image";
+import { useTranslations } from "next-intl";
+import { useParams, usePathname, useRouter } from "next/navigation";
+import { localeNames, localeFlags, type Locale } from "@/lib/i18n/config";
 
 // Lazy load PricingModal since it's only shown on user interaction
 const PricingModal = dynamic(
@@ -23,12 +26,20 @@ const CreditsModal = dynamic(
 );
 
 export const Navbar = () => {
+  const t = useTranslations('navbar');
+  const params = useParams();
+  const pathname = usePathname();
+  const router = useRouter();
+  const locale = (params.locale as Locale) || 'en';
+
   const { user, isAuthenticated, logout, loading } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [isPricingOpen, setIsPricingOpen] = useState(false);
   const [isCreditsModalOpen, setIsCreditsModalOpen] = useState(false);
+  const [isLangMenuOpen, setIsLangMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
+  const langMenuRef = useRef<HTMLDivElement>(null);
 
   const handleGoogleLogin = () => {
     const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
@@ -72,22 +83,42 @@ export const Navbar = () => {
     setShowUserMenu(false);
   };
 
+  const switchLanguage = (newLocale: Locale) => {
+    // Save language preference to cookie
+    document.cookie = `NEXT_LOCALE=${newLocale}; path=/; max-age=31536000`; // 1 year
+
+    // Replace locale in pathname
+    const newPath = pathname.replace(`/${locale}`, `/${newLocale}`);
+    router.push(newPath);
+    setIsLangMenuOpen(false);
+    setIsMobileMenuOpen(false);
+  };
+
+  const languages: Array<{ code: Locale; name: string; flag: string }> = [
+    { code: 'en', name: localeNames['en'], flag: localeFlags['en'] },
+    { code: 'zh', name: localeNames['zh'], flag: localeFlags['zh'] },
+    { code: 'zh-TW', name: localeNames['zh-TW'], flag: localeFlags['zh-TW'] },
+  ];
+
   // Handle click outside to close user menu
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
         setShowUserMenu(false);
       }
+      if (langMenuRef.current && !langMenuRef.current.contains(event.target as Node)) {
+        setIsLangMenuOpen(false);
+      }
     };
 
-    if (showUserMenu) {
+    if (showUserMenu || isLangMenuOpen) {
       document.addEventListener('mousedown', handleClickOutside);
     }
 
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [showUserMenu]);
+  }, [showUserMenu, isLangMenuOpen]);
 
   return (
     <>
@@ -95,7 +126,7 @@ export const Navbar = () => {
       <div className="w-full md:max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo Section */}
-          <Link href="/" className="flex items-center space-x-2 cursor-pointer hover:opacity-80 transition-opacity">
+          <Link href={`/${locale}`} className="flex items-center space-x-2 cursor-pointer hover:opacity-80 transition-opacity">
             <AnimatedLogo size={32} />
             <span className="text-xl font-bold flex items-center gap-0.5">
               <span className="text-purple-600">
@@ -108,23 +139,61 @@ export const Navbar = () => {
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-4">
             <Link
-              href="/"
+              href={`/${locale}`}
               className="px-4 py-2 text-sm font-medium text-text-secondary hover:text-primary transition-colors"
             >
-              Home
+              {t('home')}
             </Link>
             <Link
-              href="/about"
+              href={`/${locale}/about`}
               className="px-4 py-2 text-sm font-medium text-text-secondary hover:text-primary transition-colors"
             >
-              About
+              {t('about')}
             </Link>
             <button
               onClick={handlePricingClick}
               className="px-4 py-2 text-sm font-medium text-text-secondary hover:text-primary transition-colors"
             >
-              Pricing
+              {t('pricing')}
             </button>
+
+            {/* Language Switcher - Desktop */}
+            <div className="relative" ref={langMenuRef}>
+              <button
+                onClick={() => setIsLangMenuOpen(!isLangMenuOpen)}
+                className="flex items-center gap-1.5 px-2 py-1.5 rounded-md hover:bg-gray-100 transition-colors text-gray-600 hover:text-gray-900"
+                aria-label="Switch language"
+              >
+                <span className="text-lg">{localeFlags[locale]}</span>
+                <span className="text-xs font-medium uppercase">{locale}</span>
+              </button>
+
+              {/* Language Dropdown Menu */}
+              <AnimatePresence>
+                {isLangMenuOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.2 }}
+                    className="absolute right-0 mt-2 w-36 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50 overflow-hidden"
+                  >
+                    {languages.map((lang) => (
+                      <button
+                        key={lang.code}
+                        onClick={() => switchLanguage(lang.code)}
+                        className={`w-full px-3 py-1.5 text-left hover:bg-gray-50 transition-colors flex items-center gap-2 ${
+                          locale === lang.code ? 'bg-gray-50 text-gray-900 font-medium' : 'text-gray-700'
+                        }`}
+                      >
+                        <span className="text-base">{lang.flag}</span>
+                        <span className="text-xs">{lang.name}</span>
+                      </button>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
 
             {loading ? (
               <div className="w-10 h-10 rounded-full bg-gray-200 animate-pulse" />
@@ -186,7 +255,7 @@ export const Navbar = () => {
                         </p>
                         <div className="flex items-center justify-between">
                           <p className="text-xs text-text-muted">
-                            Credits: {user.credits.toFixed(0)}
+                            {t('credits', { count: user.credits.toFixed(0) })}
                           </p>
                           <button
                             onClick={handleAddCredits}
@@ -197,19 +266,19 @@ export const Navbar = () => {
                         </div>
                       </div>
                       <Link
-                        href="/my-videos"
+                        href={`/${locale}/my-videos`}
                         onClick={() => setShowUserMenu(false)}
                         className="w-full px-4 py-2 text-left text-sm text-text-secondary hover:bg-purple-bg hover:text-primary transition-colors flex items-center space-x-2"
                       >
                         <Film className="w-4 h-4" />
-                        <span>Media Center</span>
+                        <span>{t('myVideos')}</span>
                       </Link>
                       <button
                         onClick={handleLogout}
                         className="w-full px-4 py-2 text-left text-sm text-text-secondary hover:bg-purple-bg hover:text-primary transition-colors flex items-center space-x-2"
                       >
                         <LogOut className="w-4 h-4" />
-                        <span>Logout</span>
+                        <span>{t('logout')}</span>
                       </button>
                     </motion.div>
                   )}
@@ -222,7 +291,7 @@ export const Navbar = () => {
                 onClick={handleGoogleLogin}
                 className="bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-700 hover:to-purple-600 shadow-md"
               >
-                Login
+                {t('login')}
               </Button>
             )}
           </div>
@@ -255,25 +324,49 @@ export const Navbar = () => {
           >
             <div className="px-4 py-4 space-y-3">
               <Link
-                href="/"
+                href={`/${locale}`}
                 onClick={() => setIsMobileMenuOpen(false)}
                 className="block w-full text-left px-4 py-2 text-sm font-medium text-text-secondary hover:text-primary hover:bg-purple-bg rounded-lg transition-colors"
               >
-                Home
+                {t('home')}
               </Link>
               <Link
-                href="/about"
+                href={`/${locale}/about`}
                 onClick={() => setIsMobileMenuOpen(false)}
                 className="block w-full text-left px-4 py-2 text-sm font-medium text-text-secondary hover:text-primary hover:bg-purple-bg rounded-lg transition-colors"
               >
-                About
+                {t('about')}
               </Link>
               <button
                 onClick={handlePricingClick}
                 className="w-full text-left px-4 py-2 text-sm font-medium text-text-secondary hover:text-primary hover:bg-purple-bg rounded-lg transition-colors"
               >
-                Pricing
+                {t('pricing')}
               </button>
+
+              {/* Language Switcher - Mobile */}
+              <div className="border-t border-gray-200 pt-3 mt-3">
+                <p className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  Language / 语言
+                </p>
+                <div className="space-y-1">
+                  {languages.map((lang) => (
+                    <button
+                      key={lang.code}
+                      onClick={() => switchLanguage(lang.code)}
+                      className={`w-full px-4 py-2 text-sm hover:bg-purple-bg rounded-lg transition-colors flex items-center gap-3 ${
+                        locale === lang.code ? 'bg-purple-bg text-purple-600 font-semibold' : 'text-text-secondary'
+                      }`}
+                    >
+                      <span className="text-2xl">{lang.flag}</span>
+                      <span>{lang.name}</span>
+                      {locale === lang.code && (
+                        <Check className="w-4 h-4 ml-auto text-purple-600" />
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
 
               {loading ? (
                 <div className="h-12 bg-gray-200 rounded-lg animate-pulse" />
@@ -316,19 +409,19 @@ export const Navbar = () => {
                     </div>
                   </div>
                   <Link
-                    href="/my-videos"
+                    href={`/${locale}/my-videos`}
                     onClick={() => setIsMobileMenuOpen(false)}
                     className="w-full px-4 py-2 text-sm text-text-secondary hover:text-primary hover:bg-purple-bg rounded-lg transition-colors flex items-center space-x-2"
                   >
                     <Film className="w-4 h-4" />
-                    <span>Media Center</span>
+                    <span>{t('myVideos')}</span>
                   </Link>
                   <button
                     onClick={handleLogout}
                     className="w-full px-4 py-2 text-sm text-text-secondary hover:text-primary hover:bg-purple-bg rounded-lg transition-colors flex items-center space-x-2"
                   >
                     <LogOut className="w-4 h-4" />
-                    <span>Logout</span>
+                    <span>{t('logout')}</span>
                   </button>
                 </div>
               ) : (
@@ -341,7 +434,7 @@ export const Navbar = () => {
                   }}
                   className="w-full bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-700 hover:to-purple-600 shadow-md"
                 >
-                  Login
+                  {t('login')}
                 </Button>
               )}
             </div>

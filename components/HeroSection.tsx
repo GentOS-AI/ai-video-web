@@ -13,6 +13,7 @@ import type { Video, RecentUsersResponse } from "@/lib/api/services";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNotification } from "@/contexts/NotificationContext";
 import { useVideoStream } from "@/lib/hooks/useVideoStream";
+import { useTranslations } from "next-intl";
 
 // Lazy load PricingModal since it's only shown on user interaction
 const PricingModal = dynamic(
@@ -30,6 +31,9 @@ const aiModels = [
 ];
 
 export const HeroSection = () => {
+  const t = useTranslations('hero');
+  const tToast = useTranslations('toast');
+
   const { isAuthenticated, user, refreshUser } = useAuth();
   const { showToast } = useNotification();
   const [prompt, setPrompt] = useState("");
@@ -66,7 +70,7 @@ export const HeroSection = () => {
       } as Video);
       setIsGenerating(false);
       setStreamingVideoId(null);
-      showToast("Video generated successfully! 🎉", "success");
+      showToast(tToast('videoGeneratedSuccess'), "success");
       refreshUser();
     },
     onError: (error) => {
@@ -119,14 +123,14 @@ export const HeroSection = () => {
         const trimmedText = beforeCursor + trimmedPaste + afterCursor;
         setPrompt(trimmedText);
 
-        showToast(`Text trimmed to ${maxChars} character limit`, "warning");
+        showToast(tToast('textTrimmed', { limit: maxChars }), "warning");
 
         setTimeout(() => {
           const newCursorPos = start + trimmedPaste.length;
           target.setSelectionRange(newCursorPos, newCursorPos);
         }, 0);
       } else {
-        showToast(`Cannot paste: ${maxChars} character limit reached`, "warning");
+        showToast(tToast('cannotPaste', { limit: maxChars }), "warning");
       }
     }
   };
@@ -154,14 +158,14 @@ export const HeroSection = () => {
 
     // Check if user has a subscription
     if (!user || user.subscription_plan === 'free') {
-      showToast("Subscription required. Please upgrade to generate videos!", "warning");
+      showToast(tToast('subscriptionRequired'), "warning");
       setIsPricingOpen(true); // Open pricing modal
       return;
     }
 
     // Check if subscription is active
     if (user.subscription_status !== 'active') {
-      showToast("Your subscription has expired. Please renew to continue.", "warning");
+      showToast(tToast('subscriptionExpired'), "warning");
       setIsPricingOpen(true);
       return;
     }
@@ -171,32 +175,36 @@ export const HeroSection = () => {
       const expiryDate = new Date(user.subscription_end_date);
       const now = new Date();
       if (expiryDate < now) {
-        showToast("Your subscription has expired. Please renew to continue.", "warning");
+        showToast(tToast('subscriptionExpired'), "warning");
         setIsPricingOpen(true);
         return;
       }
     }
 
     if (!prompt.trim()) {
-      showToast("Please enter a video description", "warning");
+      showToast(tToast('enterVideoDescription'), "warning");
       return;
     }
 
     if (prompt.trim().length < 10) {
-      showToast("Video description must be at least 10 characters long", "warning");
+      showToast(tToast('descriptionTooShort'), "warning");
       return;
     }
 
     // Check if either uploaded file or thumbnail is selected
     if (!uploadedFile && selectedImage === null) {
-      showToast("Please select or upload an image", "warning");
+      showToast(tToast('selectOrUploadImage'), "warning");
       return;
     }
 
     // Check if user has enough credits
     const requiredCredits = selectedModel?.credits || 100;
     if (user.credits < requiredCredits) {
-      showToast(`Insufficient credits. You have ${user.credits.toFixed(0)} credits, but need ${requiredCredits} credits for ${selectedModel?.name || 'this model'}.`, "error");
+      showToast(tToast('insufficientCredits', {
+        current: user.credits.toFixed(0),
+        required: requiredCredits,
+        model: selectedModel?.name || 'this model'
+      }), "error");
       setIsPricingOpen(true);
       return;
     }
@@ -207,7 +215,7 @@ export const HeroSection = () => {
     if (uploadedFile) {
       // User uploaded a file - need to upload to backend first
       try {
-        setGenerationProgress("Uploading image...");
+        setGenerationProgress(t('uploadingImage'));
         const formData = new FormData();
         formData.append('file', uploadedFile);  // Backend expects 'file' parameter
 
@@ -228,7 +236,7 @@ export const HeroSection = () => {
         console.log("📤 Image uploaded:", imageUrl);
       } catch (uploadError) {
         console.error("❌ Image upload failed:", uploadError);
-        showToast("Failed to upload image. Please try again.", "error");
+        showToast(tToast('uploadImageFailed'), "error");
         setGenerationProgress("");
         setIsGenerating(false);  // Reset generating state
         return;
@@ -237,19 +245,19 @@ export const HeroSection = () => {
       // User selected a thumbnail
       const selectedImageData = trialImages.find(img => img.id === selectedImage);
       if (!selectedImageData) {
-        showToast("Selected image not found", "error");
+        showToast(tToast('imageNotFound'), "error");
         return;
       }
       imageUrl = selectedImageData.highResSrc;
     } else {
-      showToast("Please select or upload an image", "warning");
+      showToast(tToast('selectOrUploadImage'), "warning");
       return;
     }
 
     try {
       setIsGenerating(true);
       setGenerationError(null);
-      setGenerationProgress("Starting video generation...");
+      setGenerationProgress(t('startingGeneration'));
       console.log("🎬 Generating video with:", {
         prompt,
         model: selectedModel?.id || 'sora-2',
@@ -264,7 +272,7 @@ export const HeroSection = () => {
       );
 
       console.log("✅ Video generation task created:", video);
-      setGenerationProgress("Connecting to processing stream...");
+      setGenerationProgress(t('connectingStream'));
 
       // Start SSE connection for real-time updates (replaces polling)
       setStreamingVideoId(video.id);
@@ -286,7 +294,7 @@ export const HeroSection = () => {
   const handleGenerateScript = async () => {
     // Validation
     if (!isAuthenticated) {
-      showToast("Please login to use AI Script Generator", "warning");
+      showToast(tToast('loginToUseScriptGenerator'), "warning");
       // Redirect to Google OAuth login
       const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
       const redirectUri = `${window.location.origin}/auth/callback`;
@@ -307,20 +315,20 @@ export const HeroSection = () => {
 
     // Check subscription
     if (!user || user.subscription_plan === 'free') {
-      showToast("AI Script Generator requires a subscription. Please upgrade!", "warning");
+      showToast(tToast('scriptGeneratorRequiresSubscription'), "warning");
       setIsPricingOpen(true);
       return;
     }
 
     if (user.subscription_status !== 'active') {
-      showToast("Your subscription has expired. Please renew to continue.", "warning");
+      showToast(tToast('subscriptionExpired'), "warning");
       setIsPricingOpen(true);
       return;
     }
 
     // Check if image is uploaded (not thumbnail selected)
     if (!uploadedFile) {
-      showToast("Please upload an image first. Thumbnail selection is not supported for script generation.", "warning");
+      showToast(tToast('uploadImageForScript'), "warning");
       return;
     }
 
@@ -336,7 +344,7 @@ export const HeroSection = () => {
       // Fill the textarea with generated script
       setPrompt(result.script);
 
-      showToast("Script generated successfully! ✨", "success");
+      showToast(tToast('scriptGeneratedSuccess'), "success");
 
       // Optional: Log additional info
       if (result.style || result.camera || result.lighting) {
@@ -351,9 +359,9 @@ export const HeroSection = () => {
     } catch (error: unknown) {
       console.error("❌ Script generation failed:", error);
       if (error instanceof Error) {
-        showToast(error.message || "Failed to generate script", "error");
+        showToast(error.message || tToast('scriptGenerationFailed'), "error");
       } else {
-        showToast("Failed to generate script", "error");
+        showToast(tToast('scriptGenerationFailed'), "error");
       }
     } finally {
       setIsGeneratingScript(false);
@@ -410,7 +418,7 @@ export const HeroSection = () => {
   const handleSubscribe = (planName: string) => {
     console.log(`Subscribing to ${planName} plan`);
     // TODO: Integrate with payment system
-    showToast(`You selected the ${planName} plan! Payment integration coming soon.`, "info");
+    showToast(tToast('planSelected', { plan: planName }), "info");
     setIsPricingOpen(false);
   };
 
@@ -440,7 +448,7 @@ export const HeroSection = () => {
   return (
     <section className="pt-20 sm:pt-24 pb-12 sm:pb-16">
       <div className="w-full md:max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
-        <div className="grid lg:grid-cols-2 gap-6 sm:gap-8 lg:gap-12 items-end">
+        <div className="grid lg:grid-cols-2 gap-6 sm:gap-8 lg:gap-12 items-center">
           {/* Left Side - Generation Form */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -451,17 +459,17 @@ export const HeroSection = () => {
             {/* Heading */}
             <div className="space-y-2 sm:space-y-3 md:space-y-4">
               <h1 className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">
-                Generate{" "}
+                {t('title.generate')}{" "}
                 <span className="bg-gradient-to-r from-purple-600 to-purple-500 bg-clip-text text-transparent">
-                  Ads
+                  {t('title.ads')}
                 </span>{" "}
                 <span className="bg-gradient-to-r from-purple-600 via-pink-500 to-yellow-400 bg-clip-text text-transparent">
-                  Video
+                  {t('title.video')}
                 </span>{" "}
-                for your social media.
+                {t('title.suffix')}
               </h1>
               <p className="text-sm sm:text-lg md:text-xl text-text-secondary leading-relaxed">
-                AI-powered solution for script writing, video generation, and social media publishing.
+                {t('subtitle')}
               </p>
             </div>
 
@@ -484,11 +492,11 @@ export const HeroSection = () => {
                       <Wand2 className="w-4 h-4 text-purple-600" />
                     )}
                     <span className="text-xs font-semibold text-purple-600 relative pr-5">
-                      {isGeneratingScript ? "Generating..." : "AI Script Generator"}
+                      {isGeneratingScript ? t('aiScriptGenerator.generating') : t('aiScriptGenerator.title')}
 
                       {/* Pro Badge - positioned at top-right with spacing */}
                       <span className="absolute -top-2 -right-1 px-1 py-0.5 bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-[7px] font-bold rounded-sm pointer-events-none">
-                        PRO
+                        {t('aiScriptGenerator.proBadge')}
                       </span>
                     </span>
 
@@ -499,9 +507,9 @@ export const HeroSection = () => {
                           {/* Arrow - 指向下方 */}
                           <div className="absolute -bottom-5 left-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-purple-50" />
                           <p className="leading-relaxed">
-                            <strong>AI-powered script generation!</strong><br/>
-                            Upload an image and click here to automatically generate a professional video script using Gemini AI.
-                            {!uploadedFile && <span className="text-red-600 font-semibold"><br/>⚠ Upload an image first</span>}
+                            <strong>{t('aiScriptGenerator.tooltipTitle')}</strong><br/>
+                            {t('aiScriptGenerator.tooltipDescription')}
+                            {!uploadedFile && <span className="text-red-600 font-semibold"><br/>{t('aiScriptGenerator.tooltipWarning')}</span>}
                           </p>
                         </div>
                       </div>
@@ -569,7 +577,7 @@ export const HeroSection = () => {
                     value={prompt}
                     onChange={handlePromptChange}
                     onPaste={handlePaste}
-                    placeholder="Describe your video: A cinematic product showcase with smooth camera movements, professional lighting, and vibrant colors..."
+                    placeholder={t('input.placeholder')}
                     className="w-full px-0 py-0 border-0 focus:outline-none focus:ring-0 resize-none text-sm sm:text-base text-text-primary placeholder:text-text-muted"
                     rows={3}
                   />
@@ -585,12 +593,12 @@ export const HeroSection = () => {
                       {isGenerating ? (
                         <>
                           <Loader2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-spin" />
-                          Generating...
+                          {t('button.generating')}
                         </>
                       ) : (
                         <>
                           <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                          {!isAuthenticated || !user || user.subscription_plan === 'free' ? 'Try for free' : 'Generate'}
+                          {!isAuthenticated || !user || user.subscription_plan === 'free' ? t('button.tryFree') : t('button.generate')}
                         </>
                       )}
                     </Button>
@@ -610,7 +618,7 @@ export const HeroSection = () => {
                         {isConnected && (
                           <span className="flex items-center gap-1 text-xs text-green-600">
                             <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-                            Connected
+                            {t('status.connected')}
                           </span>
                         )}
                       </div>
@@ -648,7 +656,7 @@ export const HeroSection = () => {
                         ? "w-20 h-20 sm:w-18 sm:h-18 border-4 border-purple-500 shadow-lg shadow-purple-500/50 ring-4 ring-purple-200 scale-110 hover:scale-115"
                         : "w-16 h-16 sm:w-14 sm:h-14 border-2 border-dashed border-gray-300 hover:border-purple-400 hover:bg-purple-50"
                     } flex items-center justify-center overflow-hidden`}
-                    title={uploadedFilePreview ? "Uploaded image - click to change" : selectedImage !== null ? "Selected image - click to change" : "Upload image"}
+                    title={uploadedFilePreview ? t('upload.uploadedTitle') : selectedImage !== null ? t('upload.selectedTitle') : t('upload.uploadTitle')}
                   >
                     {uploadedFilePreview ? (
                       <>
@@ -723,13 +731,13 @@ export const HeroSection = () => {
                         const ALLOWED_TYPES = ["image/jpeg", "image/jpg", "image/png"];
 
                         if (!ALLOWED_TYPES.includes(file.type.toLowerCase())) {
-                          handleFileValidationError("Invalid file type. Only JPG and PNG images are allowed.");
+                          handleFileValidationError(tToast('invalidFileType'));
                           return;
                         }
 
                         if (file.size > MAX_SIZE) {
                           const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
-                          handleFileValidationError(`File too large (${sizeMB}MB). Maximum size is 20MB.`);
+                          handleFileValidationError(tToast('fileTooLarge', { size: sizeMB }));
                           return;
                         }
 
@@ -755,18 +763,25 @@ export const HeroSection = () => {
                             if (!isSupported) {
                               const supportedSizes = SUPPORTED_DIMENSIONS.map(d => d.label).join(", ");
                               handleFileValidationError(
-                                `Image dimensions (${width}x${height}) not supported. Please use one of: ${supportedSizes}`
+                                tToast('unsupportedDimensions', {
+                                  width,
+                                  height,
+                                  supported: supportedSizes
+                                })
                               );
                               return;
                             }
 
                             // Dimensions are valid - proceed with upload
                             handleFileUpload(file);
-                            showToast(`File uploaded: ${file.name} (${width}x${height})`, "success");
+                            showToast(tToast('fileUploaded', {
+                              name: file.name,
+                              dimensions: `${width}x${height}`
+                            }), "success");
                           };
 
                           img.onerror = () => {
-                            handleFileValidationError("Failed to load image. Please try a different file.");
+                            handleFileValidationError(tToast('failedToLoadImage'));
                           };
 
                           img.src = event.target?.result as string;
@@ -812,9 +827,9 @@ export const HeroSection = () => {
                 </div>
                 <p className="text-xs text-text-muted mt-2">
                   <span className="hidden sm:inline">
-                    Upload (1280x720, 720x1280, or 1024x1024) or select an image to start.
+                    {t('upload.instructions')}
                   </span>
-                  <span className="sm:hidden">← Swipe to view more images</span>
+                  <span className="sm:hidden">{t('upload.swipeHint')}</span>
                 </p>
               </div>
             </div>
@@ -848,7 +863,7 @@ export const HeroSection = () => {
                 <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-purple-100 to-pink-100">
                   <Loader2 className="w-16 h-16 text-purple-600 animate-spin mb-4" />
                   <p className="text-purple-600 font-semibold text-lg mb-2">
-                    Generating your video...
+                    {t('videoArea.generating')}
                   </p>
                   <p className="text-purple-500 text-sm text-center px-4">
                     {generationProgress}
@@ -887,17 +902,17 @@ export const HeroSection = () => {
             <div className="mt-4 sm:mt-6 flex flex-wrap gap-1.5 sm:gap-2 justify-center">
               <div className="px-2 py-1 sm:px-2.5 sm:py-1 rounded-full bg-white/95 backdrop-blur-md border border-purple-200 shadow-sm">
                 <span className="text-[9px] sm:text-[10px] font-semibold text-purple-600 whitespace-nowrap">
-                  {generatedVideo ? "1280x720" : "4K Resolution"}
+                  {generatedVideo ? "1280x720" : t('videoArea.badge.resolution')}
                 </span>
               </div>
               <div className="px-2 py-1 sm:px-2.5 sm:py-1 rounded-full bg-white/95 backdrop-blur-md border border-purple-200 shadow-sm">
                 <span className="text-[9px] sm:text-[10px] font-semibold text-purple-600 whitespace-nowrap">
-                  Professional Quality
+                  {t('videoArea.badge.quality')}
                 </span>
               </div>
               <div className="hidden sm:block px-2.5 py-1 rounded-full bg-white/95 backdrop-blur-md border border-purple-200 shadow-sm">
                 <span className="text-[10px] font-semibold text-purple-600 whitespace-nowrap">
-                  {generatedVideo ? "AI Generated" : "Auto-Generated"}
+                  {generatedVideo ? t('videoArea.badge.aiGenerated') : t('videoArea.badge.autoGenerated')}
                 </span>
               </div>
             </div>
@@ -907,11 +922,11 @@ export const HeroSection = () => {
               <p className="text-xs sm:text-sm font-medium text-text-secondary">
                 {generatedVideo ? (
                   <>
-                    Your Video: <span className="text-purple-600 font-semibold">Generated with Sora 2</span>
+                    {t('videoArea.yourVideo')}: <span className="text-purple-600 font-semibold">{t('videoArea.generatedWith')}</span>
                   </>
                 ) : (
                   <>
-                    Example: <span className="text-purple-600 font-semibold">{currentVideo.title}</span>
+                    {t('videoArea.example')}: <span className="text-purple-600 font-semibold">{currentVideo.title}</span>
                   </>
                 )}
               </p>
@@ -989,7 +1004,7 @@ export const HeroSection = () => {
                 <p className="text-xs sm:text-sm font-semibold text-gray-700">
                   <span className="text-purple-600">
                     {recentUsers?.display_count.toLocaleString() || '7,635'}
-                  </span> creators trust us
+                  </span> {t('socialProof.creatorsTrust')}
                 </p>
               </div>
             </motion.div>

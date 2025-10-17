@@ -4,6 +4,9 @@ import { useState } from "react";
 import dynamic from "next/dynamic";
 import { Twitter, Github, Linkedin, Mail } from "lucide-react";
 import { AnimatedLogo } from "./AnimatedLogo";
+import { useTranslations } from "next-intl";
+import { useParams } from "next/navigation";
+import type { Locale } from "@/lib/i18n/config";
 
 // Lazy load PricingModal
 const PricingModal = dynamic(
@@ -12,6 +15,9 @@ const PricingModal = dynamic(
 );
 
 export const Footer = () => {
+  const t = useTranslations('footer');
+  const params = useParams();
+  const locale = (params.locale as Locale) || 'en';
   const currentYear = new Date().getFullYear();
   const [isPricingOpen, setIsPricingOpen] = useState(false);
 
@@ -41,15 +47,14 @@ export const Footer = () => {
               </span>
             </div>
             <p className="text-sm text-text-secondary">
-              Transform your ideas into professional advertising videos with
-              AI-powered technology.
+              {t('companyDescription')}
             </p>
           </div>
 
           {/* Quick Links */}
           <div className="space-y-4">
             <h3 className="text-sm font-semibold text-text-primary uppercase tracking-wider">
-              Quick Links
+              {t('quickLinks')}
             </h3>
             <ul className="space-y-2">
               <li>
@@ -57,15 +62,15 @@ export const Footer = () => {
                   onClick={() => setIsPricingOpen(true)}
                   className="text-sm text-text-secondary hover:text-primary transition-colors text-left"
                 >
-                  Pricing
+                  {t('pricing')}
                 </button>
               </li>
               <li>
                 <a
-                  href="/about"
+                  href={`/${locale}/about`}
                   className="text-sm text-text-secondary hover:text-primary transition-colors"
                 >
-                  About Us
+                  {t('aboutUs')}
                 </a>
               </li>
             </ul>
@@ -74,23 +79,23 @@ export const Footer = () => {
           {/* Policy Column */}
           <div className="space-y-4">
             <h3 className="text-sm font-semibold text-text-primary uppercase tracking-wider">
-              Policy
+              {t('policy')}
             </h3>
             <ul className="space-y-2">
               <li>
                 <a
-                  href="/terms"
+                  href={`/${locale}/terms`}
                   className="text-sm text-text-secondary hover:text-primary transition-colors"
                 >
-                  Terms of Service
+                  {t('terms')}
                 </a>
               </li>
               <li>
                 <a
-                  href="/privacy"
+                  href={`/${locale}/privacy`}
                   className="text-sm text-text-secondary hover:text-primary transition-colors"
                 >
-                  Privacy Policy
+                  {t('privacy')}
                 </a>
               </li>
             </ul>
@@ -99,7 +104,7 @@ export const Footer = () => {
           {/* Social Links - Now on the right */}
           <div className="space-y-4">
             <h3 className="text-sm font-semibold text-text-primary uppercase tracking-wider">
-              Connect With Us
+              {t('connectWithUs')}
             </h3>
             <div className="flex space-x-4 sm:space-x-3">
               <a
@@ -143,7 +148,7 @@ export const Footer = () => {
         {/* Copyright */}
         <div className="mt-12 pt-8 border-t border-gray-200">
           <p className="text-center text-sm text-text-muted">
-            {currentYear} AdsVideo. All rights reserved.
+            {t('copyright', { year: currentYear })}
           </p>
         </div>
       </div>

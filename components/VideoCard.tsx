@@ -13,7 +13,8 @@ import {
   XCircle,
   Film,
   Download,
-  MoreVertical
+  MoreVertical,
+  Share2
 } from "lucide-react";
 import type { Video } from "@/lib/services/videoService";
 import { getRelativeTime } from "@/lib/services/videoService";
@@ -117,6 +118,32 @@ export const VideoCard = ({ video, onPlay, onDelete, onRetry }: VideoCardProps) 
       document.body.removeChild(link);
     } catch (error) {
       console.error('Download failed:', error);
+    }
+  };
+
+  const handleShare = async () => {
+    if (!videoUrl) return;
+
+    // Check if Web Share API is available
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'AI Generated Video',
+          text: video.prompt,
+          url: videoUrl,
+        });
+      } catch (error) {
+        // User cancelled or error occurred
+        console.log('Share cancelled or failed:', error);
+      }
+    } else {
+      // Fallback: Copy video URL to clipboard
+      try {
+        await navigator.clipboard.writeText(videoUrl);
+        alert('Video link copied to clipboard!');
+      } catch (error) {
+        console.error('Failed to copy link:', error);
+      }
     }
   };
 
@@ -316,6 +343,17 @@ export const VideoCard = ({ video, onPlay, onDelete, onRetry }: VideoCardProps) 
             >
               <RotateCcw className="w-4 h-4" />
               Retry
+            </button>
+          )}
+
+          {/* Share Button - Only for completed videos */}
+          {video.status === 'completed' && videoUrl && (
+            <button
+              onClick={handleShare}
+              className="flex items-center justify-center p-2.5 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors"
+              title="Share video"
+            >
+              <Share2 className="w-4 h-4" />
             </button>
           )}
         </div>

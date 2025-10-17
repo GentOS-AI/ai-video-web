@@ -7,17 +7,19 @@
     "blog": "博客",
     "login": "登录",
     "logout": "退出",
-    "myVideos": "我的视频",
+    "myVideos": "媒体中心",
     "credits": "{count} 积分"
   },
   "hero": {
     "title": {
-      "generate": "生成",
+      "prefix": "图片转",
+      "professional": "专业",
       "ads": "广告",
       "video": "视频",
-      "suffix": "为您的社交媒体。"
+      "by": "仅需",
+      "oneClick": "一键"
     },
-    "subtitle": "AI驱动的脚本写作、视频生成和社交媒体发布解决方案。",
+    "subtitle": "AI驱动的脚本写作、视频生成，并发布到您的社交媒体。",
     "input": {
       "placeholder": "描述您的视频：电影级产品展示，流畅的相机运动、专业照明和鲜艳的色彩..."
     },

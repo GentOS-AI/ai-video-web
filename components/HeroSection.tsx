@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import dynamic from "next/dynamic";
 import { Button } from "./Button";
 import { VideoPlayer } from "./VideoPlayer";
-import { Wand2, Sparkles, Loader2, AlertCircle } from "lucide-react";
+import { Wand2, Sparkles, Loader2, AlertCircle, Brain, Upload } from "lucide-react";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import { heroVideos, trialImages } from "@/lib/assets";
@@ -380,6 +380,12 @@ export const HeroSection = () => {
     reader.readAsDataURL(file);
 
     console.log("📁 File uploaded:", file.name, `${(file.size / (1024 * 1024)).toFixed(2)}MB`);
+
+    // Automatically trigger script generation after file upload
+    // Use setTimeout to ensure file state is updated
+    setTimeout(() => {
+      handleGenerateScript();
+    }, 100);
   };
 
   const handleFileValidationError = (error: string) => {
@@ -448,7 +454,7 @@ export const HeroSection = () => {
   return (
     <section className="pt-20 sm:pt-24 pb-12 sm:pb-16">
       <div className="w-full md:max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
-        <div className="grid lg:grid-cols-2 gap-6 sm:gap-8 lg:gap-12 items-center">
+        <div className="grid lg:grid-cols-[53%_47%] gap-6 sm:gap-8 lg:gap-12 items-end">
           {/* Left Side - Generation Form */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -459,14 +465,13 @@ export const HeroSection = () => {
             {/* Heading */}
             <div className="space-y-2 sm:space-y-3 md:space-y-4">
               <h1 className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">
-                {t('title.generate')}{" "}
-                <span className="bg-gradient-to-r from-purple-600 to-purple-500 bg-clip-text text-transparent">
-                  {t('title.ads')}
-                </span>{" "}
+                {t('title.prefix')}{" "}
+                {t('title.professional')}{" "}
                 <span className="bg-gradient-to-r from-purple-600 via-pink-500 to-yellow-400 bg-clip-text text-transparent">
-                  {t('title.video')}
+                  {t('title.ads')} {t('title.video')}
                 </span>{" "}
-                {t('title.suffix')}
+                {t('title.by')}{" "}
+                {t('title.oneClick')}
               </h1>
               <p className="text-sm sm:text-lg md:text-xl text-text-secondary leading-relaxed">
                 {t('subtitle')}
@@ -475,135 +480,17 @@ export const HeroSection = () => {
 
             {/* Integrated Input Card */}
             <div className="relative bg-white border border-gray-200 rounded-2xl overflow-visible transition-all duration-300 hover:border-purple-200 hover:shadow-xl hover:shadow-purple-500/10">
-              {/* Card Header */}
-              <div className="flex items-center justify-between px-4 py-3 sm:px-6 sm:py-4 border-b border-gray-100 bg-white/0">
-                {/* Left: AI Script Generator with Tooltip - Hidden on mobile */}
-                <div className="hidden sm:flex items-center space-x-2 relative">
-                  <button
-                    className="flex items-center space-x-2 hover:opacity-80 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
-                    onClick={handleGenerateScript}
-                    disabled={isGeneratingScript}
-                    onMouseEnter={() => setShowHelperTooltip(true)}
-                    onMouseLeave={() => setShowHelperTooltip(false)}
-                  >
-                    {isGeneratingScript ? (
-                      <Loader2 className="w-4 h-4 text-purple-600 animate-spin" />
-                    ) : (
-                      <Wand2 className="w-4 h-4 text-purple-600" />
-                    )}
-                    <span className="text-xs font-semibold text-purple-600 relative pr-5">
-                      {isGeneratingScript ? t('aiScriptGenerator.generating') : t('aiScriptGenerator.title')}
-
-                      {/* Pro Badge - positioned at top-right with spacing */}
-                      <span className="absolute -top-2 -right-1 px-1 py-0.5 bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-[7px] font-bold rounded-sm pointer-events-none">
-                        {t('aiScriptGenerator.proBadge')}
-                      </span>
-                    </span>
-
-                    {/* Tooltip - 显示在上方 */}
-                    {showHelperTooltip && !isGeneratingScript && (
-                      <div className="absolute left-0 bottom-full mb-2 w-64 bg-purple-50 text-purple-900 text-xs rounded-lg shadow-xl shadow-purple-200/50 border-2 border-purple-300 p-3 z-[9999] pointer-events-none">
-                        <div className="relative">
-                          {/* Arrow - 指向下方 */}
-                          <div className="absolute -bottom-5 left-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-purple-50" />
-                          <p className="leading-relaxed">
-                            <strong>{t('aiScriptGenerator.tooltipTitle')}</strong><br/>
-                            {t('aiScriptGenerator.tooltipDescription')}
-                            {!uploadedFile && <span className="text-red-600 font-semibold"><br/>{t('aiScriptGenerator.tooltipWarning')}</span>}
-                          </p>
-                        </div>
-                      </div>
-                    )}
-                  </button>
-                </div>
-
-                {/* Right: Model Selector Dropdown - Centered on mobile */}
-                <div
-                  ref={dropdownRef}
-                  className="relative w-full sm:w-auto flex justify-center sm:justify-end"
-                >
-                  <button
-                    onClick={() => setIsModelDropdownOpen(!isModelDropdownOpen)}
-                    className="flex items-center justify-center px-2.5 py-1.5 sm:px-3 sm:py-1.5 bg-white border border-gray-200 rounded-full hover:border-purple-300 hover:bg-purple-50/50 transition-all text-xs font-medium"
-                  >
-                    <span className="text-text-primary">{selectedModel?.name}</span>
-                  </button>
-
-                  {/* Dropdown Menu - Full width on mobile */}
-                  {isModelDropdownOpen && (
-                    <div className="absolute right-0 top-full mt-2 w-full sm:w-52 bg-white border border-gray-200 rounded-lg shadow-lg z-20">
-                      {aiModels.map((model) => (
-                        <button
-                          key={model.id}
-                          onClick={() => {
-                            setSelectedModel(model);
-                            setIsModelDropdownOpen(false);
-                          }}
-                          className={`w-full px-3 py-2.5 text-left hover:bg-purple-50 transition-colors first:rounded-t-lg last:rounded-b-lg ${
-                            selectedModel?.id === model.id ? "bg-purple-50" : ""
-                          }`}
-                        >
-                          <div className="flex items-center justify-between gap-2">
-                            <div className="flex-1">
-                              <div className="text-xs font-medium text-text-primary">
-                                {model.name}
-                              </div>
-                              <div className="text-[10px] text-text-muted">
-                                {model.version}
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-1 px-2 py-1 bg-purple-100 rounded-full">
-                              <span className="text-[10px] font-semibold text-purple-600">
-                                {model.credits}
-                              </span>
-                              <svg className="w-3 h-3 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
-                                <path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z"/>
-                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V5z" clipRule="evenodd"/>
-                              </svg>
-                            </div>
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-
               {/* Main Input Area */}
               <div className="p-4 sm:p-6">
-                <div className="relative pb-10">
-                  <textarea
-                    id="prompt"
-                    value={prompt}
-                    onChange={handlePromptChange}
-                    onPaste={handlePaste}
-                    placeholder={t('input.placeholder')}
-                    className="w-full px-0 py-0 border-0 focus:outline-none focus:ring-0 resize-none text-sm sm:text-base text-text-primary placeholder:text-text-muted"
-                    rows={3}
-                  />
-                  {/* Generate Button at bottom-right with safe spacing */}
-                  <div className="absolute bottom-0 right-0">
-                    <Button
-                      variant="primary"
-                      size="sm"
-                      onClick={handleGenerate}
-                      disabled={isGenerating || isGeneratingScript}
-                      className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 shadow-md flex items-center gap-1.5 text-xs sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {isGenerating ? (
-                        <>
-                          <Loader2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-spin" />
-                          {t('button.generating')}
-                        </>
-                      ) : (
-                        <>
-                          <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                          {!isAuthenticated || !user || user.subscription_plan === 'free' ? t('button.tryFree') : t('button.generate')}
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                </div>
+                <textarea
+                  id="prompt"
+                  value={prompt}
+                  onChange={handlePromptChange}
+                  onPaste={handlePaste}
+                  placeholder={t('input.placeholder')}
+                  className="w-full px-0 py-0 border-0 focus:outline-none focus:ring-0 resize-none text-sm sm:text-base text-text-primary placeholder:text-text-muted"
+                  rows={6}
+                />
               </div>
 
               {/* Generation Status/Error Messages */}
@@ -645,11 +532,13 @@ export const HeroSection = () => {
                 </div>
               )}
 
-              {/* Bottom Toolbar */}
+              {/* Bottom Toolbar: Images on left, Buttons on right */}
               <div className="px-4 py-3 sm:px-6 sm:py-4 bg-gray-50/50 border-t border-gray-100">
-                <div className="flex items-center gap-2 sm:gap-3">
-                  {/* Upload Button with Uploaded File or Selected Image Preview */}
-                  <button
+                <div className="flex items-center justify-between gap-3">
+                  {/* Left: Upload Button + Image Thumbnails */}
+                  <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                    {/* Upload Button with Uploaded File or Selected Image Preview */}
+                    <button
                     onClick={() => document.getElementById("file-upload")?.click()}
                     className={`relative flex-shrink-0 rounded-lg transition-all ${
                       uploadedFilePreview || selectedImage !== null
@@ -703,19 +592,7 @@ export const HeroSection = () => {
                         <div className="absolute bottom-0 right-0 w-3 h-3 bg-purple-500 rounded-tl-lg" />
                       </>
                     ) : (
-                      <svg
-                        className="w-6 h-6 sm:w-6 sm:h-6 text-text-muted"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                        />
-                      </svg>
+                      <Upload className="w-6 h-6 sm:w-6 sm:h-6 text-text-muted" />
                     )}
                   </button>
                   <input
@@ -825,6 +702,115 @@ export const HeroSection = () => {
                     </div>
                   </div>
                 </div>
+
+                  {/* Right: Icon Buttons */}
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    {/* AI Script Generator Icon */}
+                    <div
+                      className="relative"
+                      onMouseEnter={() => setShowHelperTooltip(true)}
+                      onMouseLeave={() => setShowHelperTooltip(false)}
+                    >
+                      <div className="w-9 h-9 rounded-lg border border-gray-200 hover:border-purple-300 hover:bg-purple-50 transition-all flex items-center justify-center relative">
+                        {isGeneratingScript ? (
+                          <Loader2 className="w-4 h-4 text-purple-600 animate-spin" />
+                        ) : (
+                          <Wand2 className="w-4 h-4 text-purple-600" />
+                        )}
+                        {/* Pro Badge */}
+                        <span className="absolute -top-1 -right-1 px-1 py-0.5 bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-[6px] font-bold rounded-sm pointer-events-none">
+                          PRO
+                        </span>
+                      </div>
+
+                      {/* Tooltip */}
+                      {showHelperTooltip && !isGeneratingScript && (
+                        <div className="absolute right-0 bottom-full mb-2 w-64 bg-purple-50 text-purple-900 text-xs rounded-lg shadow-xl shadow-purple-200/50 border-2 border-purple-300 p-3 z-[9999] pointer-events-none">
+                          <div className="relative">
+                            <div className="absolute -bottom-5 right-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-purple-50" />
+                            <p className="leading-relaxed">
+                              <strong>{t('aiScriptGenerator.tooltipTitle')}</strong><br/>
+                              {t('aiScriptGenerator.tooltipDescription')}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Model Selector Icon */}
+                    <div
+                      ref={dropdownRef}
+                      className="relative"
+                    >
+                      <button
+                        onClick={() => setIsModelDropdownOpen(!isModelDropdownOpen)}
+                        className="w-9 h-9 rounded-lg border border-gray-200 hover:border-purple-300 hover:bg-purple-50 transition-all flex items-center justify-center"
+                        title={selectedModel?.name}
+                      >
+                        <Brain className="w-4 h-4 text-purple-600" />
+                      </button>
+
+                      {/* Dropdown Menu */}
+                      {isModelDropdownOpen && (
+                        <div className="absolute right-0 bottom-full mb-2 w-52 bg-white border border-gray-200 rounded-lg shadow-lg z-20">
+                          {aiModels.map((model) => (
+                            <button
+                              key={model.id}
+                              onClick={() => {
+                                setSelectedModel(model);
+                                setIsModelDropdownOpen(false);
+                              }}
+                              className={`w-full px-3 py-2.5 text-left hover:bg-purple-50 transition-colors first:rounded-t-lg last:rounded-b-lg ${
+                                selectedModel?.id === model.id ? "bg-purple-50" : ""
+                              }`}
+                            >
+                              <div className="flex items-center justify-between gap-2">
+                                <div className="flex-1">
+                                  <div className="text-xs font-medium text-text-primary">
+                                    {model.name}
+                                  </div>
+                                  <div className="text-[10px] text-text-muted">
+                                    {model.version}
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-1 px-2 py-1 bg-purple-100 rounded-full">
+                                  <span className="text-[10px] font-semibold text-purple-600">
+                                    {model.credits}
+                                  </span>
+                                  <svg className="w-3 h-3 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z"/>
+                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V5z" clipRule="evenodd"/>
+                                  </svg>
+                                </div>
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Generate Button */}
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={handleGenerate}
+                      disabled={isGenerating || isGeneratingScript}
+                      className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 shadow-md flex items-center gap-1.5 text-xs sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isGenerating ? (
+                        <>
+                          <Loader2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-spin" />
+                          {t('button.generating')}
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                          {!isAuthenticated || !user || user.subscription_plan === 'free' ? t('button.tryFree') : t('button.generate')}
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
                 <p className="text-xs text-text-muted mt-2">
                   <span className="hidden sm:inline">
                     {t('upload.instructions')}
@@ -840,7 +826,7 @@ export const HeroSection = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.1, ease: "easeOut" }}
-            className="relative order-1 lg:order-2"
+            className="relative order-1 lg:order-2 pt-8 lg:pt-0"
             style={{ willChange: "transform, opacity" }}
           >
             {/* Simplified Background - Lightweight gradient */}

@@ -7,17 +7,19 @@
     "blog": "部落格",
     "login": "登入",
     "logout": "登出",
-    "myVideos": "我的影片",
+    "myVideos": "媒體中心",
     "credits": "{count} 點數"
   },
   "hero": {
     "title": {
-      "generate": "生成",
+      "prefix": "圖片轉",
+      "professional": "專業",
       "ads": "廣告",
       "video": "影片",
-      "suffix": "為您的社群媒體。"
+      "by": "僅需",
+      "oneClick": "一鍵"
     },
-    "subtitle": "AI驅動的腳本撰寫、影片生成和社群媒體發布解決方案。",
+    "subtitle": "AI驅動的腳本撰寫、影片生成，並發布到您的社群媒體。",
     "input": {
       "placeholder": "描述您的影片：電影級產品展示，流暢的相機運動、專業照明和鮮豔的色彩..."
     },

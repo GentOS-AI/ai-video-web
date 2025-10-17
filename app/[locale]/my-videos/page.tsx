@@ -233,7 +233,7 @@ export default function MediaCenterPage() {
                 }`}
               >
                 <ImageIconLucide className="w-5 h-5" />
-                <span>Uploaded Images</span>
+                <span>Images</span>
                 {images.length > 0 && (
                   <span className={`ml-1 px-2 py-0.5 rounded-full text-xs font-bold ${
                     activeTab === 'images' ? 'bg-white/20' : 'bg-gray-100'

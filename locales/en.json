@@ -7,17 +7,19 @@
     "blog": "Blog",
     "login": "Login",
     "logout": "Logout",
-    "myVideos": "My Videos",
+    "myVideos": "Media Center",
     "credits": "{count} credits"
   },
   "hero": {
     "title": {
-      "generate": "Generate",
+      "prefix": "Image to",
+      "professional": "Professional",
       "ads": "Ads",
       "video": "Video",
-      "suffix": "for your social media."
+      "by": "by Only",
+      "oneClick": "One Click"
     },
-    "subtitle": "AI-powered solution for script writing, video generation, and social media publishing.",
+    "subtitle": "AI-powered script writing, video generation, and publish to your social media.",
     "input": {
       "placeholder": "Describe your video: A cinematic product showcase with smooth camera movements, professional lighting, and vibrant colors..."
     },

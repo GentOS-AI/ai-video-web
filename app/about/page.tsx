@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
-import { Sparkles, Target, Users, Zap } from "lucide-react";
+import { Target, Users, Zap } from "lucide-react";
+import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "About Us - AdsVideo",
@@ -27,7 +28,7 @@ export default function AboutPage() {
               About <span className="text-gradient-purple">AdsVideo</span>
             </h1>
             <p className="text-xl text-gray-600 leading-relaxed">
-              We're on a mission to democratize professional video creation,
+              We&apos;re on a mission to democratize professional video creation,
               empowering businesses and creators with cutting-edge AI
               technology.
             </p>
@@ -54,7 +55,7 @@ export default function AboutPage() {
                   specialized skills.
                 </p>
                 <p className="text-gray-600 leading-relaxed">
-                  We're changing that by harnessing the power of AI to make
+                  We&apos;re changing that by harnessing the power of AI to make
                   video creation as simple as describing your vision. Our
                   platform transforms your ideas into stunning advertising
                   videos in minutes, not weeks.
@@ -211,12 +212,12 @@ export default function AboutPage() {
             <p className="text-xl text-gray-600 mb-8">
               Join thousands of businesses creating professional videos with AI
             </p>
-            <a
+            <Link
               href="/"
               className="inline-block px-8 py-4 bg-purple-500 text-white rounded-lg hover:bg-purple-600 hover:shadow-xl transition-all font-semibold text-lg"
             >
               Start Creating Videos
-            </a>
+            </Link>
           </div>
         </section>
       </main>

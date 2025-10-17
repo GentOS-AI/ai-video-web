@@ -95,7 +95,8 @@ async def upload_image(
             status_code=status.HTTP_200_OK,
             content={
                 "message": "File uploaded successfully",
-                "file_path": file_path,
+                "url": file_path,  # Frontend expects 'url' key
+                "file_path": file_path,  # Keep for backward compatibility
                 "filename": file.filename,
             },
         )

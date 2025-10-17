@@ -314,3 +314,31 @@ export const creditsService = {
     return data;
   },
 };
+
+// AI Service
+export const aiService = {
+  /**
+   * Generate video script from uploaded product image using Gemini AI
+   */
+  async generateScript(
+    file: File,
+    duration: number = 4
+  ): Promise<{
+    script: string;
+    style?: string;
+    camera?: string;
+    lighting?: string;
+    tokens_used: number;
+  }> {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('duration', duration.toString());
+
+    const { data } = await apiClient.post('/ai/generate-script', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return data;
+  },
+};

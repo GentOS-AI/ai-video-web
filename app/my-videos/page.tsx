@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Video as VideoIcon, Loader2, Film, RefreshCw } from "lucide-react";
+import { ArrowLeft, Video as VideoIcon, Loader2, Film, RefreshCw, Image as ImageIconLucide, Play } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNotification } from "@/contexts/NotificationContext";
 import { VideoCard } from "@/components/VideoCard";
@@ -12,11 +12,17 @@ import { VideoModal } from "@/components/VideoModal";
 import { VideoStatusFilter, type VideoStatusType } from "@/components/VideoStatusFilter";
 import { getUserVideos, deleteVideo, retryVideo, type Video } from "@/lib/services/videoService";
 
-export default function MyVideosPage() {
+type TabType = 'videos' | 'images';
+
+export default function MediaCenterPage() {
   const router = useRouter();
   const { isAuthenticated, loading: authLoading, user } = useAuth();
   const { showToast, showConfirm } = useNotification();
 
+  // Tab state
+  const [activeTab, setActiveTab] = useState<TabType>('videos');
+
+  // Video states
   const [videos, setVideos] = useState<Video[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -29,6 +35,10 @@ export default function MyVideosPage() {
 
   // Refresh countdown state
   const [refreshCountdown, setRefreshCountdown] = useState(10);
+
+  // Image states (placeholder for now - will be implemented when API is ready)
+  const [images] = useState<unknown[]>([]);
+  const [imagesLoading] = useState(false);
 
   // Calculate status counts
   const statusCounts = {
@@ -69,13 +79,15 @@ export default function MyVideosPage() {
       return;
     }
 
-    if (isAuthenticated) {
+    if (isAuthenticated && activeTab === 'videos') {
       fetchVideos();
     }
-  }, [isAuthenticated, authLoading, router, fetchVideos]);
+  }, [isAuthenticated, authLoading, router, fetchVideos, activeTab]);
 
   // Auto-refresh for processing videos with countdown
   useEffect(() => {
+    if (activeTab !== 'videos') return;
+
     const hasProcessingVideos = videos.some(
       v => v.status === 'pending' || v.status === 'processing'
     );
@@ -106,7 +118,7 @@ export default function MyVideosPage() {
       clearInterval(countdownInterval);
       clearInterval(refreshInterval);
     };
-  }, [videos, fetchVideos]);
+  }, [videos, fetchVideos, activeTab]);
 
   // Filter videos by active status
   const filteredVideos = activeStatus === 'all'
@@ -202,105 +214,192 @@ export default function MyVideosPage() {
               )}
               <div>
                 <h1 className="text-3xl sm:text-4xl font-bold text-gray-900">
-                  My Videos
+                  Media Center
                 </h1>
                 <p className="text-gray-600 mt-1">
-                  {user?.name ? `${user.name}'s video collection` : 'Manage your AI-generated videos'}
+                  {user?.name ? `${user.name}&apos;s media library` : 'Manage your AI-generated content'}
                 </p>
               </div>
             </div>
 
-            {/* Status Filter and Refresh Indicator */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 justify-between">
-              <VideoStatusFilter
-                activeStatus={activeStatus}
-                onStatusChange={handleStatusChange}
-                counts={statusCounts}
-              />
-
-              {/* Refresh Button with Countdown */}
-              {videos.some(v => v.status === 'pending' || v.status === 'processing') && (
-                <motion.button
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  onClick={handleManualRefresh}
-                  disabled={loading}
-                  className="flex items-center gap-2 px-4 py-2 bg-purple-50 border border-purple-200 rounded-lg hover:bg-purple-100 hover:border-purple-300 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <RefreshCw
-                    className={`w-4 h-4 text-purple-600 ${loading || refreshCountdown <= 3 ? 'animate-spin' : ''}`}
-                  />
-                  <span className="text-sm font-medium text-purple-700">
-                    {loading ? 'Refreshing...' : `Refresh in ${refreshCountdown}s`}
+            {/* Tab Switcher */}
+            <div className="flex items-center gap-2 mb-6">
+              <button
+                onClick={() => setActiveTab('images')}
+                className={`flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all ${
+                  activeTab === 'images'
+                    ? 'bg-purple-500 text-white shadow-lg shadow-purple-500/25'
+                    : 'bg-white text-gray-600 border border-gray-200 hover:border-purple-300 hover:text-purple-600'
+                }`}
+              >
+                <ImageIconLucide className="w-5 h-5" />
+                <span>Uploaded Images</span>
+                {images.length > 0 && (
+                  <span className={`ml-1 px-2 py-0.5 rounded-full text-xs font-bold ${
+                    activeTab === 'images' ? 'bg-white/20' : 'bg-gray-100'
+                  }`}>
+                    {images.length}
                   </span>
-                </motion.button>
-              )}
+                )}
+              </button>
+              <button
+                onClick={() => setActiveTab('videos')}
+                className={`flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all ${
+                  activeTab === 'videos'
+                    ? 'bg-purple-500 text-white shadow-lg shadow-purple-500/25'
+                    : 'bg-white text-gray-600 border border-gray-200 hover:border-purple-300 hover:text-purple-600'
+                }`}
+              >
+                <Play className="w-5 h-5" />
+                <span>Videos</span>
+                {videos.length > 0 && (
+                  <span className={`ml-1 px-2 py-0.5 rounded-full text-xs font-bold ${
+                    activeTab === 'videos' ? 'bg-white/20' : 'bg-gray-100'
+                  }`}>
+                    {videos.length}
+                  </span>
+                )}
+              </button>
             </div>
+
+            {/* Video Tab - Status Filter and Refresh */}
+            {activeTab === 'videos' && (
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 justify-between">
+                <VideoStatusFilter
+                  activeStatus={activeStatus}
+                  onStatusChange={handleStatusChange}
+                  counts={statusCounts}
+                />
+
+                {/* Refresh Button with Countdown */}
+                {videos.some(v => v.status === 'pending' || v.status === 'processing') && (
+                  <motion.button
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    onClick={handleManualRefresh}
+                    disabled={loading}
+                    className="flex items-center gap-2 px-4 py-2 bg-purple-50 border border-purple-200 rounded-lg hover:bg-purple-100 hover:border-purple-300 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <RefreshCw
+                      className={`w-4 h-4 text-purple-600 ${loading || refreshCountdown <= 3 ? 'animate-spin' : ''}`}
+                    />
+                    <span className="text-sm font-medium text-purple-700">
+                      {loading ? 'Refreshing...' : `Refresh in ${refreshCountdown}s`}
+                    </span>
+                  </motion.button>
+                )}
+              </div>
+            )}
           </div>
 
-          {/* Content */}
-          {loading ? (
-            <div className="flex flex-col items-center justify-center py-20">
-              <Loader2 className="w-12 h-12 text-purple-600 animate-spin mb-4" />
-              <p className="text-gray-600">Loading your videos...</p>
-            </div>
-          ) : error ? (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
-              <p className="text-red-600">{error}</p>
-              <button
-                onClick={fetchVideos}
-                className="mt-4 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+          {/* Content Area */}
+          <AnimatePresence mode="wait">
+            {activeTab === 'videos' ? (
+              <motion.div
+                key="videos"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.2 }}
               >
-                Try Again
-              </button>
-            </div>
-          ) : filteredVideos.length === 0 ? (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="bg-white rounded-2xl shadow-md p-12 text-center border border-gray-200"
-            >
-              <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-gradient-to-br from-purple-100 to-purple-50 flex items-center justify-center">
-                <Film className="w-10 h-10 text-purple-400" />
-              </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                No videos yet
-              </h3>
-              <p className="text-gray-600 mb-6">
-                {activeStatus === 'all'
-                  ? "Start creating your first AI video!"
-                  : `No ${activeStatus} videos found.`}
-              </p>
-              <button
-                onClick={() => router.push('/')}
-                className="px-6 py-3 bg-gradient-purple text-white rounded-lg hover:shadow-lg transition-all font-medium"
-              >
-                Generate Video
-              </button>
-            </motion.div>
-          ) : (
-            <>
-              {/* Video Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <AnimatePresence mode="popLayout">
-                  {filteredVideos.map((video) => (
-                    <VideoCard
-                      key={video.id}
-                      video={video}
-                      onPlay={handlePlay}
-                      onDelete={handleDelete}
-                      onRetry={handleRetry}
-                    />
-                  ))}
-                </AnimatePresence>
-              </div>
+                {loading ? (
+                  <div className="flex flex-col items-center justify-center py-20">
+                    <Loader2 className="w-12 h-12 text-purple-600 animate-spin mb-4" />
+                    <p className="text-gray-600">Loading your videos...</p>
+                  </div>
+                ) : error ? (
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+                    <p className="text-red-600">{error}</p>
+                    <button
+                      onClick={fetchVideos}
+                      className="mt-4 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                    >
+                      Try Again
+                    </button>
+                  </div>
+                ) : filteredVideos.length === 0 ? (
+                  <div className="bg-white rounded-2xl shadow-md p-12 text-center border border-gray-200">
+                    <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-gradient-to-br from-purple-100 to-purple-50 flex items-center justify-center">
+                      <Film className="w-10 h-10 text-purple-400" />
+                    </div>
+                    <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                      No videos yet
+                    </h3>
+                    <p className="text-gray-600 mb-6">
+                      {activeStatus === 'all'
+                        ? "Start creating your first AI video!"
+                        : `No ${activeStatus} videos found.`}
+                    </p>
+                    <button
+                      onClick={() => router.push('/')}
+                      className="px-6 py-3 bg-gradient-purple text-white rounded-lg hover:shadow-lg transition-all font-medium"
+                    >
+                      Generate Video
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    {/* Video Grid */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      <AnimatePresence mode="popLayout">
+                        {filteredVideos.map((video) => (
+                          <VideoCard
+                            key={video.id}
+                            video={video}
+                            onPlay={handlePlay}
+                            onDelete={handleDelete}
+                            onRetry={handleRetry}
+                          />
+                        ))}
+                      </AnimatePresence>
+                    </div>
 
-              {/* Pagination Info */}
-              <div className="mt-8 text-center text-sm text-gray-600">
-                Showing {filteredVideos.length} of {totalVideos} videos
-              </div>
-            </>
-          )}
+                    {/* Pagination Info */}
+                    <div className="mt-8 text-center text-sm text-gray-600">
+                      Showing {filteredVideos.length} of {totalVideos} videos
+                    </div>
+                  </>
+                )}
+              </motion.div>
+            ) : (
+              <motion.div
+                key="images"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.2 }}
+              >
+                {imagesLoading ? (
+                  <div className="flex flex-col items-center justify-center py-20">
+                    <Loader2 className="w-12 h-12 text-purple-600 animate-spin mb-4" />
+                    <p className="text-gray-600">Loading your images...</p>
+                  </div>
+                ) : images.length === 0 ? (
+                  <div className="bg-white rounded-2xl shadow-md p-12 text-center border border-gray-200">
+                    <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-gradient-to-br from-purple-100 to-purple-50 flex items-center justify-center">
+                      <ImageIconLucide className="w-10 h-10 text-purple-400" />
+                    </div>
+                    <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                      No images yet
+                    </h3>
+                    <p className="text-gray-600 mb-6">
+                      Upload your first image to get started with AI video generation!
+                    </p>
+                    <button
+                      onClick={() => router.push('/')}
+                      className="px-6 py-3 bg-gradient-purple text-white rounded-lg hover:shadow-lg transition-all font-medium"
+                    >
+                      Upload Image
+                    </button>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    {/* Image grid will be implemented here */}
+                  </div>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </main>
 

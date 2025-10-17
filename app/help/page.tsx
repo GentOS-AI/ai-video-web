@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { HelpCircle } from "lucide-react";
 import { SimpleHeader } from "@/components/SimpleHeader";
 import { FAQAccordion } from "@/components/FAQAccordion";
+import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "Help Center - AdsVideo",
@@ -139,7 +140,7 @@ export default function HelpPage() {
         {/* Intro */}
         <div className="text-center mb-12">
           <p className="text-lg text-gray-600">
-            Can't find what you're looking for?{" "}
+            Can&apos;t find what you&apos;re looking for?{" "}
             <a
               href="mailto:support@adsvideo.co"
               className="text-purple-600 hover:text-purple-700 font-semibold"
@@ -173,12 +174,12 @@ export default function HelpPage() {
             >
               Email Support
             </a>
-            <a
+            <Link
               href="/"
               className="px-6 py-3 bg-white text-purple-600 border-2 border-purple-600 rounded-lg hover:bg-purple-50 transition-all font-semibold"
             >
               Back to Home
-            </a>
+            </Link>
           </div>
         </div>
       </main>

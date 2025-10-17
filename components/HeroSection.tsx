@@ -8,7 +8,7 @@ import { Wand2, Sparkles, Loader2, AlertCircle } from "lucide-react";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import { heroVideos, trialImages } from "@/lib/assets";
-import { videoService, userService } from "@/lib/api/services";
+import { videoService, userService, aiService } from "@/lib/api/services";
 import type { Video, RecentUsersResponse } from "@/lib/api/services";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNotification } from "@/contexts/NotificationContext";
@@ -40,7 +40,7 @@ export const HeroSection = () => {
   const [showHelperTooltip, setShowHelperTooltip] = useState(false);
   const [isPricingOpen, setIsPricingOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const maxChars = 500;
+  const maxChars = 5000;
 
   // Video generation states
   const [isGenerating, setIsGenerating] = useState(false);
@@ -48,6 +48,11 @@ export const HeroSection = () => {
   const [generationError, setGenerationError] = useState<string | null>(null);
   const [generationProgress, setGenerationProgress] = useState<string>("Starting...");
   const [streamingVideoId, setStreamingVideoId] = useState<number | null>(null);
+
+  // Script generation states
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [uploadedFilePreview, setUploadedFilePreview] = useState<string | null>(null);
+  const [isGeneratingScript, setIsGeneratingScript] = useState(false);
 
   // Use SSE Hook for real-time progress updates
   const { messages, isConnected, lastMessage } = useVideoStream({
@@ -79,6 +84,50 @@ export const HeroSection = () => {
     const text = e.target.value;
     if (text.length <= maxChars) {
       setPrompt(text);
+    }
+  };
+
+  const handlePaste = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    e.preventDefault();
+    const pastedText = e.clipboardData.getData('text');
+
+    // Get current cursor position
+    const target = e.target as HTMLTextAreaElement;
+    const start = target.selectionStart;
+    const end = target.selectionEnd;
+
+    // Calculate new text
+    const currentText = prompt;
+    const beforeCursor = currentText.substring(0, start);
+    const afterCursor = currentText.substring(end);
+    const newText = beforeCursor + pastedText + afterCursor;
+
+    // Only update if within character limit
+    if (newText.length <= maxChars) {
+      setPrompt(newText);
+
+      // Set cursor position after paste
+      setTimeout(() => {
+        const newCursorPos = start + pastedText.length;
+        target.setSelectionRange(newCursorPos, newCursorPos);
+      }, 0);
+    } else {
+      // Trim pasted text to fit within limit
+      const availableSpace = maxChars - (beforeCursor.length + afterCursor.length);
+      if (availableSpace > 0) {
+        const trimmedPaste = pastedText.substring(0, availableSpace);
+        const trimmedText = beforeCursor + trimmedPaste + afterCursor;
+        setPrompt(trimmedText);
+
+        showToast(`Text trimmed to ${maxChars} character limit`, "warning");
+
+        setTimeout(() => {
+          const newCursorPos = start + trimmedPaste.length;
+          target.setSelectionRange(newCursorPos, newCursorPos);
+        }, 0);
+      } else {
+        showToast(`Cannot paste: ${maxChars} character limit reached`, "warning");
+      }
     }
   };
 
@@ -138,23 +187,62 @@ export const HeroSection = () => {
       return;
     }
 
-    if (selectedImage === null) {
+    // Check if either uploaded file or thumbnail is selected
+    if (!uploadedFile && selectedImage === null) {
       showToast("Please select or upload an image", "warning");
       return;
     }
 
     // Check if user has enough credits
-    const requiredCredits = selectedModel.credits;
+    const requiredCredits = selectedModel?.credits || 100;
     if (user.credits < requiredCredits) {
-      showToast(`Insufficient credits. You have ${user.credits.toFixed(0)} credits, but need ${requiredCredits} credits for ${selectedModel.name}.`, "error");
+      showToast(`Insufficient credits. You have ${user.credits.toFixed(0)} credits, but need ${requiredCredits} credits for ${selectedModel?.name || 'this model'}.`, "error");
       setIsPricingOpen(true);
       return;
     }
 
-    // Get selected image URL
-    const selectedImageData = trialImages.find(img => img.id === selectedImage);
-    if (!selectedImageData) {
-      showToast("Selected image not found", "error");
+    // Determine image URL based on upload or thumbnail selection
+    let imageUrl: string;
+
+    if (uploadedFile) {
+      // User uploaded a file - need to upload to backend first
+      try {
+        setGenerationProgress("Uploading image...");
+        const formData = new FormData();
+        formData.append('file', uploadedFile);  // Backend expects 'file' parameter
+
+        const uploadResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/upload/image`, {
+          method: 'POST',
+          body: formData,
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+          }
+        });
+
+        if (!uploadResponse.ok) {
+          throw new Error('Failed to upload image');
+        }
+
+        const { url } = await uploadResponse.json();
+        imageUrl = url;
+        console.log("📤 Image uploaded:", imageUrl);
+      } catch (uploadError) {
+        console.error("❌ Image upload failed:", uploadError);
+        showToast("Failed to upload image. Please try again.", "error");
+        setGenerationProgress("");
+        setIsGenerating(false);  // Reset generating state
+        return;
+      }
+    } else if (selectedImage !== null) {
+      // User selected a thumbnail
+      const selectedImageData = trialImages.find(img => img.id === selectedImage);
+      if (!selectedImageData) {
+        showToast("Selected image not found", "error");
+        return;
+      }
+      imageUrl = selectedImageData.highResSrc;
+    } else {
+      showToast("Please select or upload an image", "warning");
       return;
     }
 
@@ -165,14 +253,14 @@ export const HeroSection = () => {
       console.log("🎬 Generating video with:", {
         prompt,
         model: selectedModel?.id || 'sora-2',
-        imageUrl: selectedImageData.highResSrc,  // Use high-res version for AI
+        imageUrl: imageUrl,  // Use uploaded or selected image URL
       });
 
-      // Call video generation API with high-resolution image
+      // Call video generation API with image URL
       const video = await videoService.generate(
         prompt,
         selectedModel?.id || 'sora-2',
-        selectedImageData.highResSrc  // Use 1280x720 instead of 400x400
+        imageUrl  // Use uploaded file URL or thumbnail high-res URL
       );
 
       console.log("✅ Video generation task created:", video);
@@ -193,6 +281,103 @@ export const HeroSection = () => {
       }
       setIsGenerating(false);
     }
+  };
+
+  const handleGenerateScript = async () => {
+    // Validation
+    if (!isAuthenticated) {
+      showToast("Please login to use AI Script Generator", "warning");
+      // Redirect to Google OAuth login
+      const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+      const redirectUri = `${window.location.origin}/auth/callback`;
+      const scope = 'openid email profile';
+
+      const googleAuthUrl =
+        `https://accounts.google.com/o/oauth2/v2/auth?` +
+        `client_id=${clientId}&` +
+        `redirect_uri=${encodeURIComponent(redirectUri)}&` +
+        `response_type=code&` +
+        `scope=${encodeURIComponent(scope)}&` +
+        `access_type=offline&` +
+        `prompt=consent`;
+
+      window.location.href = googleAuthUrl;
+      return;
+    }
+
+    // Check subscription
+    if (!user || user.subscription_plan === 'free') {
+      showToast("AI Script Generator requires a subscription. Please upgrade!", "warning");
+      setIsPricingOpen(true);
+      return;
+    }
+
+    if (user.subscription_status !== 'active') {
+      showToast("Your subscription has expired. Please renew to continue.", "warning");
+      setIsPricingOpen(true);
+      return;
+    }
+
+    // Check if image is uploaded (not thumbnail selected)
+    if (!uploadedFile) {
+      showToast("Please upload an image first. Thumbnail selection is not supported for script generation.", "warning");
+      return;
+    }
+
+    try {
+      setIsGeneratingScript(true);
+      console.log("🤖 Generating script from image...");
+
+      // Call AI service
+      const result = await aiService.generateScript(uploadedFile, 4);
+
+      console.log("✅ Script generated:", result);
+
+      // Fill the textarea with generated script
+      setPrompt(result.script);
+
+      showToast("Script generated successfully! ✨", "success");
+
+      // Optional: Log additional info
+      if (result.style || result.camera || result.lighting) {
+        console.log("Script details:", {
+          style: result.style,
+          camera: result.camera,
+          lighting: result.lighting,
+          tokens: result.tokens_used
+        });
+      }
+
+    } catch (error: unknown) {
+      console.error("❌ Script generation failed:", error);
+      if (error instanceof Error) {
+        showToast(error.message || "Failed to generate script", "error");
+      } else {
+        showToast("Failed to generate script", "error");
+      }
+    } finally {
+      setIsGeneratingScript(false);
+    }
+  };
+
+  const handleFileUpload = (file: File) => {
+    setUploadedFile(file);
+    setSelectedImage(null); // Clear thumbnail selection when file is uploaded
+
+    // Create preview URL for uploaded file
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setUploadedFilePreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+
+    console.log("📁 File uploaded:", file.name, `${(file.size / (1024 * 1024)).toFixed(2)}MB`);
+  };
+
+  const handleFileValidationError = (error: string) => {
+    showToast(error, "error");
+    setUploadedFile(null);
+    setUploadedFilePreview(null);
   };
 
   // Update progress text based on SSE messages
@@ -287,14 +472,19 @@ export const HeroSection = () => {
                 {/* Left: AI Script Generator with Tooltip - Hidden on mobile */}
                 <div className="hidden sm:flex items-center space-x-2 relative">
                   <button
-                    className="flex items-center space-x-2 hover:opacity-80 transition-opacity"
-                    onClick={() => setIsPricingOpen(true)}
+                    className="flex items-center space-x-2 hover:opacity-80 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+                    onClick={handleGenerateScript}
+                    disabled={isGeneratingScript}
                     onMouseEnter={() => setShowHelperTooltip(true)}
                     onMouseLeave={() => setShowHelperTooltip(false)}
                   >
-                    <Wand2 className="w-4 h-4 text-purple-600" />
+                    {isGeneratingScript ? (
+                      <Loader2 className="w-4 h-4 text-purple-600 animate-spin" />
+                    ) : (
+                      <Wand2 className="w-4 h-4 text-purple-600" />
+                    )}
                     <span className="text-xs font-semibold text-purple-600 relative pr-5">
-                      AI Script Generator
+                      {isGeneratingScript ? "Generating..." : "AI Script Generator"}
 
                       {/* Pro Badge - positioned at top-right with spacing */}
                       <span className="absolute -top-2 -right-1 px-1 py-0.5 bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-[7px] font-bold rounded-sm pointer-events-none">
@@ -303,15 +493,15 @@ export const HeroSection = () => {
                     </span>
 
                     {/* Tooltip - 显示在上方 */}
-                    {showHelperTooltip && (
+                    {showHelperTooltip && !isGeneratingScript && (
                       <div className="absolute left-0 bottom-full mb-2 w-64 bg-purple-50 text-purple-900 text-xs rounded-lg shadow-xl shadow-purple-200/50 border-2 border-purple-300 p-3 z-[9999] pointer-events-none">
                         <div className="relative">
                           {/* Arrow - 指向下方 */}
                           <div className="absolute -bottom-5 left-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-purple-50" />
                           <p className="leading-relaxed">
-                            <strong>Click to unlock PRO features!</strong><br/>
-                            AI-powered script generator helps you craft engaging video descriptions.
-                            Get professional results in seconds.
+                            <strong>AI-powered script generation!</strong><br/>
+                            Upload an image and click here to automatically generate a professional video script using Gemini AI.
+                            {!uploadedFile && <span className="text-red-600 font-semibold"><br/>⚠ Upload an image first</span>}
                           </p>
                         </div>
                       </div>
@@ -378,6 +568,7 @@ export const HeroSection = () => {
                     id="prompt"
                     value={prompt}
                     onChange={handlePromptChange}
+                    onPaste={handlePaste}
                     placeholder="Describe your video: A cinematic product showcase with smooth camera movements, professional lighting, and vibrant colors..."
                     className="w-full px-0 py-0 border-0 focus:outline-none focus:ring-0 resize-none text-sm sm:text-base text-text-primary placeholder:text-text-muted"
                     rows={3}
@@ -388,7 +579,7 @@ export const HeroSection = () => {
                       variant="primary"
                       size="sm"
                       onClick={handleGenerate}
-                      disabled={isGenerating}
+                      disabled={isGenerating || isGeneratingScript}
                       className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 shadow-md flex items-center gap-1.5 text-xs sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {isGenerating ? (
@@ -449,17 +640,38 @@ export const HeroSection = () => {
               {/* Bottom Toolbar */}
               <div className="px-4 py-3 sm:px-6 sm:py-4 bg-gray-50/50 border-t border-gray-100">
                 <div className="flex items-center gap-2 sm:gap-3">
-                  {/* Upload Button with Selected Image Preview */}
+                  {/* Upload Button with Uploaded File or Selected Image Preview */}
                   <button
                     onClick={() => document.getElementById("file-upload")?.click()}
                     className={`relative flex-shrink-0 rounded-lg transition-all ${
-                      selectedImage !== null
+                      uploadedFilePreview || selectedImage !== null
                         ? "w-20 h-20 sm:w-18 sm:h-18 border-4 border-purple-500 shadow-lg shadow-purple-500/50 ring-4 ring-purple-200 scale-110 hover:scale-115"
                         : "w-16 h-16 sm:w-14 sm:h-14 border-2 border-dashed border-gray-300 hover:border-purple-400 hover:bg-purple-50"
                     } flex items-center justify-center overflow-hidden`}
-                    title={selectedImage !== null ? "Selected image - click to change" : "Upload image"}
+                    title={uploadedFilePreview ? "Uploaded image - click to change" : selectedImage !== null ? "Selected image - click to change" : "Upload image"}
                   >
-                    {selectedImage !== null ? (
+                    {uploadedFilePreview ? (
+                      <>
+                        {/* Uploaded File Preview */}
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={uploadedFilePreview}
+                          alt="Uploaded"
+                          className="w-full h-full object-cover"
+                        />
+
+                        {/* Upload Badge (different from selection checkmark) */}
+                        <div className="absolute -top-2 -right-2 w-7 h-7 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center shadow-lg border-2 border-white z-10">
+                          <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                          </svg>
+                        </div>
+
+                        {/* Corner Accent */}
+                        <div className="absolute top-0 left-0 w-3 h-3 bg-blue-500 rounded-br-lg" />
+                        <div className="absolute bottom-0 right-0 w-3 h-3 bg-blue-500 rounded-tl-lg" />
+                      </>
+                    ) : selectedImage !== null ? (
                       <>
                         {/* Selected Image Thumbnail */}
                         <Image
@@ -502,7 +714,67 @@ export const HeroSection = () => {
                     type="file"
                     id="file-upload"
                     className="hidden"
-                    accept="image/*"
+                    accept="image/jpeg,image/jpg,image/png"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        // Validate file
+                        const MAX_SIZE = 20 * 1024 * 1024; // 20MB
+                        const ALLOWED_TYPES = ["image/jpeg", "image/jpg", "image/png"];
+
+                        if (!ALLOWED_TYPES.includes(file.type.toLowerCase())) {
+                          handleFileValidationError("Invalid file type. Only JPG and PNG images are allowed.");
+                          return;
+                        }
+
+                        if (file.size > MAX_SIZE) {
+                          const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
+                          handleFileValidationError(`File too large (${sizeMB}MB). Maximum size is 20MB.`);
+                          return;
+                        }
+
+                        // Validate image dimensions
+                        const reader = new FileReader();
+                        reader.onload = (event) => {
+                          const img = new window.Image();
+                          img.onload = () => {
+                            const width = img.width;
+                            const height = img.height;
+
+                            // Sora 2 API supported dimensions
+                            const SUPPORTED_DIMENSIONS = [
+                              { width: 1280, height: 720, label: "1280x720 (16:9 Landscape)" },
+                              { width: 720, height: 1280, label: "720x1280 (9:16 Portrait)" },
+                              { width: 1024, height: 1024, label: "1024x1024 (1:1 Square)" },
+                            ];
+
+                            const isSupported = SUPPORTED_DIMENSIONS.some(
+                              dim => dim.width === width && dim.height === height
+                            );
+
+                            if (!isSupported) {
+                              const supportedSizes = SUPPORTED_DIMENSIONS.map(d => d.label).join(", ");
+                              handleFileValidationError(
+                                `Image dimensions (${width}x${height}) not supported. Please use one of: ${supportedSizes}`
+                              );
+                              return;
+                            }
+
+                            // Dimensions are valid - proceed with upload
+                            handleFileUpload(file);
+                            showToast(`File uploaded: ${file.name} (${width}x${height})`, "success");
+                          };
+
+                          img.onerror = () => {
+                            handleFileValidationError("Failed to load image. Please try a different file.");
+                          };
+
+                          img.src = event.target?.result as string;
+                        };
+
+                        reader.readAsDataURL(file);
+                      }
+                    }}
                   />
 
                   {/* Trial Images Slider with gradient hint */}
@@ -539,7 +811,9 @@ export const HeroSection = () => {
                   </div>
                 </div>
                 <p className="text-xs text-text-muted mt-2">
-                  <span className="hidden sm:inline">Upload or select an image to start your free trial.</span>
+                  <span className="hidden sm:inline">
+                    Upload (1280x720, 720x1280, or 1024x1024) or select an image to start.
+                  </span>
                   <span className="sm:hidden">← Swipe to view more images</span>
                 </p>
               </div>

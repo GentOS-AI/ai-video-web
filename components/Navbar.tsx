@@ -108,6 +108,12 @@ export const Navbar = () => {
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-4">
             <Link
+              href="/"
+              className="px-4 py-2 text-sm font-medium text-text-secondary hover:text-primary transition-colors"
+            >
+              Home
+            </Link>
+            <Link
               href="/about"
               className="px-4 py-2 text-sm font-medium text-text-secondary hover:text-primary transition-colors"
             >
@@ -196,7 +202,7 @@ export const Navbar = () => {
                         className="w-full px-4 py-2 text-left text-sm text-text-secondary hover:bg-purple-bg hover:text-primary transition-colors flex items-center space-x-2"
                       >
                         <Film className="w-4 h-4" />
-                        <span>My Videos</span>
+                        <span>Media Center</span>
                       </Link>
                       <button
                         onClick={handleLogout}
@@ -248,6 +254,13 @@ export const Navbar = () => {
             style={{ willChange: "height, opacity" }}
           >
             <div className="px-4 py-4 space-y-3">
+              <Link
+                href="/"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="block w-full text-left px-4 py-2 text-sm font-medium text-text-secondary hover:text-primary hover:bg-purple-bg rounded-lg transition-colors"
+              >
+                Home
+              </Link>
               <Link
                 href="/about"
                 onClick={() => setIsMobileMenuOpen(false)}
@@ -308,7 +321,7 @@ export const Navbar = () => {
                     className="w-full px-4 py-2 text-sm text-text-secondary hover:text-primary hover:bg-purple-bg rounded-lg transition-colors flex items-center space-x-2"
                   >
                     <Film className="w-4 h-4" />
-                    <span>My Videos</span>
+                    <span>Media Center</span>
                   </Link>
                   <button
                     onClick={handleLogout}

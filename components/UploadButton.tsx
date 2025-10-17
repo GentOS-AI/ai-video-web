@@ -1,30 +1,117 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { Upload, Image as ImageIcon } from "lucide-react";
+import { Upload, Image as ImageIcon, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface UploadButtonProps {
   onFileSelect?: (file: File) => void;
+  onValidationError?: (error: string) => void;
   className?: string;
 }
 
+// File validation constants
+const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
+const ALLOWED_TYPES = ["image/jpeg", "image/jpg", "image/png"];
+const ALLOWED_EXTENSIONS = [".jpg", ".jpeg", ".png"];
+
+// Sora 2 API supported image dimensions (width x height)
+const SUPPORTED_DIMENSIONS = [
+  { width: 1280, height: 720, label: "1280x720 (16:9 Landscape)" },
+  { width: 720, height: 1280, label: "720x1280 (9:16 Portrait)" },
+  { width: 1024, height: 1024, label: "1024x1024 (1:1 Square)" },
+];
+
 export const UploadButton: React.FC<UploadButtonProps> = ({
   onFileSelect,
+  onValidationError,
   className,
 }) => {
   const [preview, setPreview] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const validateFile = (file: File): string | null => {
+    // Check file type
+    if (!ALLOWED_TYPES.includes(file.type.toLowerCase())) {
+      return "Invalid file type. Only JPG and PNG images are allowed.";
+    }
+
+    // Check file extension
+    const fileName = file.name.toLowerCase();
+    if (!ALLOWED_EXTENSIONS.some(ext => fileName.endsWith(ext))) {
+      return "Invalid file extension. Only .jpg, .jpeg, and .png files are allowed.";
+    }
+
+    // Check file size
+    if (file.size > MAX_FILE_SIZE) {
+      const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
+      return `File too large (${sizeMB}MB). Maximum size is 20MB.`;
+    }
+
+    // Check minimum size
+    if (file.size < 1024) {
+      return "File is too small or corrupted.";
+    }
+
+    return null;
+  };
+
   const handleFileChange = (file: File) => {
+    setError(null);
+
+    if (!file) return;
+
+    // Validate file type and size
+    const validationError = validateFile(file);
+    if (validationError) {
+      setError(validationError);
+      onValidationError?.(validationError);
+      return;
+    }
+
+    // Only process image files
     if (file && file.type.startsWith("image/")) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setPreview(reader.result as string);
+        const result = reader.result as string;
+
+        // Validate image dimensions
+        const img = new Image();
+        img.onload = () => {
+          const width = img.width;
+          const height = img.height;
+
+          // Check if dimensions match any supported size
+          const isSupported = SUPPORTED_DIMENSIONS.some(
+            dim => dim.width === width && dim.height === height
+          );
+
+          if (!isSupported) {
+            const supportedSizes = SUPPORTED_DIMENSIONS.map(d => d.label).join(", ");
+            const errorMsg = `Image dimensions (${width}x${height}) not supported. Please use one of: ${supportedSizes}`;
+            setError(errorMsg);
+            onValidationError?.(errorMsg);
+            setPreview(null);
+            return;
+          }
+
+          // Dimensions are valid
+          setPreview(result);
+          onFileSelect?.(file);
+        };
+
+        img.onerror = () => {
+          const errorMsg = "Failed to load image. Please try a different file.";
+          setError(errorMsg);
+          onValidationError?.(errorMsg);
+          setPreview(null);
+        };
+
+        img.src = result;
       };
       reader.readAsDataURL(file);
-      onFileSelect?.(file);
     }
   };
 
@@ -66,7 +153,7 @@ export const UploadButton: React.FC<UploadButtonProps> = ({
       <input
         ref={fileInputRef}
         type="file"
-        accept="image/*"
+        accept="image/jpeg,image/jpg,image/png"
         className="hidden"
         onChange={(e) => {
           const file = e.target.files?.[0];
@@ -88,13 +175,26 @@ export const UploadButton: React.FC<UploadButtonProps> = ({
         </div>
       ) : (
         <div className="flex flex-col items-center justify-center p-6 space-y-2">
-          <ImageIcon className="w-10 h-10 text-text-muted" />
-          <p className="text-sm text-text-secondary font-medium">
-            Upload Image
+          <ImageIcon className={`w-10 h-10 ${error ? 'text-red-400' : 'text-text-muted'}`} />
+          <p className={`text-sm font-medium ${error ? 'text-red-600' : 'text-text-secondary'}`}>
+            {error || 'Upload Reference Image'}
           </p>
-          <p className="text-xs text-text-muted">
-            Click or drag to upload
-          </p>
+          {!error && (
+            <>
+              <p className="text-xs text-text-muted">
+                JPG/PNG, max 20MB
+              </p>
+              <p className="text-xs text-text-muted font-medium">
+                Supported sizes: 1280x720, 720x1280, 1024x1024
+              </p>
+            </>
+          )}
+          {error && (
+            <div className="flex items-center gap-1 text-xs text-red-500">
+              <AlertCircle className="w-3 h-3" />
+              <span>Please try again</span>
+            </div>
+          )}
         </div>
       )}
     </div>

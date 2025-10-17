@@ -53,7 +53,7 @@ class SoraVideoGenerator:
         Read local image file and encode to base64
 
         Args:
-            image_path: Path to local image file
+            image_path: Path to local image file (can be web path like /uploads/... or filesystem path)
 
         Returns:
             Base64 encoded image string
@@ -61,6 +61,12 @@ class SoraVideoGenerator:
         Raises:
             FileNotFoundError: If image file doesn't exist
         """
+        # Convert web path to filesystem path if needed
+        if image_path.startswith('/uploads/'):
+            # Web path: /uploads/user_1/xxx.jpeg -> Filesystem: ./uploads/user_1/xxx.jpeg
+            image_path = '.' + image_path
+            print(f"   Converted web path to filesystem path: {image_path}")
+
         with open(image_path, "rb") as image_file:
             encoded_image = base64.b64encode(image_file.read()).decode("utf-8")
         return encoded_image

@@ -240,7 +240,7 @@ export default function BlogPage() {
               advertising videos in minutes.
             </p>
             <p className="text-gray-600 leading-relaxed">
-              Whether you're a small business owner, marketing professional, or
+              Whether you&apos;re a small business owner, marketing professional, or
               content creator, our blog provides valuable insights, tutorials, and
               strategies to help you maximize the potential of AI video
               marketing. Stay ahead of the curve with our expert content.

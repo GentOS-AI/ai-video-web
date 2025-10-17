@@ -2,7 +2,7 @@
 API v1 routes
 """
 from fastapi import APIRouter
-from app.api.v1 import auth, users, videos, showcase, upload, credits
+from app.api.v1 import auth, users, videos, showcase, upload, credits, ai
 
 api_router = APIRouter()
 
@@ -13,3 +13,4 @@ api_router.include_router(videos.router, prefix="/videos", tags=["Videos"])
 api_router.include_router(showcase.router, prefix="/showcase", tags=["Showcase"])
 api_router.include_router(upload.router, prefix="/upload", tags=["Upload"])
 api_router.include_router(credits.router, prefix="/credits", tags=["Credits"])
+api_router.include_router(ai.router, prefix="/ai", tags=["AI Services"])

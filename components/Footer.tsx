@@ -71,26 +71,26 @@ export const Footer = () => {
             </ul>
           </div>
 
-          {/* Resources - New Column */}
+          {/* Policy Column */}
           <div className="space-y-4">
             <h3 className="text-sm font-semibold text-text-primary uppercase tracking-wider">
-              Resources
+              Policy
             </h3>
             <ul className="space-y-2">
               <li>
                 <a
-                  href="/help"
+                  href="/terms"
                   className="text-sm text-text-secondary hover:text-primary transition-colors"
                 >
-                  Help Center
+                  Terms of Service
                 </a>
               </li>
               <li>
                 <a
-                  href="/blog"
+                  href="/privacy"
                   className="text-sm text-text-secondary hover:text-primary transition-colors"
                 >
-                  Blog
+                  Privacy Policy
                 </a>
               </li>
             </ul>

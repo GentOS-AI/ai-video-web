@@ -61,7 +61,9 @@ class Settings(BaseSettings):
 
     # Credits
     DEFAULT_USER_CREDITS: float = 100.0
-    VIDEO_GENERATION_COST: float = 100.0  # Changed from 10.0 to 100.0
+    # Model-specific credit costs
+    SORA_2_COST: float = 100.0  # Sora-2 Standard
+    SORA_2_PRO_COST: float = 300.0  # Sora-2 Pro
 
     model_config = SettingsConfigDict(
         env_file=".env",

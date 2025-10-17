@@ -19,8 +19,7 @@ class VideoStatus(str, enum.Enum):
 class AIModel(str, enum.Enum):
     """Available AI models"""
     SORA_2 = "sora-2"
-    SORA_1 = "sora-1"
-    RUNWAY_GEN3 = "runway-gen3"
+    SORA_2_PRO = "sora-2-pro"
 
 
 class Video(Base):

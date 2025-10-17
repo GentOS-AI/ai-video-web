@@ -76,6 +76,7 @@ export const VideoModal = ({ video, isOpen, onClose }: VideoModalProps) => {
                   src={videoUrl}
                   poster={video.poster_url || undefined}
                   autoPlay={true}
+                  muted={false}
                 />
               </div>
             )}

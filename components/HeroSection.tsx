@@ -23,11 +23,10 @@ const PricingModal = dynamic(
 // Use imported data
 const sampleVideos = heroVideos;
 
-// AI Models for dropdown
+// AI Models for dropdown with credit costs
 const aiModels = [
-  { id: "sora-2", name: "Sora 2", version: "Latest" },
-  { id: "sora-1", name: "Sora 1", version: "Stable" },
-  { id: "runway-gen3", name: "Runway Gen-3", version: "Beta" },
+  { id: "sora-2", name: "Sora-2", version: "Standard", credits: 100 },
+  { id: "sora-2-pro", name: "Sora-2 Pro", version: "Premium", credits: 300 },
 ];
 
 export const HeroSection = () => {
@@ -86,7 +85,21 @@ export const HeroSection = () => {
   const handleGenerate = async () => {
     // Validation with Toast notifications
     if (!isAuthenticated) {
-      showToast("Please login to generate videos", "warning");
+      // Redirect to Google OAuth login
+      const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+      const redirectUri = `${window.location.origin}/auth/callback`;
+      const scope = 'openid email profile';
+
+      const googleAuthUrl =
+        `https://accounts.google.com/o/oauth2/v2/auth?` +
+        `client_id=${clientId}&` +
+        `redirect_uri=${encodeURIComponent(redirectUri)}&` +
+        `response_type=code&` +
+        `scope=${encodeURIComponent(scope)}&` +
+        `access_type=offline&` +
+        `prompt=consent`;
+
+      window.location.href = googleAuthUrl;
       return;
     }
 
@@ -130,9 +143,10 @@ export const HeroSection = () => {
       return;
     }
 
-    // Check if user has enough credits (100 credits required)
-    if (user.credits < 100) {
-      showToast(`Insufficient credits. You have ${user.credits} credits, but need 100 credits to generate a video.`, "error");
+    // Check if user has enough credits
+    const requiredCredits = selectedModel.credits;
+    if (user.credits < requiredCredits) {
+      showToast(`Insufficient credits. You have ${user.credits.toFixed(0)} credits, but need ${requiredCredits} credits for ${selectedModel.name}.`, "error");
       setIsPricingOpen(true);
       return;
     }
@@ -252,14 +266,17 @@ export const HeroSection = () => {
             {/* Heading */}
             <div className="space-y-2 sm:space-y-3 md:space-y-4">
               <h1 className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">
-                Create Stunning{" "}
+                Generate{" "}
                 <span className="bg-gradient-to-r from-purple-600 to-purple-500 bg-clip-text text-transparent">
-                  AI Videos
-                </span>
+                  Ads
+                </span>{" "}
+                <span className="bg-gradient-to-r from-purple-600 via-pink-500 to-yellow-400 bg-clip-text text-transparent">
+                  Video
+                </span>{" "}
+                for your social media.
               </h1>
               <p className="text-sm sm:text-lg md:text-xl text-text-secondary leading-relaxed">
-                Transform your ideas into professional advertising videos in
-                seconds with Sora 2 AI technology.
+                AI-powered solution for script writing, video generation, and social media publishing.
               </p>
             </div>
 
@@ -316,7 +333,7 @@ export const HeroSection = () => {
 
                   {/* Dropdown Menu - Full width on mobile */}
                   {isModelDropdownOpen && (
-                    <div className="absolute right-0 top-full mt-2 w-full sm:w-44 bg-white border border-gray-200 rounded-lg shadow-lg z-20">
+                    <div className="absolute right-0 top-full mt-2 w-full sm:w-52 bg-white border border-gray-200 rounded-lg shadow-lg z-20">
                       {aiModels.map((model) => (
                         <button
                           key={model.id}
@@ -328,13 +345,24 @@ export const HeroSection = () => {
                             selectedModel?.id === model.id ? "bg-purple-50" : ""
                           }`}
                         >
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs font-medium text-text-primary">
-                              {model.name}
-                            </span>
-                            <span className="text-[10px] text-text-muted">
-                              {model.version}
-                            </span>
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex-1">
+                              <div className="text-xs font-medium text-text-primary">
+                                {model.name}
+                              </div>
+                              <div className="text-[10px] text-text-muted">
+                                {model.version}
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-1 px-2 py-1 bg-purple-100 rounded-full">
+                              <span className="text-[10px] font-semibold text-purple-600">
+                                {model.credits}
+                              </span>
+                              <svg className="w-3 h-3 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z"/>
+                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V5z" clipRule="evenodd"/>
+                              </svg>
+                            </div>
                           </div>
                         </button>
                       ))}
@@ -371,7 +399,7 @@ export const HeroSection = () => {
                       ) : (
                         <>
                           <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                          Generate
+                          {!isAuthenticated || !user || user.subscription_plan === 'free' ? 'Try for free' : 'Generate'}
                         </>
                       )}
                     </Button>

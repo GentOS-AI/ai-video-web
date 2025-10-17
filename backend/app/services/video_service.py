@@ -57,10 +57,17 @@ def create_video_generation_task(
             "Your subscription has expired. Please renew to continue."
         )
 
+    # Calculate credits cost based on model
+    model_id = video_request.model
+    if model_id == "sora-2-pro":
+        credits_cost = settings.SORA_2_PRO_COST
+    else:  # Default to sora-2
+        credits_cost = settings.SORA_2_COST
+
     # Check if user has enough credits
-    if user.credits < settings.VIDEO_GENERATION_COST:
+    if user.credits < credits_cost:
         raise InsufficientCreditsException(
-            f"Insufficient credits. Required: {settings.VIDEO_GENERATION_COST}, Available: {user.credits}"
+            f"Insufficient credits. Required: {credits_cost}, Available: {user.credits}"
         )
 
     # Create video record
@@ -74,8 +81,11 @@ def create_video_generation_task(
 
     db.add(video)
 
-    # Deduct credits
-    user.credits -= settings.VIDEO_GENERATION_COST
+    # Deduct credits based on model
+    user.credits -= credits_cost
+
+    print(f"💰 Credits deducted: {credits_cost} for model {model_id}")
+    print(f"   Remaining credits: {user.credits}")
 
     db.commit()
     db.refresh(video)
@@ -214,25 +224,21 @@ def update_video_status(
     return video
 
 
-# Mock AI model information (replace with real data)
+# AI model information
 AI_MODELS_INFO = [
     {
         "id": "sora-2",
-        "name": "Sora 2",
-        "version": "Latest",
-        "description": "Most advanced AI video generation model with photorealistic results",
+        "name": "Sora-2",
+        "version": "Standard",
+        "description": "Advanced AI video generation model with high-quality results (100 credits)",
+        "credits_cost": 100,
     },
     {
-        "id": "sora-1",
-        "name": "Sora 1",
-        "version": "Stable",
-        "description": "Reliable AI video generation with consistent quality",
-    },
-    {
-        "id": "runway-gen3",
-        "name": "Runway Gen-3",
-        "version": "Beta",
-        "description": "High-quality video generation with fast processing",
+        "id": "sora-2-pro",
+        "name": "Sora-2 Pro",
+        "version": "Premium",
+        "description": "Professional-grade AI video generation with enhanced quality and features (300 credits)",
+        "credits_cost": 300,
     },
 ]
 

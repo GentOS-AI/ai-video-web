@@ -114,7 +114,7 @@ export const ShowcaseSection = () => {
           {/* Navigation Buttons - Mobile inline, desktop outside */}
           <button
             onClick={prevPage}
-            className="absolute left-2 sm:-translate-x-12 top-1/2 -translate-y-1/2 z-10 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white shadow-lg hover:shadow-xl transition-all hover:scale-110 flex items-center justify-center border border-gray-200 hover:border-purple-300"
+            className="hidden absolute left-2 sm:-translate-x-12 top-1/2 -translate-y-1/2 z-10 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white shadow-lg hover:shadow-xl transition-all hover:scale-110 items-center justify-center border border-gray-200 hover:border-purple-300"
             aria-label="Previous videos"
           >
             <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6 text-gray-600" />
@@ -122,7 +122,7 @@ export const ShowcaseSection = () => {
 
           <button
             onClick={nextPage}
-            className="absolute right-2 sm:translate-x-12 top-1/2 -translate-y-1/2 z-10 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white shadow-lg hover:shadow-xl transition-all hover:scale-110 flex items-center justify-center border border-gray-200 hover:border-purple-300"
+            className="hidden absolute right-2 sm:translate-x-12 top-1/2 -translate-y-1/2 z-10 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white shadow-lg hover:shadow-xl transition-all hover:scale-110 items-center justify-center border border-gray-200 hover:border-purple-300"
             aria-label="Next videos"
           >
             <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6 text-gray-600" />

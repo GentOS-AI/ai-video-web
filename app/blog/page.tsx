@@ -1,26 +1,10 @@
-import type { Metadata } from "next";
+"use client";
+
+import { useState } from "react";
 import { BookOpen, Calendar, Clock } from "lucide-react";
 import { SimpleHeader } from "@/components/SimpleHeader";
-
-export const metadata: Metadata = {
-  title: "Blog - AI Video Marketing Tips & Updates | AdsVideo",
-  description:
-    "Discover expert tips, insights, and the latest updates on AI video generation, marketing strategies, and content creation. Stay ahead with AdsVideo's blog.",
-  keywords: [
-    "AI video marketing",
-    "video generation tips",
-    "AI content creation",
-    "Sora 2 tutorials",
-    "video marketing strategies",
-    "advertising tips",
-  ],
-  openGraph: {
-    title: "AdsVideo Blog - AI Video Marketing Tips & Insights",
-    description:
-      "Expert guides, tips, and updates on AI-powered video generation for businesses.",
-    type: "website",
-  },
-};
+import { useAuth } from "@/contexts/AuthContext";
+import { useNotification } from "@/contexts/NotificationContext";
 
 interface BlogPost {
   id: number;
@@ -125,6 +109,20 @@ const categories = [
 ];
 
 export default function BlogPage() {
+  const { isAuthenticated } = useAuth();
+  const { showToast } = useNotification();
+  const [isSubscribed, setIsSubscribed] = useState(false);
+
+  const handleSubscribe = () => {
+    if (!isAuthenticated) {
+      showToast("Please log in to subscribe to our newsletter", "error");
+      return;
+    }
+
+    setIsSubscribed(true);
+    showToast("Successfully subscribed to newsletter!", "success");
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-purple-50/30">
       <SimpleHeader
@@ -209,19 +207,24 @@ export default function BlogPage() {
             Get the latest tips, insights, and updates on AI video generation
             delivered straight to your inbox. No spam, unsubscribe anytime.
           </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 max-w-md mx-auto">
-            <input
-              type="email"
-              placeholder="Enter your email"
-              className="w-full sm:flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent"
-            />
-            <button className="w-full sm:w-auto px-6 py-3 bg-purple-500 text-white rounded-lg hover:bg-purple-600 hover:shadow-lg transition-all font-semibold whitespace-nowrap">
-              Subscribe
+          <div className="flex justify-center">
+            <button
+              onClick={handleSubscribe}
+              disabled={isSubscribed}
+              className={`px-8 py-3 rounded-lg font-semibold transition-all ${
+                isSubscribed
+                  ? "bg-pink-100 text-pink-400 cursor-not-allowed"
+                  : "bg-purple-500 text-white hover:bg-purple-600 hover:shadow-lg"
+              }`}
+            >
+              {isSubscribed ? "Subscribed" : "Subscribe"}
             </button>
           </div>
-          <p className="text-xs text-gray-500 mt-4">
-            By subscribing, you agree to our Privacy Policy.
-          </p>
+          {!isSubscribed && (
+            <p className="text-xs text-gray-500 mt-4">
+              By subscribing, you agree to our Privacy Policy.
+            </p>
+          )}
         </div>
 
         {/* SEO Content Section */}

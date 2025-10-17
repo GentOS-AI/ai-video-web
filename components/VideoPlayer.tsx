@@ -8,6 +8,7 @@ interface VideoPlayerProps {
   poster?: string;
   className?: string;
   autoPlay?: boolean;
+  muted?: boolean;
   preload?: "none" | "metadata" | "auto";
   onPlayStateChange?: (isPlaying: boolean) => void;
   children?: React.ReactNode;
@@ -18,6 +19,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   poster,
   className = "",
   autoPlay = false,
+  muted = true,
   preload = "metadata",
   onPlayStateChange,
   children,
@@ -52,7 +54,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
         poster={poster}
         className="w-full h-full object-cover"
         loop
-        muted
+        muted={muted}
         autoPlay={autoPlay}
         playsInline
         preload={preload}

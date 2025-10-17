@@ -154,6 +154,14 @@ npm run start
 - ✅ High-resolution image selection (1280x720) for AI generation
 - ✅ Animated logo and smooth transitions
 - ✅ Mobile-first responsive design
+- ✅ **My Videos Page** - Complete video management dashboard
+  - Video list with pagination (20 items per page)
+  - Status filtering (All/Pending/Processing/Completed/Failed)
+  - Auto-refresh for processing videos (every 10 seconds)
+  - Video playback modal with full details
+  - Delete and retry functionality
+  - Responsive grid layout (3→2→1 columns)
+  - Background task persistence (continue viewing even after page close)
 
 #### Backend (FastAPI + Celery)
 - ✅ **OpenAI Sora 2 API Integration** - Real AI video generation
@@ -192,9 +200,12 @@ Frontend (Next.js)     Backend (FastAPI)      AI Service
      │                      │  <─── API ────────  │
      │                      │  (Sora 2)      OpenAI
      │                      │                     │
-     │  <─── Video URL ──   ├─ Download           │
-     │                      ├─ Save to DB         │
-     └─ Display Video       └─ Serve File         │
+     ├─ My Videos ───────>  │                     │
+     │  <─── List ────────  ├─ Query DB           │
+     │                      │                     │
+     │  <─── Play ────────  ├─ Serve File         │
+     │                      │                     │
+     └─ Delete/Retry ────>  └─ Update DB          │
 ```
 
 ### 🔧 Configuration

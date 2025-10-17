@@ -3,7 +3,8 @@
 import { useState, useEffect, useRef } from "react";
 import dynamic from "next/dynamic";
 import { Button } from "./Button";
-import { Menu, X, LogOut } from "lucide-react";
+import { Menu, X, LogOut, Film } from "lucide-react";
+import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import { AnimatedLogo } from "./AnimatedLogo";
@@ -173,6 +174,14 @@ export const Navbar = () => {
                           Credits: {user.credits.toFixed(1)}
                         </p>
                       </div>
+                      <Link
+                        href="/my-videos"
+                        onClick={() => setShowUserMenu(false)}
+                        className="w-full px-4 py-2 text-left text-sm text-text-secondary hover:bg-purple-bg hover:text-primary transition-colors flex items-center space-x-2"
+                      >
+                        <Film className="w-4 h-4" />
+                        <span>My Videos</span>
+                      </Link>
                       <button
                         onClick={handleLogout}
                         className="w-full px-4 py-2 text-left text-sm text-text-secondary hover:bg-purple-bg hover:text-primary transition-colors flex items-center space-x-2"
@@ -270,6 +279,14 @@ export const Navbar = () => {
                       </p>
                     </div>
                   </div>
+                  <Link
+                    href="/my-videos"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="w-full px-4 py-2 text-sm text-text-secondary hover:text-primary hover:bg-purple-bg rounded-lg transition-colors flex items-center space-x-2"
+                  >
+                    <Film className="w-4 h-4" />
+                    <span>My Videos</span>
+                  </Link>
                   <button
                     onClick={handleLogout}
                     className="w-full px-4 py-2 text-sm text-text-secondary hover:text-primary hover:bg-purple-bg rounded-lg transition-colors flex items-center space-x-2"

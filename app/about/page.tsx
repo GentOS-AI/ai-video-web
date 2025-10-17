@@ -40,8 +40,8 @@ export default function AboutPage() {
             <div className="grid md:grid-cols-2 gap-12 items-center">
               <div>
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-100 to-purple-50 flex items-center justify-center shadow-md">
-                    <Target className="w-5 h-5 text-purple-600" />
+                  <div className="w-10 h-10 rounded-lg bg-purple-500 flex items-center justify-center shadow-md">
+                    <Target className="w-5 h-5 text-white" />
                   </div>
                   <h2 className="text-3xl font-bold text-gray-900">
                     Our Mission
@@ -169,7 +169,7 @@ export default function AboutPage() {
         {/* Stats Section */}
         <section className="py-12 px-4 sm:px-6 lg:px-8">
           <div className="max-w-6xl mx-auto">
-            <div className="bg-gradient-purple rounded-2xl p-8 sm:p-12 text-white shadow-2xl">
+            <div className="bg-purple-500 rounded-2xl p-8 sm:p-12 text-white shadow-2xl">
               <div className="text-center mb-8">
                 <h2 className="text-3xl font-bold mb-2">
                   Trusted by Thousands
@@ -213,7 +213,7 @@ export default function AboutPage() {
             </p>
             <a
               href="/"
-              className="inline-block px-8 py-4 bg-gradient-purple text-white rounded-lg hover:shadow-xl transition-all font-semibold text-lg"
+              className="inline-block px-8 py-4 bg-purple-500 text-white rounded-lg hover:bg-purple-600 hover:shadow-xl transition-all font-semibold text-lg"
             >
               Start Creating Videos
             </a>

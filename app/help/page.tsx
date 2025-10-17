@@ -169,7 +169,7 @@ export default function HelpPage() {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <a
               href="mailto:support@adsvideo.co"
-              className="px-6 py-3 bg-gradient-purple text-white rounded-lg hover:shadow-lg transition-all font-semibold"
+              className="px-6 py-3 bg-purple-500 text-white rounded-lg hover:bg-purple-600 hover:shadow-lg transition-all font-semibold"
             >
               Email Support
             </a>

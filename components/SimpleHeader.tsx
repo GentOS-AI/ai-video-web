@@ -37,7 +37,7 @@ export const SimpleHeader = ({
           className="flex items-center gap-4"
         >
           {icon && (
-            <div className="w-12 h-12 rounded-xl bg-gradient-purple flex items-center justify-center shadow-lg">
+            <div className="w-12 h-12 rounded-xl bg-purple-500 flex items-center justify-center shadow-lg">
               {icon}
             </div>
           )}

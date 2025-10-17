@@ -141,7 +141,7 @@ export default function BlogPage() {
               key={category}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                 category === "All Posts"
-                  ? "bg-gradient-purple text-white shadow-md"
+                  ? "bg-purple-500 text-white shadow-md"
                   : "bg-white text-gray-700 border border-gray-200 hover:border-purple-300 hover:text-purple-600"
               }`}
             >
@@ -215,7 +215,7 @@ export default function BlogPage() {
               placeholder="Enter your email"
               className="w-full sm:flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent"
             />
-            <button className="w-full sm:w-auto px-6 py-3 bg-gradient-purple text-white rounded-lg hover:shadow-lg transition-all font-semibold whitespace-nowrap">
+            <button className="w-full sm:w-auto px-6 py-3 bg-purple-500 text-white rounded-lg hover:bg-purple-600 hover:shadow-lg transition-all font-semibold whitespace-nowrap">
               Subscribe
             </button>
           </div>

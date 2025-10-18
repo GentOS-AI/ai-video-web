@@ -379,3 +379,50 @@ export const aiService = {
     return data;
   },
 };
+
+// Payment Service
+export const paymentService = {
+  /**
+   * Create Stripe Checkout Session
+   */
+  async createCheckoutSession(
+    productType: 'basic' | 'pro' | 'credits',
+    successUrl: string,
+    cancelUrl: string
+  ): Promise<{
+    session_id: string;
+    url: string;
+    publishable_key: string;
+  }> {
+    const { data } = await apiClient.post('/payments/create-checkout-session', {
+      product_type: productType,
+      success_url: successUrl,
+      cancel_url: cancelUrl,
+    });
+    return data;
+  },
+
+  /**
+   * Get payment session status
+   */
+  async getSessionStatus(sessionId: string) {
+    const { data } = await apiClient.get(`/payments/session/${sessionId}`);
+    return data;
+  },
+
+  /**
+   * Get pricing information from backend
+   */
+  async getPricing() {
+    const { data } = await apiClient.get('/payments/pricing');
+    return data;
+  },
+
+  /**
+   * Get Stripe configuration
+   */
+  async getStripeConfig() {
+    const { data } = await apiClient.get('/payments/config');
+    return data;
+  },
+};

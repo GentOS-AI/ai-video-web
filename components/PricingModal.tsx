@@ -2,9 +2,14 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Check, Zap, Crown } from "lucide-react";
+import { X, Check, Zap, Crown, Loader2 } from "lucide-react";
 import { Button } from "./Button";
 import { useTranslations } from "next-intl";
+import { useAuth } from "@/contexts/AuthContext";
+import { useNotification } from "@/contexts/NotificationContext";
+import { paymentService } from "@/lib/api/services";
+import { redirectToCheckout } from "@/lib/stripe/stripe";
+import { PRICING_CONFIG, getSuccessUrl, getCancelUrl } from "@/lib/config/pricing";
 
 interface PricingModalProps {
   isOpen: boolean;
@@ -12,15 +17,19 @@ interface PricingModalProps {
   onSubscribe?: (plan: string) => void;
 }
 
-export const PricingModal = ({ isOpen, onClose, onSubscribe }: PricingModalProps) => {
+export const PricingModal = ({ isOpen, onClose }: PricingModalProps) => {
   const t = useTranslations('pricing');
+  const { isAuthenticated } = useAuth();
+  const { showToast } = useNotification();
   const [selectedPlan, setSelectedPlan] = useState<string>("Pro");
+  const [isProcessing, setIsProcessing] = useState(false);
 
-  // Define pricing plans with translations
+  // Use dynamic pricing from config
   const pricingPlans = [
     {
+      id: "basic",
       name: t('basic.name'),
-      price: t('basic.price'),
+      price: PRICING_CONFIG.basic.price,
       period: t('basic.period'),
       description: t('basic.description'),
       credits: t('monthlyCredits', { count: 500 }),
@@ -37,8 +46,9 @@ export const PricingModal = ({ isOpen, onClose, onSubscribe }: PricingModalProps
       popular: false,
     },
     {
+      id: "pro",
       name: t('pro.name'),
-      price: t('pro.price'),
+      price: PRICING_CONFIG.pro.price,
       period: t('pro.period'),
       description: t('pro.description'),
       credits: t('yearlyCredits', { count: 3000 }),
@@ -63,9 +73,37 @@ export const PricingModal = ({ isOpen, onClose, onSubscribe }: PricingModalProps
     setSelectedPlan(planName);
   };
 
-  const handleSubscribe = () => {
-    if (onSubscribe) {
-      onSubscribe(selectedPlan);
+  const handleSubscribe = async () => {
+    // Check authentication
+    if (!isAuthenticated) {
+      showToast('Please login first to subscribe', 'error');
+      return;
+    }
+
+    // Get product type based on selected plan
+    const productType = selectedPlan.toLowerCase() as 'basic' | 'pro';
+
+    try {
+      setIsProcessing(true);
+      console.log(`🛒 Creating checkout session for ${productType} plan...`);
+
+      // Create Stripe Checkout Session
+      const session = await paymentService.createCheckoutSession(
+        productType,
+        getSuccessUrl(),
+        getCancelUrl()
+      );
+
+      console.log('✅ Session created:', session.session_id);
+      console.log('🔄 Redirecting to Stripe Checkout...');
+
+      // Redirect to Stripe Checkout
+      await redirectToCheckout(session.session_id);
+
+    } catch (error) {
+      console.error('❌ Failed to create checkout session:', error);
+      showToast('Failed to start checkout. Please try again.', 'error');
+      setIsProcessing(false);
     }
   };
 
@@ -95,13 +133,14 @@ export const PricingModal = ({ isOpen, onClose, onSubscribe }: PricingModalProps
               {/* Close Button */}
               <button
                 onClick={onClose}
-                className="absolute top-3 right-3 p-2 rounded-full hover:bg-gray-100 transition-colors z-10"
+                disabled={isProcessing}
+                className="absolute top-3 right-3 p-2 rounded-full hover:bg-gray-100 transition-colors z-10 disabled:opacity-50"
                 aria-label="Close pricing modal"
               >
                 <X className="w-5 h-5 text-gray-600" />
               </button>
 
-              {/* Header - Simplified Animation */}
+              {/* Header */}
               <div className="bg-gradient-to-r from-purple-600 to-purple-500 px-4 py-3 sm:px-6 sm:py-4 text-center">
                 <h2 className="text-xl sm:text-2xl font-bold text-white mb-1">
                   {t('title')}
@@ -109,6 +148,11 @@ export const PricingModal = ({ isOpen, onClose, onSubscribe }: PricingModalProps
                 <p className="text-xs sm:text-sm text-white/90">
                   {t('subtitle')}
                 </p>
+                {PRICING_CONFIG.isDevelopment && (
+                  <p className="text-xs text-yellow-300 mt-2">
+                    🧪 Test Mode: ${PRICING_CONFIG.basic.priceValue} / ${PRICING_CONFIG.pro.priceValue}
+                  </p>
+                )}
               </div>
 
               {/* Pricing Cards */}
@@ -117,8 +161,10 @@ export const PricingModal = ({ isOpen, onClose, onSubscribe }: PricingModalProps
                   {pricingPlans.map((plan) => (
                     <div
                       key={plan.name}
-                      onClick={() => handlePlanClick(plan.name)}
-                      className={`relative bg-white rounded-xl overflow-hidden transition-all duration-200 cursor-pointer ${
+                      onClick={() => !isProcessing && handlePlanClick(plan.name)}
+                      className={`relative bg-white rounded-xl overflow-hidden transition-all duration-200 ${
+                        isProcessing ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'
+                      } ${
                         selectedPlan === plan.name
                           ? "ring-2 ring-primary shadow-2xl scale-[1.02]"
                           : "border-2 border-gray-200 hover:border-primary/50 shadow-lg hover:shadow-xl"
@@ -165,7 +211,7 @@ export const PricingModal = ({ isOpen, onClose, onSubscribe }: PricingModalProps
                           </p>
                         </div>
 
-                        {/* Features List - Show 4 on mobile, 6 on desktop */}
+                        {/* Features List */}
                         <div className="space-y-1.5 sm:space-y-2 mb-3 sm:mb-4">
                           {plan.features.slice(0, 4).map((feature, idx) => (
                             <div key={idx} className="flex items-start space-x-2">
@@ -185,7 +231,6 @@ export const PricingModal = ({ isOpen, onClose, onSubscribe }: PricingModalProps
                           ))}
                           {plan.features.length > 4 && (
                             <>
-                              {/* Show features 5-6 only on desktop */}
                               <div className="hidden sm:block space-y-2">
                                 {plan.features.slice(4, 6).map((feature, idx) => (
                                   <div key={idx + 4} className="flex items-start space-x-2">
@@ -216,6 +261,7 @@ export const PricingModal = ({ isOpen, onClose, onSubscribe }: PricingModalProps
                         <Button
                           variant={selectedPlan === plan.name ? "primary" : "outline"}
                           size="md"
+                          disabled={isProcessing}
                           onClick={(e) => {
                             e.stopPropagation();
                             handleSubscribe();
@@ -228,14 +274,21 @@ export const PricingModal = ({ isOpen, onClose, onSubscribe }: PricingModalProps
                               : "border-2 border-gray-300 hover:border-primary hover:text-primary bg-white"
                           }`}
                         >
-                          {t('subscribeNow')}
+                          {isProcessing && selectedPlan === plan.name ? (
+                            <div className="flex items-center justify-center gap-2">
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                              <span>Processing...</span>
+                            </div>
+                          ) : (
+                            t('subscribeNow')
+                          )}
                         </Button>
                       </div>
                     </div>
                   ))}
                 </div>
 
-                {/* Footer Note - Simplified */}
+                {/* Footer Note */}
                 <div className="text-center mt-6">
                   <p className="text-xs text-text-muted">
                     {t('footerGuarantee')}

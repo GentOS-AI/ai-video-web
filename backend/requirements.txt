@@ -47,6 +47,9 @@ gunicorn==23.0.0
 # PostgreSQL Driver (Production)
 psycopg2-binary==2.9.10
 
+# Payment Processing
+stripe==10.15.0
+
 # Development
 pytest==8.3.3
 pytest-asyncio==0.24.0

@@ -70,6 +70,29 @@ class Settings(BaseSettings):
     SORA_2_COST: float = 100.0  # Sora-2 Standard
     SORA_2_PRO_COST: float = 300.0  # Sora-2 Pro
 
+    # Stripe Payment Configuration
+    STRIPE_ENVIRONMENT: str = "development"  # development | production
+
+    # Test Keys
+    STRIPE_SECRET_KEY_TEST: str = ""
+    STRIPE_PUBLISHABLE_KEY_TEST: str = ""
+    STRIPE_WEBHOOK_SECRET_TEST: str = ""
+
+    # Test Price IDs
+    STRIPE_BASIC_PRICE_ID_TEST: str = ""
+    STRIPE_PRO_PRICE_ID_TEST: str = ""
+    STRIPE_CREDITS_PRICE_ID_TEST: str = ""
+
+    # Live Keys
+    STRIPE_SECRET_KEY_LIVE: str = ""
+    STRIPE_PUBLISHABLE_KEY_LIVE: str = ""
+    STRIPE_WEBHOOK_SECRET_LIVE: str = ""
+
+    # Live Price IDs
+    STRIPE_BASIC_PRICE_ID_LIVE: str = ""
+    STRIPE_PRO_PRICE_ID_LIVE: str = ""
+    STRIPE_CREDITS_PRICE_ID_LIVE: str = ""
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

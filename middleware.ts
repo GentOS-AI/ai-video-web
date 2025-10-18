@@ -26,5 +26,6 @@ export const config = {
   // Match all pathnames except for
   // - … if they start with `/api`, `/_next`, `/_vercel`
   // - … the ones containing a dot (e.g. `favicon.ico`)
-  matcher: ['/', '/(zh|zh-TW|en)/:path*', '/((?!api|_next|_vercel|.*\\..*).*)'],
+  // - … /auth/callback (unified OAuth callback, no locale prefix)
+  matcher: ['/', '/(zh|zh-TW|en)/:path*', '/((?!api|_next|_vercel|auth/callback|.*\\..*).*)'],
 };

@@ -229,15 +229,18 @@ export const HeroSection = () => {
         });
       }
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("❌ Script generation failed:", error);
 
       // Extract error message from axios error or use fallback
       let errorMessage = tToast('scriptGenerationFailed');
 
-      if (error?.response?.data?.detail) {
-        errorMessage = error.response.data.detail;
-      } else if (error?.message) {
+      if (error && typeof error === 'object' && 'response' in error) {
+        const axiosError = error as { response?: { data?: { detail?: string } } };
+        if (axiosError.response?.data?.detail) {
+          errorMessage = axiosError.response.data.detail;
+        }
+      } else if (error instanceof Error && error.message) {
         errorMessage = error.message;
       }
 

@@ -33,17 +33,17 @@ export const Footer = () => {
         {/* Purple Divider */}
         <div className="h-1 w-full gradient-purple rounded-full mb-8 sm:mb-12" />
 
-        {/* Footer Content - Single column mobile, 4 columns tablet+ */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
+        {/* Footer Content - Single column mobile, 5 columns tablet+ */}
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-6 sm:gap-4 md:gap-6">
           {/* Company Info */}
           <div className="space-y-4">
             <div className="flex items-center space-x-2">
               <AnimatedLogo size={32} />
               <span className="text-xl font-bold flex items-center gap-0.5">
                 <span className="text-purple-600">
-                  Ads
+                  Syno
                 </span>
-                <span className="text-text-primary">Video.co</span>
+                <span className="text-text-primary">.Video</span>
               </span>
             </div>
             <p className="text-sm text-text-secondary">
@@ -71,6 +71,31 @@ export const Footer = () => {
                   className="text-sm text-text-secondary hover:text-primary transition-colors"
                 >
                   {t('aboutUs')}
+                </a>
+              </li>
+            </ul>
+          </div>
+
+          {/* Resource Column */}
+          <div className="space-y-4">
+            <h3 className="text-sm font-semibold text-text-primary uppercase tracking-wider">
+              Resources
+            </h3>
+            <ul className="space-y-2">
+              <li>
+                <a
+                  href={`/${locale}/help`}
+                  className="text-sm text-text-secondary hover:text-primary transition-colors"
+                >
+                  Help Center
+                </a>
+              </li>
+              <li>
+                <a
+                  href={`/${locale}/blog`}
+                  className="text-sm text-text-secondary hover:text-primary transition-colors"
+                >
+                  Blog
                 </a>
               </li>
             </ul>

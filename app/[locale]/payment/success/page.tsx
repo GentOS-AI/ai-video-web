@@ -6,7 +6,6 @@ import { motion } from "framer-motion";
 import { CheckCircle, Loader2, Home, CreditCard } from "lucide-react";
 import { Button } from "@/components/Button";
 import { useAuth } from "@/contexts/AuthContext";
-import { paymentService } from "@/lib/api/services";
 
 interface SessionData {
   session_id: string;
@@ -33,27 +32,35 @@ export default function PaymentSuccessPage() {
       return;
     }
 
-    // Verify payment and get session details
-    const verifyPayment = async () => {
+    // Simplified success flow - Webhook already processed payment
+    const handleSuccess = async () => {
       try {
-        console.log('✅ Verifying payment session:', sessionId);
+        console.log('✅ Payment successful, session:', sessionId);
 
-        const data = await paymentService.getSessionStatus(sessionId);
-        setSessionData(data);
+        // Set basic session data
+        setSessionData({
+          session_id: sessionId,
+          status: 'complete',
+        });
 
-        // Refresh user data to update credits/subscription
-        await refreshUser();
+        // Refresh user data to show updated credits/subscription
+        // This will work if user is logged in, otherwise silently fail
+        try {
+          await refreshUser();
+        } catch {
+          console.log('Note: Unable to refresh user data (user may not be logged in)');
+        }
 
-        console.log('✅ Payment verified:', data);
+        console.log('✅ Success page loaded');
       } catch (err) {
-        console.error('❌ Failed to verify payment:', err);
-        setError('Failed to verify payment');
+        console.error('❌ Error:', err);
+        setError('An error occurred');
       } finally {
         setLoading(false);
       }
     };
 
-    verifyPayment();
+    handleSuccess();
   }, [searchParams, refreshUser]);
 
   if (loading) {
@@ -136,21 +143,13 @@ export default function PaymentSuccessPage() {
               <div className="flex items-center justify-between text-sm">
                 <span className="text-gray-600">Transaction ID</span>
                 <span className="font-mono text-gray-900 text-xs">
-                  {sessionData?.session_id?.substring(0, 20)}...
+                  {sessionData?.session_id?.substring(0, 30)}...
                 </span>
               </div>
-              {sessionData?.amount && (
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-600">Amount Paid</span>
-                  <span className="font-bold text-gray-900">
-                    ${sessionData.amount.toFixed(2)} {sessionData.currency?.toUpperCase()}
-                  </span>
-                </div>
-              )}
               <div className="flex items-center justify-between text-sm">
                 <span className="text-gray-600">Status</span>
                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                  {sessionData?.status || 'Completed'}
+                  ✓ Completed
                 </span>
               </div>
             </div>

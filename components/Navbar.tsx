@@ -100,6 +100,21 @@ export const Navbar = () => {
     { code: 'zh-TW', name: localeNames['zh-TW'], flag: localeFlags['zh-TW'] },
   ];
 
+  // Helper function to check if a path is active
+  const isActivePath = (path: string) => {
+    // Remove locale from pathname for comparison
+    const currentPath = pathname.replace(`/${locale}`, '') || '/';
+    const targetPath = path.replace(`/${locale}`, '') || '/';
+
+    // Exact match for home page
+    if (targetPath === '/') {
+      return currentPath === '/';
+    }
+
+    // For other pages, check if current path starts with target path
+    return currentPath.startsWith(targetPath);
+  };
+
   // Handle click outside to close user menu
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -132,9 +147,9 @@ export const Navbar = () => {
             <AnimatedLogo size={32} />
             <span className="text-xl font-bold flex items-center gap-0.5">
               <span className="text-purple-600">
-                Ads
+                Syno
               </span>
-              <span className="text-text-primary">Video.co</span>
+              <span className="text-text-primary">.Video</span>
             </span>
           </Link>
 
@@ -142,15 +157,16 @@ export const Navbar = () => {
           <div className="hidden md:flex items-center space-x-4">
             <Link
               href={`/${locale}`}
-              className="px-4 py-2 text-sm font-medium text-text-secondary hover:text-primary transition-colors"
+              className={`px-4 py-2 text-sm font-medium transition-colors relative ${
+                isActivePath(`/${locale}`)
+                  ? 'text-primary font-semibold'
+                  : 'text-text-secondary hover:text-primary'
+              }`}
             >
               {t('home')}
-            </Link>
-            <Link
-              href={`/${locale}/blog`}
-              className="px-4 py-2 text-sm font-medium text-text-secondary hover:text-primary transition-colors"
-            >
-              {t('blog')}
+              {isActivePath(`/${locale}`) && (
+                <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-primary rounded-full" />
+              )}
             </Link>
             <button
               onClick={handlePricingClick}
@@ -330,16 +346,13 @@ export const Navbar = () => {
               <Link
                 href={`/${locale}`}
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="block w-full text-left px-4 py-2 text-sm font-medium text-text-secondary hover:text-primary hover:bg-purple-bg rounded-lg transition-colors"
+                className={`block w-full text-left px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                  isActivePath(`/${locale}`)
+                    ? 'bg-purple-bg text-primary font-semibold'
+                    : 'text-text-secondary hover:text-primary hover:bg-purple-bg'
+                }`}
               >
                 {t('home')}
-              </Link>
-              <Link
-                href={`/${locale}/blog`}
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="block w-full text-left px-4 py-2 text-sm font-medium text-text-secondary hover:text-primary hover:bg-purple-bg rounded-lg transition-colors"
-              >
-                {t('blog')}
               </Link>
               <button
                 onClick={handlePricingClick}

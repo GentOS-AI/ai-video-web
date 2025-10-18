@@ -2,10 +2,41 @@
  * Pricing Configuration
  *
  * Dynamic pricing based on environment (development/production)
+ * Prices are loaded from environment variables
  */
 
 // Check if we're in development mode
 const isDevelopment = process.env.NEXT_PUBLIC_STRIPE_ENVIRONMENT === 'development';
+
+// Read prices from environment variables
+const getPrice = (devKey: string, prodKey: string, defaultDev: number, defaultProd: number): number => {
+  if (isDevelopment) {
+    return parseFloat(process.env[devKey] || String(defaultDev));
+  }
+  return parseFloat(process.env[prodKey] || String(defaultProd));
+};
+
+// Get pricing from environment variables
+const PRICE_BASIC = getPrice(
+  'NEXT_PUBLIC_PRICE_BASIC_DEV',
+  'NEXT_PUBLIC_PRICE_BASIC_PROD',
+  29.99,
+  0.01
+);
+
+const PRICE_PRO = getPrice(
+  'NEXT_PUBLIC_PRICE_PRO_DEV',
+  'NEXT_PUBLIC_PRICE_PRO_PROD',
+  129.99,
+  0.02
+);
+
+const PRICE_CREDITS = getPrice(
+  'NEXT_PUBLIC_PRICE_CREDITS_DEV',
+  'NEXT_PUBLIC_PRICE_CREDITS_PROD',
+  49.99,
+  0.03
+);
 
 export interface PricingPlan {
   id: string;
@@ -37,8 +68,8 @@ export const PRICING_CONFIG = {
   basic: {
     id: 'basic',
     name: 'Basic',
-    price: isDevelopment ? '$0.50' : '$29.99',
-    priceValue: isDevelopment ? 0.50 : 29.99,
+    price: `$${PRICE_BASIC.toFixed(2)}`,
+    priceValue: PRICE_BASIC,
     period: '/month',
     description: 'Perfect for individuals and small projects',
     credits: 500,
@@ -57,8 +88,8 @@ export const PRICING_CONFIG = {
   pro: {
     id: 'pro',
     name: 'Pro',
-    price: isDevelopment ? '$1.00' : '$129.99',
-    priceValue: isDevelopment ? 1.00 : 129.99,
+    price: `$${PRICE_PRO.toFixed(2)}`,
+    priceValue: PRICE_PRO,
     period: '/year',
     description: 'For professionals and growing teams',
     credits: 3000,
@@ -78,8 +109,8 @@ export const PRICING_CONFIG = {
 
   // Credits Pack (One-time Purchase)
   credits: {
-    price: isDevelopment ? '$0.50' : '$49.99',
-    priceValue: isDevelopment ? 0.50 : 49.99,
+    price: `$${PRICE_CREDITS.toFixed(2)}`,
+    priceValue: PRICE_CREDITS,
     credits: 1000,
   } as CreditsPack,
 };

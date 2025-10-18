@@ -42,7 +42,6 @@ export const HeroSection = () => {
   const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
   const [selectedModel, setSelectedModel] = useState(aiModels[0]);
   const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false);
-  const [showHelperTooltip, setShowHelperTooltip] = useState(false);
   const [isPricingOpen, setIsPricingOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const maxChars = 5000;

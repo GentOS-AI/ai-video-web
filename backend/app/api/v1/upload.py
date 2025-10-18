@@ -6,9 +6,13 @@ import uuid
 from typing import List
 from fastapi import APIRouter, Depends, UploadFile, File, HTTPException, status
 from fastapi.responses import JSONResponse
+from sqlalchemy.orm import Session
+from PIL import Image as PILImage
+from io import BytesIO
 
-from app.api.deps import get_current_user
+from app.api.deps import get_current_user, get_db
 from app.models.user import User
+from app.models.uploaded_image import UploadedImage
 from app.core.config import settings
 
 router = APIRouter()
@@ -78,9 +82,10 @@ def save_upload_file(file: UploadFile, user_id: int) -> str:
 async def upload_image(
     file: UploadFile = File(...),
     current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
 ):
     """
-    Upload reference image for video generation
+    Upload reference image for video generation and save to database
 
     Requires authentication
     """
@@ -88,25 +93,121 @@ async def upload_image(
         # Validate file
         validate_image_file(file)
 
-        # Save file
+        # Read file content for analysis
+        file_content = await file.read()
+        file_size = len(file_content)
+
+        # Get image dimensions using PIL
+        image = PILImage.open(BytesIO(file_content))
+        width, height = image.size
+
+        # Reset file pointer for saving
+        await file.seek(0)
+
+        # Save file to disk
         file_path = save_upload_file(file, current_user.id)
+
+        # Create full HTTPS URL
+        base_url = settings.BASE_URL or "http://localhost:8000"
+        file_url = f"{base_url}{file_path}"
+
+        # Save image record to database
+        db_image = UploadedImage(
+            user_id=current_user.id,
+            filename=file.filename or "untitled.jpg",
+            file_url=file_url,
+            file_size=file_size,
+            file_type=file.content_type,
+            width=width,
+            height=height,
+        )
+        db.add(db_image)
+        db.commit()
+        db.refresh(db_image)
 
         return JSONResponse(
             status_code=status.HTTP_200_OK,
             content={
                 "message": "File uploaded successfully",
-                "url": file_path,  # Frontend expects 'url' key
+                "url": file_path,  # Frontend expects 'url' key (relative path)
+                "file_url": file_url,  # Full HTTPS URL
                 "file_path": file_path,  # Keep for backward compatibility
                 "filename": file.filename,
+                "image_id": db_image.id,
+                "width": width,
+                "height": height,
             },
         )
 
     except HTTPException:
         raise
     except Exception as e:
+        db.rollback()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to upload file: {str(e)}",
+        )
+
+
+@router.get("/images")
+async def get_uploaded_images(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+    limit: int = 50,
+    offset: int = 0,
+):
+    """
+    Get list of uploaded images for the current user
+
+    Requires authentication
+    """
+    try:
+        # Query uploaded images for current user
+        images = (
+            db.query(UploadedImage)
+            .filter(UploadedImage.user_id == current_user.id)
+            .order_by(UploadedImage.created_at.desc())
+            .limit(limit)
+            .offset(offset)
+            .all()
+        )
+
+        # Get total count
+        total_count = (
+            db.query(UploadedImage)
+            .filter(UploadedImage.user_id == current_user.id)
+            .count()
+        )
+
+        # Format response
+        images_data = [
+            {
+                "id": img.id,
+                "filename": img.filename,
+                "file_url": img.file_url,
+                "file_size": img.file_size,
+                "file_type": img.file_type,
+                "width": img.width,
+                "height": img.height,
+                "created_at": img.created_at.isoformat() if img.created_at else None,
+            }
+            for img in images
+        ]
+
+        return JSONResponse(
+            status_code=status.HTTP_200_OK,
+            content={
+                "images": images_data,
+                "total": total_count,
+                "limit": limit,
+                "offset": offset,
+            },
+        )
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to fetch images: {str(e)}",
         )
 
 

@@ -2,17 +2,13 @@
  * Google OAuth Callback Page
  * Handles the OAuth redirect from Google and exchanges code for tokens
  *
- * Note: This page must be dynamically rendered because it uses searchParams
- * to read OAuth callback parameters (code, state, error)
+ * Note: Dynamic rendering is enforced by the parent layout.tsx
  */
 'use client';
 
 import { useEffect, useState, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-
-// Force dynamic rendering - OAuth callback cannot be statically generated
-export const dynamic = 'force-dynamic';
 
 function AuthCallbackContent() {
   const router = useRouter();
@@ -73,7 +69,8 @@ function AuthCallbackContent() {
 
       try {
         // Exchange code for tokens
-        const redirectUri = `${window.location.origin}/auth/callback`;
+        // Use current URL's path to match the OAuth callback URL
+        const redirectUri = `${window.location.origin}/${userLocale}/auth/callback`;
         await login(code, redirectUri);
 
         // Redirect to home with locale

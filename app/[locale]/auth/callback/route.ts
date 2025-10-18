@@ -92,7 +92,7 @@ const html = `
         const redirectUri = window.location.origin + window.location.pathname;
 
         // Exchange code for tokens
-        const response = await fetch(apiUrl + '/auth/google/callback', {
+        const response = await fetch(apiUrl + '/auth/google', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

@@ -49,7 +49,7 @@ export default function PaymentCancelPage() {
                 No charges were made to your account.
               </p>
               <p className="text-sm text-gray-600">
-                You can try again whenever you're ready.
+                You can try again whenever you&apos;re ready.
               </p>
             </div>
 

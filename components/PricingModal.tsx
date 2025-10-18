@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Check, Zap, Crown, Loader2 } from "lucide-react";
 import { Button } from "./Button";
@@ -24,8 +24,8 @@ export const PricingModal = ({ isOpen, onClose }: PricingModalProps) => {
   const [selectedPlan, setSelectedPlan] = useState<string>("Pro");
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // Use dynamic pricing from config
-  const pricingPlans = [
+  // Memoize pricing plans to avoid recreation on every render (PERFORMANCE OPTIMIZATION)
+  const pricingPlans = useMemo(() => [
     {
       id: "basic",
       name: t('basic.name'),
@@ -67,7 +67,7 @@ export const PricingModal = ({ isOpen, onClose }: PricingModalProps) => {
       gradient: "from-purple-500 to-pink-500",
       popular: true,
     },
-  ];
+  ], [t]);
 
   const handlePlanClick = (planName: string) => {
     setSelectedPlan(planName);
@@ -96,9 +96,10 @@ export const PricingModal = ({ isOpen, onClose }: PricingModalProps) => {
 
       console.log('✅ Session created:', session.session_id);
       console.log('🔄 Redirecting to Stripe Checkout...');
+      console.log('   Checkout URL:', session.url);
 
-      // Redirect to Stripe Checkout
-      await redirectToCheckout(session.session_id);
+      // Redirect to Stripe Checkout using the session URL
+      await redirectToCheckout(session.url);
 
     } catch (error) {
       console.error('❌ Failed to create checkout session:', error);
@@ -108,27 +109,29 @@ export const PricingModal = ({ isOpen, onClose }: PricingModalProps) => {
   };
 
   return (
-    <AnimatePresence>
+    <AnimatePresence mode="wait">
       {isOpen && (
         <>
-          {/* Backdrop */}
+          {/* Backdrop - Optimized without blur */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50"
+            transition={{ duration: 0.15, ease: "easeOut" }}
+            className="fixed inset-0 bg-black/60 z-50"
             onClick={onClose}
+            style={{ willChange: "opacity" }}
           />
 
           {/* Modal */}
           <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 pointer-events-none">
             <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              transition={{ duration: 0.3, ease: "easeOut" }}
+              initial={{ opacity: 0, scale: 0.96 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.96 }}
+              transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
               className="relative w-full max-w-3xl bg-white rounded-2xl shadow-2xl overflow-hidden pointer-events-auto max-h-[95vh] sm:max-h-[90vh] overflow-y-auto"
+              style={{ willChange: "transform, opacity" }}
             >
               {/* Close Button */}
               <button
@@ -162,14 +165,13 @@ export const PricingModal = ({ isOpen, onClose }: PricingModalProps) => {
                     <div
                       key={plan.name}
                       onClick={() => !isProcessing && handlePlanClick(plan.name)}
-                      className={`relative bg-white rounded-xl overflow-hidden transition-all duration-200 ${
+                      className={`relative bg-white rounded-xl overflow-hidden transition-all duration-150 ${
                         isProcessing ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'
                       } ${
                         selectedPlan === plan.name
-                          ? "ring-2 ring-primary shadow-2xl scale-[1.02]"
+                          ? "ring-2 ring-primary shadow-2xl"
                           : "border-2 border-gray-200 hover:border-primary/50 shadow-lg hover:shadow-xl"
                       }`}
-                      style={{ willChange: "transform" }}
                     >
                       {/* Popular Badge */}
                       {plan.popular && (

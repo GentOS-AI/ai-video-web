@@ -40,9 +40,10 @@ export const CreditsModal = ({ isOpen, onClose }: CreditsModalProps) => {
 
       console.log('✅ Session created:', session.session_id);
       console.log('🔄 Redirecting to Stripe Checkout...');
+      console.log('   Checkout URL:', session.url);
 
-      // Redirect to Stripe Checkout
-      await redirectToCheckout(session.session_id);
+      // Redirect to Stripe Checkout using the session URL
+      await redirectToCheckout(session.url);
 
     } catch (error) {
       console.error('❌ Failed to create checkout session:', error);
@@ -52,27 +53,29 @@ export const CreditsModal = ({ isOpen, onClose }: CreditsModalProps) => {
   };
 
   return (
-    <AnimatePresence>
+    <AnimatePresence mode="wait">
       {isOpen && (
         <>
-          {/* Backdrop */}
+          {/* Backdrop - Optimized without blur */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50"
+            transition={{ duration: 0.15, ease: "easeOut" }}
+            className="fixed inset-0 bg-black/60 z-50"
             onClick={onClose}
+            style={{ willChange: "opacity" }}
           />
 
           {/* Modal */}
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
             <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              transition={{ duration: 0.3, ease: "easeOut" }}
+              initial={{ opacity: 0, scale: 0.96 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.96 }}
+              transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
               className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden pointer-events-auto"
+              style={{ willChange: "transform, opacity" }}
             >
               {/* Close Button */}
               <button
@@ -84,21 +87,17 @@ export const CreditsModal = ({ isOpen, onClose }: CreditsModalProps) => {
                 <X className="w-5 h-5 text-gray-600" />
               </button>
 
-              {/* Header with Gradient */}
+              {/* Header with Gradient - Optimized */}
               <div className="bg-gradient-to-r from-green-500 to-emerald-500 px-6 py-8 text-center relative overflow-hidden">
-                {/* Background Pattern */}
-                <div className="absolute inset-0 opacity-10">
+                {/* Simplified Background Pattern - No motion */}
+                <div className="absolute inset-0 opacity-10 pointer-events-none">
                   <div className="absolute top-0 left-0 w-32 h-32 bg-white rounded-full -translate-x-1/2 -translate-y-1/2" />
                   <div className="absolute bottom-0 right-0 w-40 h-40 bg-white rounded-full translate-x-1/2 translate-y-1/2" />
                 </div>
 
-                <motion.div
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
-                  className="relative"
-                >
-                  <div className="w-16 h-16 mx-auto mb-4 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
+                {/* Removed motion wrapper for better performance */}
+                <div className="relative">
+                  <div className="w-16 h-16 mx-auto mb-4 bg-white/20 rounded-full flex items-center justify-center">
                     <Sparkles className="w-8 h-8 text-white" />
                   </div>
                   <h2 className="text-2xl font-bold text-white mb-2">
@@ -112,18 +111,13 @@ export const CreditsModal = ({ isOpen, onClose }: CreditsModalProps) => {
                       🧪 Test Mode: ${PRICING_CONFIG.credits.priceValue}
                     </p>
                   )}
-                </motion.div>
+                </div>
               </div>
 
               {/* Content */}
               <div className="px-6 py-6">
-                {/* Credits Package Card */}
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.1 }}
-                  className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-6 mb-6 border-2 border-green-200 hover:border-green-300 transition-colors"
-                >
+                {/* Credits Package Card - Removed motion for better performance */}
+                <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-6 mb-6 border-2 border-green-200 hover:border-green-300 transition-colors">
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center space-x-3">
                       <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-500 rounded-lg flex items-center justify-center shadow-lg">
@@ -183,7 +177,7 @@ export const CreditsModal = ({ isOpen, onClose }: CreditsModalProps) => {
                       </span>
                     </div>
                   </div>
-                </motion.div>
+                </div>
 
                 {/* Purchase Button */}
                 <Button

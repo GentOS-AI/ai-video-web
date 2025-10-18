@@ -8,13 +8,20 @@ import { Button } from "@/components/Button";
 import { useAuth } from "@/contexts/AuthContext";
 import { paymentService } from "@/lib/api/services";
 
+interface SessionData {
+  session_id: string;
+  status: string;
+  amount?: number;
+  currency?: string;
+}
+
 export default function PaymentSuccessPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { refreshUser } = useAuth();
 
   const [loading, setLoading] = useState(true);
-  const [sessionData, setSessionData] = useState<any>(null);
+  const [sessionData, setSessionData] = useState<SessionData | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {

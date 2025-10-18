@@ -93,6 +93,16 @@ class Settings(BaseSettings):
     STRIPE_PRO_PRICE_ID_LIVE: str = ""
     STRIPE_CREDITS_PRICE_ID_LIVE: str = ""
 
+    # Test Product IDs
+    STRIPE_PRODUCT_BASIC_TEST: str = ""
+    STRIPE_PRODUCT_PRO_TEST: str = ""
+    STRIPE_PRODUCT_CREDITS_TEST: str = ""
+
+    # Live Product IDs
+    STRIPE_PRODUCT_BASIC_LIVE: str = ""
+    STRIPE_PRODUCT_PRO_LIVE: str = ""
+    STRIPE_PRODUCT_CREDITS_LIVE: str = ""
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

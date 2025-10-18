@@ -1,812 +1,637 @@
-# Deployment Guide - AI Video Web
+# 🚀 AdsVideo.co - 生产环境部署文档
 
-Complete guide for deploying the AI Video Web application to production server.
-
-## Table of Contents
-
-- [Overview](#overview)
-- [Prerequisites](#prerequisites)
-- [Initial Server Setup](#initial-server-setup)
-- [Deployment Methods](#deployment-methods)
-- [Configuration](#configuration)
-- [Troubleshooting](#troubleshooting)
-- [Maintenance](#maintenance)
+**部署架构**: PM2 + Nginx + Let's Encrypt SSL
+**服务器**: Ubuntu 20.04+
+**域名**: https://adsvideo.co
+**最后更新**: 2025-10-18
 
 ---
 
-## Overview
+## 📚 文档导航
 
-### Deployment Architecture
-
-```
-┌─────────────────┐       Git Push        ┌─────────────────┐
-│  Local Machine  │ ───────────────────► │     GitHub      │
-└─────────────────┘                       └─────────────────┘
-         │                                         │
-         │ SSH + Deploy Script                    │ Git Pull
-         │                                         │
-         ▼                                         ▼
-┌─────────────────────────────────────────────────────────┐
-│               Production Server (23.95.254.67:3200)     │
-│  ┌────────────────────────────────────────────────────┐ │
-│  │  1. Stop PM2 Services                              │ │
-│  │  2. Pull Latest Code from GitHub                   │ │
-│  │  3. Install Dependencies (npm install)             │ │
-│  │  4. Build Application (npm run build)              │ │
-│  │  5. Start PM2 Services                             │ │
-│  │  6. Health Check                                   │ │
-│  └────────────────────────────────────────────────────┘ │
-│                                                          │
-│  Running Services:                                       │
-│  ├─ ai-video-web (Next.js Frontend) - Port 3000         │
-│  └─ ai-video-api (Backend API) - Port 8000 (optional)   │
-└─────────────────────────────────────────────────────────┘
-         │
-         ▼
-   https://AdsVideo.co
-```
-
-### Key Features
-
-- ✅ **Automated Deployment**: One-command deployment from local machine
-- ✅ **Zero-Downtime Strategy**: Build before restart, rollback on failure
-- ✅ **Backup & Rollback**: Automatic backup before deployment
-- ✅ **Health Checks**: Verify services after deployment
-- ✅ **Logging**: Comprehensive deployment and application logs
-- ✅ **Process Management**: PM2 for auto-restart and monitoring
+- **[快速开始 - DEPLOY_QUICK_START.md](DEPLOY_QUICK_START.md)** ⭐ 推荐新手使用
+- **本文档 - DEPLOYMENT.md** (详细技术说明)
 
 ---
 
-## Prerequisites
+## 🏗️ 系统架构
 
-### 1. Server Requirements
-
-**Server Specifications:**
-- OS: Ubuntu 20.04+ / CentOS 7+ / Debian 10+
-- RAM: Minimum 2GB (4GB recommended)
-- Storage: Minimum 10GB free space
-- Network: Public IP with SSH access
-
-**Software Requirements:**
-```bash
-# Node.js 20+ (LTS recommended)
-node --version  # Should be v20.x.x or higher
-
-# npm (comes with Node.js)
-npm --version   # Should be 10.x.x or higher
-
-# PM2 (process manager)
-pm2 --version   # Install if missing: npm install -g pm2
-
-# Git
-git --version   # Should be 2.x.x or higher
+```
+┌─────────────────────────────────────────────────────────────┐
+│                     Internet (HTTPS)                        │
+└───────────────────────────┬─────────────────────────────────┘
+                            │
+                ┌───────────▼──────────────┐
+                │   Nginx (80/443)          │
+                │   - SSL Termination       │
+                │   - Reverse Proxy         │
+                │   - Static Files          │
+                │   - WWW Redirect          │
+                └───────────┬───────────────┘
+                            │
+              ┌─────────────┴──────────────┐
+              │                            │
+    ┌─────────▼────────┐         ┌────────▼─────────┐
+    │  PM2: Frontend   │         │  PM2: Backend    │
+    │  Next.js (3000)  │         │  FastAPI (8000)  │
+    │  - SSR           │         │  - REST API      │
+    │  - Static Gen    │         │  - SQLite DB     │
+    │  - SEO           │         │  - Celery Jobs   │
+    └──────────────────┘         └──────────────────┘
+                                          │
+                                  ┌───────┴────────┐
+                                  │ Redis (6379)   │
+                                  │ - Task Queue   │
+                                  │ - Cache        │
+                                  └────────────────┘
 ```
 
-### 2. SSH Access Configuration
+---
 
-**From Local Machine:**
+## 🎯 部署方法
+
+### 方法1: 一键部署 (推荐)
+
 ```bash
-# Test SSH connection
-ssh -p 3200 root@23.95.254.67
-
-# Should see successful login without password prompt
+# 在本地机器执行
+./scripts/deploy.sh -m "部署说明"
 ```
 
-**On Server:**
-```bash
-# Verify SSH key for GitHub
-ls -la ~/.ssh/id_ed25519      # Should exist
-cat ~/.ssh/id_ed25519.pub     # Copy to GitHub Deploy Keys
+**自动完成**:
+1. Git commit & push to GitHub
+2. SSH连接到服务器
+3. 拉取最新代码
+4. 安装依赖
+5. 构建应用
+6. 重启PM2服务
+7. 健康检查
 
-# Test GitHub SSH connection
-GIT_SSH_COMMAND="ssh -i ~/.ssh/id_ed25519" \
-  git ls-remote git@github.com:GentOS-AI/ai-video-web.git
-```
-
-**Add SSH Key to GitHub:**
-1. Go to: https://github.com/GentOS-AI/ai-video-web/settings/keys
-2. Click "Add deploy key"
-3. Paste the content of `~/.ssh/id_ed25519.pub`
-4. Check "Allow write access" if needed
-5. Save
-
-### 3. Environment Variables
-
-Create `.env.production` on server with actual credentials:
+### 方法2: 服务器手动部署
 
 ```bash
-# On server
+# SSH登录
+ssh -p3200 -lroot 23.95.254.67
+
+# 完整部署 (前端+后端)
 cd /root/ai-video-web
-nano .env.production
-```
+./scripts/deploy-full.sh
 
-See [.env.production](.env.production) template for all required variables.
+# 只部署前端
+./scripts/deploy-frontend.sh
+
+# 只部署后端
+./scripts/deploy-backend.sh
+```
 
 ---
 
-## Initial Server Setup
+## 📋 首次部署清单
 
-### Step 1: Install Node.js (if not installed)
-
-```bash
-# Using nvm (recommended)
-curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
-source ~/.bashrc
-nvm install 20
-nvm use 20
-nvm alias default 20
-
-# Verify
-node --version  # Should show v20.x.x
-npm --version
-```
-
-### Step 2: Install PM2
+### 1. 服务器准备
 
 ```bash
-# Install PM2 globally
+# 安装基础依赖
+apt update && apt upgrade -y
+apt install -y git curl wget vim ufw
+
+# 安装Node.js 20
+curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+apt install -y nodejs
+
+# 安装Python 3.11
+apt install -y python3.11 python3.11-venv python3-pip
+
+# 安装PM2
 npm install -g pm2
 
-# Verify installation
-pm2 --version
-
-# Configure PM2 to start on system boot
+# 配置PM2开机自启
 pm2 startup
-# Follow the instructions shown
-
-# Save PM2 process list
 pm2 save
 ```
 
-### Step 3: Clone Repository
+### 2. 克隆项目
 
 ```bash
-# Navigate to deployment directory
 cd /root
-
-# Clone repository using SSH key
 GIT_SSH_COMMAND="ssh -i ~/.ssh/id_ed25519" \
   git clone git@github.com:GentOS-AI/ai-video-web.git
-
-# Navigate to project
 cd ai-video-web
-
-# Verify clone
-ls -la
-git status
 ```
 
-### Step 4: Configure Environment
+### 3. 配置环境变量
+
+#### 前端 (.env.production)
 
 ```bash
-# Copy environment template
-cp .env.production.template .env.production
+# 必须配置项
+NEXT_PUBLIC_API_URL=https://adsvideo.co/api/v1
+NEXT_PUBLIC_GOOGLE_CLIENT_ID=your-client-id
+GOOGLE_CLIENT_ID=your-client-id
+GOOGLE_CLIENT_SECRET=your-client-secret
 
-# Edit with actual credentials
-nano .env.production
+STRIPE_SECRET_KEY=sk_live_...
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_live_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+NEXT_PUBLIC_STRIPE_ENVIRONMENT=production
 
-# Secure the file
-chmod 600 .env.production
-
-# Verify it's not tracked by git
-git status  # Should NOT show .env.production
+OPENAI_API_KEY=sk-proj-...
+GEMINI_API_KEY=AIza...
 ```
 
-### Step 5: Initial Build
+#### 后端 (backend/.env)
 
 ```bash
-# Install dependencies
-npm install
+cd backend
+cp .env.production.template .env
 
-# Build application
-npm run build
+# 编辑配置
+nano .env
 
-# Verify build
-ls -la .next/  # Should contain build artifacts
+# 必须配置项
+GOOGLE_CLIENT_ID=your-client-id
+GOOGLE_CLIENT_SECRET=your-client-secret
+GOOGLE_REDIRECT_URI=https://adsvideo.co/auth/callback
+
+JWT_SECRET_KEY=<生成: openssl rand -hex 32>
+
+OPENAI_API_KEY=sk-proj-...
+GEMINI_API_KEY=AIza...
+
+DATABASE_URL=sqlite:///./aivideo.db
+ALLOWED_ORIGINS=["https://adsvideo.co"]
 ```
 
-### Step 6: Configure PM2
+### 4. 执行部署
 
 ```bash
-# ecosystem.config.js should already exist from git clone
-# Verify configuration
-cat ecosystem.config.js
+cd /root/ai-video-web
+./scripts/deploy-full.sh
+```
 
-# Start services
-pm2 start ecosystem.config.js
+### 5. 配置Nginx
 
-# Check status
+Nginx配置文件已存在于: `/etc/nginx/sites-available/adsvideo.co`
+
+**关键配置**:
+```nginx
+# 前端代理
+location / {
+    proxy_pass http://127.0.0.1:3000;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+}
+
+# 后端API代理
+location /api/ {
+    proxy_pass http://127.0.0.1:8000;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+}
+
+# WWW重定向
+server {
+    server_name www.adsvideo.co;
+    return 301 https://adsvideo.co$request_uri;
+}
+```
+
+**测试并重载**:
+```bash
+nginx -t
+systemctl reload nginx
+```
+
+### 6. 配置SSL (Let's Encrypt)
+
+```bash
+# 安装Certbot
+apt install -y certbot python3-certbot-nginx
+
+# 申请证书
+certbot --nginx \
+  -d adsvideo.co \
+  -d www.adsvideo.co \
+  --email your-email@example.com \
+  --agree-tos \
+  --no-eff-email
+
+# 测试自动续期
+certbot renew --dry-run
+```
+
+---
+
+## 🔍 验证部署
+
+### 服务状态检查
+
+```bash
+# PM2状态
 pm2 status
 
-# View logs
-pm2 logs
+# 应该看到:
+# ┌────┬─────────────────┬─────────┬─────────┬──────────┐
+# │ id │ name            │ status  │ restart │ uptime   │
+# ├────┼─────────────────┼─────────┼─────────┼──────────┤
+# │ 0  │ ai-video-web    │ online  │ 0       │ 1h       │
+# │ 1  │ ai-video-api    │ online  │ 0       │ 1h       │
+# └────┴─────────────────┴─────────┴─────────┴──────────┘
+```
 
-# Save configuration
+### 端口测试
+
+```bash
+# 前端
+curl http://localhost:3000
+
+# 后端
+curl http://localhost:8000/api/v1/health
+
+# Nginx
+curl -I https://adsvideo.co
+```
+
+### 浏览器测试
+
+1. ✅ 访问 https://adsvideo.co (主页加载)
+2. ✅ 访问 https://www.adsvideo.co (重定向到非www)
+3. ✅ 点击登录按钮 (Google OAuth)
+4. ✅ 上传图片生成视频
+5. ✅ 查看"我的视频"页面
+
+---
+
+## 🛠️ 常见问题
+
+### 问题1: PM2服务无法启动
+
+**症状**: `pm2 status` 显示 `errored` 或不断重启
+
+**原因**:
+- 端口被占用 (3000或8000)
+- 环境变量缺失
+- 构建失败
+
+**解决**:
+```bash
+# 检查端口
+lsof -i :3000
+lsof -i :8000
+
+# 查看错误日志
+pm2 logs --err --lines 50
+
+# 清除PM2并重新启动
+pm2 delete all
+pm2 start ecosystem.config.js
 pm2 save
 ```
 
-**Expected PM2 Output:**
-```
-┌─────┬──────────────────┬─────────────┬─────────┬─────────┬──────────┬────────┬──────┐
-│ id  │ name             │ namespace   │ version │ mode    │ pid      │ uptime │ ...  │
-├─────┼──────────────────┼─────────────┼─────────┼─────────┼──────────┼────────┼──────┤
-│ 0   │ ai-video-web     │ default     │ 0.1.0   │ fork    │ 12345    │ 0s     │ ...  │
-└─────┴──────────────────┴─────────────┴─────────┴─────────┴──────────┴────────┴──────┘
+### 问题2: Google OAuth登录失败
+
+**症状**: 点击登录后显示 "Network Error"
+
+**原因**:
+- `NEXT_PUBLIC_API_URL` 配置错误 (指向localhost)
+- 浏览器缓存旧的JavaScript代码
+
+**解决**:
+```bash
+# 1. 检查环境变量
+grep NEXT_PUBLIC_API_URL .env.production
+# 必须是: https://adsvideo.co/api/v1 (不是localhost!)
+
+# 2. 重新构建
+npm run build
+pm2 restart ai-video-web
+
+# 3. 浏览器硬刷新
+# Mac: Cmd+Shift+R
+# Windows: Ctrl+Shift+R
 ```
 
-### Step 7: Configure Nginx (Optional)
+**Google Cloud Console检查**:
+- 授权重定向URI: `https://adsvideo.co/auth/callback`
+- 授权JavaScript来源: `https://adsvideo.co`
+- ⚠️ 不要包含 `www.adsvideo.co` (会被重定向)
 
-If using Nginx as reverse proxy:
+### 问题3: 后端API返回502
+
+**症状**: 前端显示API错误,Nginx日志显示502
+
+**原因**: 后端服务未启动或崩溃
+
+**解决**:
+```bash
+# 检查后端状态
+pm2 status ai-video-api
+
+# 查看后端日志
+pm2 logs ai-video-api --lines 100
+
+# 常见问题:
+# - Python虚拟环境不存在
+# - backend/.env配置缺失
+# - 数据库文件损坏
+
+# 重新部署后端
+./scripts/deploy-backend.sh
+```
+
+### 问题4: Nginx配置测试失败
+
+**症状**: `nginx -t` 报错
+
+**常见错误**:
+```bash
+# SSL证书未找到
+# → 需要先申请Let's Encrypt证书
+
+# 配置语法错误
+# → 检查 /etc/nginx/sites-available/adsvideo.co
+
+# 端口冲突
+# → 检查是否有其他服务占用80/443端口
+```
+
+---
+
+## 📊 日常运维
+
+### 日志查看
 
 ```bash
-# Install Nginx
-apt update && apt install nginx -y
+# 部署日志
+tail -f /root/ai-video-web/logs/deploy-full.log
 
-# Create configuration
-nano /etc/nginx/sites-available/ai-video-web
+# PM2应用日志
+pm2 logs                      # 实时查看所有
+pm2 logs ai-video-web         # 前端
+pm2 logs ai-video-api         # 后端
+pm2 logs --lines 100          # 最近100行
+pm2 logs --err                # 只看错误
+
+# Nginx日志
+tail -f /var/log/nginx/adsvideo-access.log
+tail -f /var/log/nginx/adsvideo-error.log
+
+# 系统日志
+journalctl -u nginx -f
 ```
 
-**Nginx Configuration:**
-```nginx
-server {
-    listen 80;
-    server_name adsvideo.co www.adsvideo.co;
-
-    location / {
-        proxy_pass http://localhost:3000;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header Host $host;
-        proxy_cache_bypass $http_upgrade;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-}
-```
+### 服务重启
 
 ```bash
-# Enable site
-ln -s /etc/nginx/sites-available/ai-video-web /etc/nginx/sites-enabled/
+# 重启特定服务
+pm2 restart ai-video-web      # 前端
+pm2 restart ai-video-api      # 后端
 
-# Test configuration
-nginx -t
+# 重启所有PM2服务
+pm2 restart all
 
-# Reload Nginx
+# 优雅重启 (等待连接结束)
+pm2 reload all
+
+# 重启Nginx (无中断)
 systemctl reload nginx
-
-# Enable SSL with Let's Encrypt (recommended)
-apt install certbot python3-certbot-nginx -y
-certbot --nginx -d adsvideo.co -d www.adsvideo.co
 ```
 
----
-
-## Deployment Methods
-
-### Method 1: One-Command Deployment (Recommended)
-
-**From your local machine:**
+### 性能监控
 
 ```bash
-# Navigate to project directory
-cd /path/to/ai-video-web
+# PM2实时监控
+pm2 monit
 
-# Run deployment script
-./scripts/deploy.sh
-
-# With custom commit message
-./scripts/deploy.sh -m "Add new feature: video templates"
-
-# Deploy without git push (use current remote version)
-./scripts/deploy.sh -s
+# 服务器资源
+htop                  # CPU, RAM, 进程
+df -h                 # 磁盘空间
+free -h               # 内存使用
+netstat -tulpn        # 端口监听
 ```
 
-**What it does:**
-1. Commits and pushes your local changes to GitHub
-2. SSHs to the server
-3. Executes `server-deploy.sh` remotely
-4. Shows real-time deployment logs
-5. Displays deployment summary
-
-**Expected Output:**
-```
-╔══════════════════════════════════════════════════════════╗
-║         AI Video Web - Deployment Script                ║
-╚══════════════════════════════════════════════════════════╝
-
-[11:23:45] INFO: Project directory: /Users/lzx/lin/github/ai-video-web
-[11:23:45] INFO: Target server: root@23.95.254.67:3200
-[11:23:45] INFO: Remote path: /root/ai-video-web
-
-[11:23:45] ▶ Checking git status...
-[11:23:46] Pushing to GitHub...
-[11:23:48] Code pushed successfully
-
-[11:23:48] ▶ Testing SSH connection to server...
-[11:23:49] SSH connection successful
-
-[11:23:49] ▶ Starting remote deployment...
-
-═══════════════════════════════════════════════════════════
-  Remote Server Deployment Log
-═══════════════════════════════════════════════════════════
-
-[11:23:50] ==========================================
-[11:23:50] Starting deployment at 20250118-112350
-[11:23:50] ==========================================
-[11:23:50] Creating backup of current version...
-[11:23:51] Backup created at: /root/ai-video-web/backups/backup-20250118-112350
-[11:23:51] Stopping PM2 services...
-[11:23:52] PM2 services stopped
-[11:23:52] Fetching latest code from GitHub...
-[11:23:54] Pulling latest changes...
-[11:23:54] INFO: Current commit: a8ab8d8
-[11:23:54] INFO: Remote commit:  f9a2b37
-[11:23:55] Code updated successfully to commit: f9a2b37
-[11:23:55] Installing dependencies...
-[11:23:58] Dependencies installed successfully
-[11:23:58] Building application...
-[11:24:15] Build completed successfully
-[11:24:15] Starting PM2 services...
-[11:24:17] Performing health check...
-[11:24:17] Frontend service is running
-[11:24:17] ==========================================
-[11:24:17] Deployment completed successfully!
-[11:24:17] ==========================================
-
-[11:24:17] ✓ Deployment completed successfully!
-
-[11:24:17] INFO: Your application is now running on:
-[11:24:17] INFO:   - Server: http://23.95.254.67
-[11:24:17] INFO:   - Domain: https://AdsVideo.co
-```
-
-### Method 2: Manual Server Deployment
-
-**SSH to server and run:**
+### 备份管理
 
 ```bash
-# SSH to server
-ssh -p 3200 root@23.95.254.67
-
-# Navigate to project
-cd /root/ai-video-web
-
-# Run deployment script
-./scripts/server-deploy.sh
-```
-
-This is useful when:
-- You've already pushed code to GitHub manually
-- You want to rebuild without code changes
-- Debugging deployment issues
-
-### Method 3: PM2 Deployment (Alternative)
-
-**Using PM2's built-in deployment:**
-
-```bash
-# From local machine
-pm2 deploy ecosystem.config.js production setup    # First time only
-pm2 deploy ecosystem.config.js production update   # Subsequent deploys
-```
-
-Note: Requires uncommenting the `deploy` section in [ecosystem.config.js](ecosystem.config.js).
-
----
-
-## Configuration
-
-### PM2 Configuration ([ecosystem.config.js](ecosystem.config.js))
-
-**Key Settings:**
-
-```javascript
-{
-  name: 'ai-video-web',           // Process name
-  script: 'npm',                   // Command to run
-  args: 'start',                   // Arguments (npm start)
-  instances: 1,                    // Number of instances
-  exec_mode: 'fork',              // Execution mode
-  autorestart: true,               // Auto-restart on crash
-  max_memory_restart: '1G',        // Restart if exceeds 1GB RAM
-  env: {
-    NODE_ENV: 'production',
-    PORT: 3000
-  }
-}
-```
-
-**Adjust for your needs:**
-- Increase `instances` for load balancing (use 'cluster' mode)
-- Adjust `max_memory_restart` based on server RAM
-- Add backend API configuration if needed
-
-### Environment Variables ([.env.production](.env.production))
-
-**Critical Variables:**
-
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `NODE_ENV` | Environment mode | `production` |
-| `PORT` | Frontend server port | `3000` |
-| `NEXT_PUBLIC_API_URL` | Public API URL | `https://api.adsvideo.co/api/v1` |
-| `STRIPE_SECRET_KEY` | Stripe API key | `sk_live_...` |
-| `OPENAI_API_KEY` | OpenAI API key | `sk-proj-...` |
-
-**Security Checklist:**
-- ✅ All keys are production keys (not test keys)
-- ✅ File permissions: `chmod 600 .env.production`
-- ✅ File is in `.gitignore`
-- ✅ API keys have IP restrictions enabled
-- ✅ Webhook secrets are configured
-
----
-
-## Troubleshooting
-
-### Common Issues
-
-#### 1. Build Fails with TypeScript Errors
-
-**Symptom:**
-```
-Type error: ... is possibly 'undefined'
-Build failed!
-```
-
-**Solution:**
-```bash
-# Check TypeScript errors locally first
-npm run build
-
-# Fix errors based on TYPESCRIPT_CONFIG.md guidelines
-# Common fixes:
-# - Add null checks for array access
-# - Remove unused variables
-# - Ensure all code paths return
-```
-
-#### 2. PM2 Process Crashes Immediately
-
-**Symptom:**
-```
-pm2 status
-# Shows: status: errored, restarts: 15
-```
-
-**Solution:**
-```bash
-# Check error logs
-pm2 logs ai-video-web --err --lines 50
-
-# Common causes:
-# - Port already in use
-# - Missing environment variables
-# - Build artifacts missing
-
-# Fix port issue
-lsof -i :3000        # Check what's using port
-pm2 delete all       # Clear PM2
-pm2 start ecosystem.config.js
-
-# Fix missing env
-cp .env.production.template .env.production
-nano .env.production  # Add credentials
-```
-
-#### 3. Git Pull Fails with SSH Error
-
-**Symptom:**
-```
-Permission denied (publickey)
-fatal: Could not read from remote repository
-```
-
-**Solution:**
-```bash
-# Test SSH key
-ssh -T git@github.com -i ~/.ssh/id_ed25519
-
-# If fails, check key permissions
-chmod 600 ~/.ssh/id_ed25519
-
-# Verify key is added to GitHub
-cat ~/.ssh/id_ed25519.pub
-# Add to: github.com/GentOS-AI/ai-video-web/settings/keys
-
-# Test git command
-GIT_SSH_COMMAND="ssh -i ~/.ssh/id_ed25519" \
-  git ls-remote git@github.com:GentOS-AI/ai-video-web.git
-```
-
-#### 4. Deployment Rollback
-
-**If deployment fails, rollback manually:**
-
-```bash
-cd /root/ai-video-web
-
-# List available backups
-ls -lt backups/
-
-# Restore from backup
-BACKUP="backups/backup-20250118-112350"
-rm -rf .next node_modules
-cp -r "$BACKUP/.next" .
-cp -r "$BACKUP/node_modules" .
-
-# Restart PM2
-pm2 restart all
-
-# Verify
-pm2 status
-curl http://localhost:3000
-```
-
-#### 5. Out of Memory During Build
-
-**Symptom:**
-```
-FATAL ERROR: Reached heap limit Allocation failed
-```
-
-**Solution:**
-```bash
-# Increase Node.js memory limit
-NODE_OPTIONS="--max-old-space-size=4096" npm run build
-
-# Or add to package.json scripts:
-# "build": "NODE_OPTIONS='--max-old-space-size=4096' next build"
-
-# For persistent fix, upgrade server RAM
-```
-
-### Viewing Logs
-
-**Deployment logs:**
-```bash
-tail -f /root/ai-video-web/logs/deploy.log
-```
-
-**Application logs:**
-```bash
-# All logs
-pm2 logs
-
-# Frontend only
-pm2 logs ai-video-web
-
-# Last 100 lines
-pm2 logs --lines 100
-
-# Error logs only
-pm2 logs --err
-```
-
-**Log files location:**
-- Deployment: `/root/ai-video-web/logs/deploy.log`
-- Frontend output: `/root/ai-video-web/logs/frontend-out.log`
-- Frontend errors: `/root/ai-video-web/logs/frontend-error.log`
-
-### Health Checks
-
-**Check if application is running:**
-
-```bash
-# PM2 status
-pm2 status
-
-# Check port
-netstat -tlnp | grep 3000
-
-# Test HTTP response
-curl http://localhost:3000
-
-# Test from outside
-curl http://23.95.254.67:3000
-curl https://adsvideo.co
-```
-
-**Expected responses:**
-- PM2 status: `online` with green status
-- Port 3000: Should show Node.js process
-- HTTP response: Should return HTML (not 502/503 error)
-
----
-
-## Maintenance
-
-### Regular Tasks
-
-#### Update Dependencies
-
-```bash
-# SSH to server
-cd /root/ai-video-web
-
-# Update to latest compatible versions
-npm update
-
-# Rebuild
-npm run build
-
-# Restart
-pm2 restart all
-
-# Verify
-pm2 logs
-```
-
-#### Clean Old Backups
-
-```bash
+# 自动备份位置
+ls -lh /root/ai-video-web/backups/
+
+# 备份保留策略: 最近5次部署
+# 手动清理:
 cd /root/ai-video-web/backups
-
-# Backups are auto-cleaned (keeps last 5)
-# Manual cleanup:
 ls -t | tail -n +6 | xargs rm -rf
 ```
 
-#### Rotate Logs
+---
+
+## 🔐 安全最佳实践
+
+### 1. 环境变量安全
 
 ```bash
-# PM2 log rotation (install module)
-pm2 install pm2-logrotate
+# 确保.env文件权限正确
+chmod 600 /root/ai-video-web/.env.production
+chmod 600 /root/ai-video-web/backend/.env
 
-# Configure rotation
-pm2 set pm2-logrotate:max_size 10M
-pm2 set pm2-logrotate:retain 7
-pm2 set pm2-logrotate:compress true
+# 验证.env不在Git中
+grep -r "\.env" /root/ai-video-web/.gitignore
 ```
 
-#### Monitor Resources
+### 2. SSH安全
 
 ```bash
-# Real-time monitoring
-pm2 monit
+# 禁用密码登录 (只允许密钥)
+nano /etc/ssh/sshd_config
+# 设置: PasswordAuthentication no
 
-# Server resources
-htop              # CPU, RAM usage
-df -h             # Disk usage
-free -h           # Memory usage
+systemctl restart sshd
 ```
 
-### Security Updates
+### 3. 防火墙配置
 
-**Monthly security checklist:**
+```bash
+# 只开放必要端口
+ufw allow 22/tcp      # SSH (或自定义端口3200)
+ufw allow 80/tcp      # HTTP
+ufw allow 443/tcp     # HTTPS
+ufw enable
 
-1. **Update system packages:**
-   ```bash
-   apt update && apt upgrade -y
-   ```
+# 验证规则
+ufw status
+```
 
-2. **Rotate API keys:**
-   - Generate new keys in provider dashboards
-   - Update `.env.production`
-   - Restart services: `pm2 restart all`
+### 4. SSL证书自动续期
 
-3. **Check for npm vulnerabilities:**
-   ```bash
-   npm audit
-   npm audit fix  # Apply automatic fixes
-   ```
+```bash
+# 检查certbot定时任务
+systemctl list-timers | grep certbot
 
-4. **Review access logs:**
-   ```bash
-   pm2 logs | grep -i error
-   tail -f /var/log/nginx/access.log  # If using Nginx
-   ```
+# 手动测试续期
+certbot renew --dry-run
+```
 
-5. **Backup database** (if applicable):
-   ```bash
-   # Example for PostgreSQL
-   pg_dump dbname > backup-$(date +%Y%m%d).sql
-   ```
+### 5. 定期更新
 
-### Performance Optimization
+```bash
+# 每月执行系统更新
+apt update && apt upgrade -y
 
-**Enable PM2 clustering:**
+# 更新Node.js依赖
+cd /root/ai-video-web
+npm audit fix
+
+# 更新Python依赖
+cd backend
+source venv/bin/activate
+pip list --outdated
+pip install --upgrade <package>
+```
+
+---
+
+## 🚨 紧急回滚
+
+如果新版本部署后出现严重问题:
+
+```bash
+cd /root/ai-video-web
+
+# 1. 查看可用备份
+ls -lh backups/
+
+# 2. 选择最近的备份
+BACKUP="backups/backup-20250118-112350"  # 替换为实际备份目录
+
+# 3. 停止服务
+pm2 stop all
+
+# 4. 恢复文件
+rm -rf .next
+cp -r "$BACKUP/.next" .
+
+# 5. 重启服务
+pm2 start ecosystem.config.js
+pm2 save
+
+# 6. 验证
+pm2 status
+curl -I https://adsvideo.co
+```
+
+或者回滚到特定Git提交:
+
+```bash
+cd /root/ai-video-web
+
+# 查看提交历史
+git log --oneline -10
+
+# 回滚到特定提交
+git reset --hard <commit-id>
+
+# 重新部署
+./scripts/deploy-full.sh
+```
+
+---
+
+## 📈 性能优化
+
+### 1. PM2集群模式 (可选)
 
 ```javascript
 // ecosystem.config.js
 {
-  instances: 'max',      // Use all CPU cores
-  exec_mode: 'cluster'   // Enable load balancing
+  name: 'ai-video-web',
+  instances: 'max',      // 使用所有CPU核心
+  exec_mode: 'cluster'   // 集群模式
 }
 ```
 
-**Enable Node.js production mode:**
+### 2. Nginx缓存优化
 
-Verify `NODE_ENV=production` is set in `.env.production`.
-
-**Enable gzip compression:**
-
-If using Nginx, add to config:
 ```nginx
+# 静态文件缓存
+location ~* \.(jpg|jpeg|png|gif|ico|css|js)$ {
+    expires 1y;
+    add_header Cache-Control "public, immutable";
+}
+
+# Gzip压缩
 gzip on;
 gzip_types text/plain text/css application/json application/javascript;
 gzip_min_length 1000;
 ```
 
----
+### 3. 数据库优化
 
-## Useful Commands Reference
+如果流量增大,考虑升级到PostgreSQL:
 
-### Deployment
+```bash
+# 安装PostgreSQL
+apt install -y postgresql postgresql-contrib
 
-| Command | Description |
-|---------|-------------|
-| `./scripts/deploy.sh` | Deploy from local machine |
-| `./scripts/deploy.sh -m "msg"` | Deploy with commit message |
-| `./scripts/deploy.sh -s` | Deploy without git push |
-| `./scripts/server-deploy.sh` | Deploy on server directly |
+# 创建数据库
+sudo -u postgres psql
+CREATE DATABASE aivideo_prod;
+CREATE USER aivideo_user WITH PASSWORD 'strong-password';
+GRANT ALL PRIVILEGES ON DATABASE aivideo_prod TO aivideo_user;
 
-### PM2 Management
-
-| Command | Description |
-|---------|-------------|
-| `pm2 start ecosystem.config.js` | Start all services |
-| `pm2 restart all` | Restart all services |
-| `pm2 stop all` | Stop all services |
-| `pm2 delete all` | Remove all services |
-| `pm2 logs` | View logs (all services) |
-| `pm2 logs ai-video-web` | View frontend logs only |
-| `pm2 status` | Show process status |
-| `pm2 monit` | Real-time monitoring |
-| `pm2 save` | Save current process list |
-| `pm2 resurrect` | Restore saved processes |
-
-### Git Operations
-
-| Command | Description |
-|---------|-------------|
-| `git status` | Check repo status |
-| `git pull origin main` | Pull latest changes |
-| `git log --oneline -5` | View recent commits |
-| `git reset --hard origin/main` | Force reset to remote |
-
-### Server Diagnostics
-
-| Command | Description |
-|---------|-------------|
-| `tail -f logs/deploy.log` | Watch deployment log |
-| `netstat -tlnp \| grep 3000` | Check port 3000 |
-| `curl http://localhost:3000` | Test local response |
-| `systemctl status nginx` | Check Nginx status |
-| `df -h` | Check disk space |
-| `free -h` | Check memory usage |
-| `htop` | Interactive process viewer |
+# 更新backend/.env
+DATABASE_URL=postgresql://aivideo_user:password@localhost:5432/aivideo_prod
+```
 
 ---
 
-## Support
+## 📞 技术支持
 
-### Getting Help
+### 快速检查命令
 
-**Common resources:**
-- Project documentation: `/docs` directory
-- Deployment issues: Check logs first (`pm2 logs`, `tail -f logs/deploy.log`)
-- GitHub issues: Report bugs at repository issues page
-- PM2 documentation: https://pm2.keymetrics.io/docs/usage/quick-start/
+```bash
+# 一行命令检查所有服务
+pm2 status && systemctl status nginx && curl -I https://adsvideo.co
+```
 
-**Before asking for help, provide:**
-1. Deployment logs (`logs/deploy.log`)
-2. PM2 status (`pm2 status`)
-3. Error logs (`pm2 logs --err`)
-4. Steps to reproduce the issue
-5. Server specs and Node.js version
+### 报告问题时提供
 
----
-
-## License
-
-This deployment configuration is part of the AI Video Web project.
-Refer to the main [README.md](README.md) for license information.
+1. **PM2状态**: `pm2 status`
+2. **错误日志**: `pm2 logs --err --lines 50`
+3. **服务器信息**: `uname -a && free -h && df -h`
+4. **Git提交**: `git log --oneline -5`
+5. **环境变量** (隐藏敏感信息): `grep -v "KEY\|SECRET" .env.production`
 
 ---
 
-**Last Updated:** 2025-01-18
-**Version:** 1.0.0
+## 📚 相关文档
+
+- [README.md](README.md) - 项目概述
+- [DEPLOY_QUICK_START.md](DEPLOY_QUICK_START.md) - 快速部署指南 ⭐
+- [CLAUDE.md](CLAUDE.md) - 开发指南
+- [backend/README.md](backend/README.md) - 后端API文档
+
+---
+
+## 🎯 部署核心命令速查
+
+| 操作 | 命令 |
+|------|------|
+| **从本地一键部署** | `./scripts/deploy.sh -m "说明"` |
+| **服务器完整部署** | `cd /root/ai-video-web && ./scripts/deploy-full.sh` |
+| **只部署前端** | `./scripts/deploy-frontend.sh` |
+| **只部署后端** | `./scripts/deploy-backend.sh` |
+| **查看PM2状态** | `pm2 status` |
+| **查看日志** | `pm2 logs` |
+| **重启服务** | `pm2 restart all` |
+| **SSH登录** | `ssh -p3200 -lroot 23.95.254.67` |
+
+---
+
+**版本**: 2.0.0
+**最后更新**: 2025-10-18
+**维护**: AI Video Web Team
+
+**关键改进**:
+- ✅ 统一使用PM2部署 (移除Systemd混淆)
+- ✅ 前后端独立部署脚本
+- ✅ 修复ecosystem.config.js端口配置
+- ✅ 清理过时文档
+- ✅ 添加详细故障排查指南

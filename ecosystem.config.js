@@ -57,16 +57,16 @@ module.exports = {
       shutdown_with_message: false,
     },
 
-    // Uncomment this section if you have a backend API server
-    /*
+    // Backend FastAPI Server
     {
       // Backend API Server
       name: 'ai-video-api',
-      script: 'npm',
-      args: 'run start:api',  // Adjust based on your backend start command
-      cwd: '/root/ai-video-web',
+      script: 'venv/bin/uvicorn',
+      args: 'app.main:app --host 127.0.0.1 --port 8000',
+      cwd: '/root/ai-video-web/backend',
       instances: 1,
       exec_mode: 'fork',
+      interpreter: 'none',  // Direct binary execution
 
       // Auto-restart configuration
       autorestart: true,
@@ -75,8 +75,7 @@ module.exports = {
 
       // Environment variables
       env: {
-        NODE_ENV: 'production',
-        PORT: 8000,
+        PYTHONUNBUFFERED: '1',
       },
 
       // Logging
@@ -94,7 +93,6 @@ module.exports = {
       listen_timeout: 3000,
       kill_timeout: 5000,
     },
-    */
   ],
 
   /**

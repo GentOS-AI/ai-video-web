@@ -30,26 +30,17 @@ export const getStripe = () => {
 /**
  * Redirect to Stripe Checkout
  *
- * @param sessionId - Stripe Checkout Session ID
+ * Modern approach: Use the checkout URL directly from the session
+ * Note: Stripe.js v4+ no longer supports redirectToCheckout()
+ *
+ * @param checkoutUrl - Stripe Checkout Session URL
  */
-export const redirectToCheckout = async (sessionId: string) => {
+export const redirectToCheckout = async (checkoutUrl: string) => {
   try {
-    const stripe = await getStripe();
-
-    if (!stripe) {
-      throw new Error('Failed to load Stripe');
-    }
-
     console.log('🔄 Redirecting to Stripe Checkout...');
 
-    const { error } = await stripe.redirectToCheckout({
-      sessionId,
-    });
-
-    if (error) {
-      console.error('❌ Stripe redirect error:', error);
-      throw error;
-    }
+    // Direct redirect to Stripe Checkout URL
+    window.location.href = checkoutUrl;
   } catch (error) {
     console.error('❌ Failed to redirect to checkout:', error);
     throw error;

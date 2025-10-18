@@ -43,6 +43,8 @@ export const HeroSection = () => {
   const [selectedModel, setSelectedModel] = useState(aiModels[0]);
   const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false);
   const [isPricingOpen, setIsPricingOpen] = useState(false);
+  const [videoKey, setVideoKey] = useState(0); // Key to force video remount
+  const [hasUserInteracted, setHasUserInteracted] = useState(false); // Track if user has clicked
   const dropdownRef = useRef<HTMLDivElement>(null);
   const maxChars = 5000;
 
@@ -462,6 +464,18 @@ export const HeroSection = () => {
     setIsPricingOpen(false);
   };
 
+  // Handle video switch - stop current video and switch to new one
+  const handleVideoSwitch = (index: number) => {
+    // Mark that user has interacted
+    setHasUserInteracted(true);
+
+    if (index !== currentVideoIndex) {
+      // Force video component to remount by changing key
+      setVideoKey(prev => prev + 1);
+      setCurrentVideoIndex(index);
+    }
+  };
+
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -497,15 +511,33 @@ export const HeroSection = () => {
             className="space-y-4 sm:space-y-6 order-2 lg:order-1"
           >
             {/* Heading */}
-            <div className="space-y-2 sm:space-y-3 md:space-y-4">
-              <h1 className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">
-                Image to Professional{" "}
-                <span className="bg-gradient-to-r from-purple-600 via-pink-500 to-yellow-400 bg-clip-text text-transparent">
-                  Ads Video
+            <div className="space-y-2 sm:space-y-3">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold leading-[1.15] tracking-tight">
+                <span className="block text-gray-900 mb-1.5">
+                  Image to Professional
                 </span>
-                {" "}Only One Click Away.
+                <span className="block relative">
+                  <span className="relative inline-block">
+                    {/* Glow effect background */}
+                    <span className="absolute inset-0 blur-2xl opacity-30 bg-gradient-to-r from-purple-600 to-pink-500"></span>
+                    {/* Main gradient text */}
+                    <span className="relative bg-gradient-to-r from-purple-600 via-pink-500 to-purple-600 bg-clip-text text-transparent animate-gradient">
+                      Ads Video
+                    </span>
+                  </span>
+                </span>
+                <span className="block text-gray-900 mt-1.5">
+                  Only{" "}
+                  <span className="relative inline-block">
+                    <span className="text-purple-600">One Click</span>
+                    <svg className="absolute -bottom-1.5 left-0 right-0 h-2.5" viewBox="0 0 200 12" preserveAspectRatio="none">
+                      <path d="M0,7 Q50,0 100,7 T200,7" fill="none" stroke="currentColor" strokeWidth="3" className="text-purple-600/30" />
+                    </svg>
+                  </span>
+                  {" "}Away.
+                </span>
               </h1>
-              <p className="text-sm sm:text-lg md:text-xl text-text-secondary leading-relaxed">
+              <p className="text-base sm:text-lg md:text-xl text-gray-600 leading-relaxed max-w-2xl">
                 Professional AI scripting, video generation, and instant social media publishing.
               </p>
             </div>
@@ -868,20 +900,21 @@ export const HeroSection = () => {
               ) : (
                 /* Default sample video */
                 <VideoPlayer
+                  key={videoKey}
                   src={currentVideo.src}
                   poster={currentVideo.poster}
-                  autoPlay={true}
+                  autoPlay={!hasUserInteracted}
                 />
               )}
 
               {/* Video Indicators (only show for sample videos) */}
               {!generatedVideo && !isGenerating && (
-                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex space-x-2 z-10">
+                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex space-x-2 z-50 pointer-events-auto">
                   {sampleVideos.map((_, index) => (
                     <button
                       key={index}
-                      onClick={() => setCurrentVideoIndex(index)}
-                      className={`rounded-full transition-all cursor-pointer ${
+                      onClick={() => handleVideoSwitch(index)}
+                      className={`rounded-full transition-all cursor-pointer pointer-events-auto ${
                         index === currentVideoIndex
                           ? "bg-white w-8 h-2 shadow-lg"
                           : "bg-white/60 hover:bg-white/90 w-2 h-2 hover:scale-150"

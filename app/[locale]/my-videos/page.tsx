@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Video as VideoIcon, Loader2, Film, RefreshCw, Image as ImageIconLucide, Play } from "lucide-react";
+import { ArrowLeft, Video as VideoIcon, Loader2, Film, RefreshCw, Image as ImageIconLucide, Play, MoreVertical, Trash2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNotification } from "@/contexts/NotificationContext";
 import { VideoCard } from "@/components/VideoCard";
@@ -34,6 +34,7 @@ export default function MediaCenterPage() {
   // Image modal states
   const [selectedImage, setSelectedImage] = useState<UploadedImage | null>(null);
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
+  const [imageMenuOpen, setImageMenuOpen] = useState<number | null>(null);
 
   const [page, setPage] = useState(1);
   const [totalVideos, setTotalVideos] = useState(0);
@@ -204,6 +205,27 @@ export default function MediaCenterPage() {
     setRefreshCountdown(10); // Reset countdown
     await fetchVideos();
     showToast('Video list refreshed', 'success');
+  };
+
+  const handleDeleteImage = async (imageId: number) => {
+    showConfirm({
+      title: 'Delete Image',
+      message: 'Are you sure you want to delete this image? This action cannot be undone.',
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      confirmVariant: 'danger',
+      onConfirm: async () => {
+        try {
+          // TODO: Add delete image API endpoint
+          // await uploadService.deleteImage(imageId);
+          setImages(prev => prev.filter(img => img.id !== imageId));
+          showToast('Image deleted successfully', 'success');
+        } catch (err) {
+          console.error('Failed to delete image:', err);
+          showToast('Failed to delete image', 'error');
+        }
+      }
+    });
   };
 
   if (authLoading) {
@@ -430,19 +452,21 @@ export default function MediaCenterPage() {
                           initial={{ opacity: 0, scale: 0.95 }}
                           animate={{ opacity: 1, scale: 1 }}
                           transition={{ duration: 0.2 }}
-                          onClick={() => {
-                            setSelectedImage(image);
-                            setIsImageModalOpen(true);
-                          }}
                           className="relative group cursor-pointer"
                         >
                           {/* Image Container - Fixed Square */}
-                          <div className="relative w-full aspect-square bg-slate-900 rounded-lg overflow-hidden border border-gray-700 hover:border-purple-400 transition-all duration-200 hover:shadow-lg hover:shadow-purple-500/30">
+                          <div
+                            className="relative w-full aspect-square bg-slate-900 rounded-lg overflow-hidden border border-gray-700 hover:border-purple-400 transition-all duration-200 hover:shadow-lg hover:shadow-purple-500/30"
+                            onClick={() => {
+                              setSelectedImage(image);
+                              setIsImageModalOpen(true);
+                            }}
+                          >
                             <Image
                               src={image.file_url}
                               alt={image.filename}
                               fill
-                              className="object-contain p-3 group-hover:scale-110 transition-transform duration-300"
+                              className="object-contain group-hover:scale-105 transition-transform duration-300"
                               sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
                             />
 
@@ -453,6 +477,47 @@ export default function MediaCenterPage() {
                                   <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
                                 </svg>
                                 <p className="text-sm font-medium">Click to enlarge</p>
+                              </div>
+                            </div>
+
+                            {/* Three-dot menu button (top-right) */}
+                            <div className="absolute top-3 right-3">
+                              <div className="relative">
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setImageMenuOpen(imageMenuOpen === image.id ? null : image.id);
+                                  }}
+                                  className="p-2 bg-white/90 hover:bg-white rounded-full shadow-md backdrop-blur-sm transition-all hover:scale-110"
+                                >
+                                  <MoreVertical className="w-4 h-4 text-gray-700" />
+                                </button>
+
+                                {/* Dropdown menu */}
+                                {imageMenuOpen === image.id && (
+                                  <>
+                                    {/* Backdrop to close menu */}
+                                    <div
+                                      className="fixed inset-0 z-10"
+                                      onClick={() => setImageMenuOpen(null)}
+                                    />
+
+                                    {/* Menu items */}
+                                    <div className="absolute right-0 mt-2 w-40 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20">
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setImageMenuOpen(null);
+                                          handleDeleteImage(image.id);
+                                        }}
+                                        className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 transition-colors flex items-center gap-2"
+                                      >
+                                        <Trash2 className="w-4 h-4" />
+                                        Delete
+                                      </button>
+                                    </div>
+                                  </>
+                                )}
                               </div>
                             </div>
                           </div>

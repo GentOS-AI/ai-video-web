@@ -44,3 +44,12 @@ next-env.d.ts
 backend/public/sample-video.mp4
 backend/public/*.mp4
 backend/uploads/videos/*.mp4
+
+# Deployment
+logs/
+backups/
+*.log
+
+# CLAUDE.md files (project instructions, should not be committed)
+CLAUDE.md
+**/CLAUDE.md

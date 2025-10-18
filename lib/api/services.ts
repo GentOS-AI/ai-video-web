@@ -248,7 +248,14 @@ export const uploadService = {
   /**
    * Upload an image file
    */
-  async uploadImage(file: File): Promise<{ file_path: string; filename: string }> {
+  async uploadImage(file: File): Promise<{
+    file_path: string;
+    filename: string;
+    file_url: string;
+    image_id: number;
+    width: number;
+    height: number;
+  }> {
     const formData = new FormData();
     formData.append('file', file);
 
@@ -256,6 +263,16 @@ export const uploadService = {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
+    });
+    return data;
+  },
+
+  /**
+   * Get uploaded images for current user
+   */
+  async getUploadedImages(limit: number = 50, offset: number = 0): Promise<UploadedImagesResponse> {
+    const { data } = await apiClient.get<UploadedImagesResponse>('/upload/images', {
+      params: { limit, offset },
     });
     return data;
   },

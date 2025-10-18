@@ -11,6 +11,7 @@ import { VideoCard } from "@/components/VideoCard";
 import { VideoModal } from "@/components/VideoModal";
 import { VideoStatusFilter, type VideoStatusType } from "@/components/VideoStatusFilter";
 import { getUserVideos, deleteVideo, retryVideo, type Video } from "@/lib/services/videoService";
+import { uploadService, type UploadedImage } from "@/lib/api/services";
 
 type TabType = 'videos' | 'images';
 
@@ -36,9 +37,9 @@ export default function MediaCenterPage() {
   // Refresh countdown state
   const [refreshCountdown, setRefreshCountdown] = useState(10);
 
-  // Image states (placeholder for now - will be implemented when API is ready)
-  const [images] = useState<unknown[]>([]);
-  const [imagesLoading] = useState(false);
+  // Image states
+  const [images, setImages] = useState<UploadedImage[]>([]);
+  const [imagesLoading, setImagesLoading] = useState(false);
 
   // Calculate status counts
   const statusCounts = {
@@ -72,6 +73,21 @@ export default function MediaCenterPage() {
     }
   }, [page, activeStatus, showToast]);
 
+  // Fetch images
+  const fetchImages = useCallback(async () => {
+    try {
+      setImagesLoading(true);
+
+      const response = await uploadService.getUploadedImages(50, 0);
+      setImages(response.images);
+    } catch (err) {
+      console.error('Failed to fetch images:', err);
+      showToast('Failed to load images', 'error');
+    } finally {
+      setImagesLoading(false);
+    }
+  }, [showToast]);
+
   // Initial fetch
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -79,10 +95,14 @@ export default function MediaCenterPage() {
       return;
     }
 
-    if (isAuthenticated && activeTab === 'videos') {
-      fetchVideos();
+    if (isAuthenticated) {
+      if (activeTab === 'videos') {
+        fetchVideos();
+      } else if (activeTab === 'images') {
+        fetchImages();
+      }
     }
-  }, [isAuthenticated, authLoading, router, fetchVideos, activeTab]);
+  }, [isAuthenticated, authLoading, router, fetchVideos, fetchImages, activeTab]);
 
   // Auto-refresh for processing videos with countdown
   useEffect(() => {
@@ -394,7 +414,32 @@ export default function MediaCenterPage() {
                   </div>
                 ) : (
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                    {/* Image grid will be implemented here */}
+                    {images.map((image) => (
+                      <motion.div
+                        key={image.id}
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="relative group aspect-square rounded-lg overflow-hidden bg-gray-100 border border-gray-200 hover:border-purple-300 hover:shadow-lg transition-all cursor-pointer"
+                      >
+                        <Image
+                          src={image.file_url}
+                          alt={image.filename}
+                          fill
+                          className="object-cover"
+                          sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                        />
+                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-end p-3">
+                          <div className="translate-y-8 group-hover:translate-y-0 transition-transform">
+                            <p className="text-white text-sm font-medium truncate">
+                              {image.filename}
+                            </p>
+                            <p className="text-white/80 text-xs">
+                              {image.width} x {image.height} • {(image.file_size / 1024 / 1024).toFixed(2)} MB
+                            </p>
+                          </div>
+                        </div>
+                      </motion.div>
+                    ))}
                   </div>
                 )}
               </motion.div>

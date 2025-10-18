@@ -11,7 +11,7 @@ interface UseIntersectionObserverOptions {
  * Used for optimizing video autoplay on mobile devices
  */
 export const useIntersectionObserver = (
-  ref: RefObject<Element>,
+  ref: RefObject<Element | null>,
   options: UseIntersectionObserverOptions = {}
 ): boolean => {
   const [isIntersecting, setIsIntersecting] = useState(false);
@@ -22,7 +22,9 @@ export const useIntersectionObserver = (
 
     const observer = new IntersectionObserver(
       ([entry]) => {
-        setIsIntersecting(entry.isIntersecting);
+        if (entry) {
+          setIsIntersecting(entry.isIntersecting);
+        }
       },
       {
         threshold: options.threshold ?? 0.5, // 50% visible by default

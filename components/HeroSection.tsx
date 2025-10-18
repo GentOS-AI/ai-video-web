@@ -205,8 +205,8 @@ export const HeroSection = () => {
       setIsGeneratingScript(true);
       console.log(`🤖 ${optimize ? 'Optimizing' : 'Generating'} script from image...`);
 
-      // Call AI service with language parameter
-      const result = await aiService.generateScript(uploadedFile!, 4, locale);
+      // Call AI service
+      const result = await aiService.generateScript(uploadedFile!, 4);
 
       console.log("✅ Script generated:", result);
 

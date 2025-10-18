@@ -73,6 +73,24 @@ export interface RecentUsersResponse {
   display_count: number;
 }
 
+export interface UploadedImage {
+  id: number;
+  filename: string;
+  file_url: string;
+  file_size: number;
+  file_type: string;
+  width: number;
+  height: number;
+  created_at: string;
+}
+
+export interface UploadedImagesResponse {
+  images: UploadedImage[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
 // Authentication Service
 export const authService = {
   /**

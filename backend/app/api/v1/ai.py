@@ -8,7 +8,7 @@ from typing import Optional
 
 from app.api.deps import get_current_user
 from app.models.user import User
-from app.services.gemini_service import gemini_service
+from app.services.openai_script_service import openai_script_service
 
 logger = logging.getLogger(__name__)
 
@@ -79,10 +79,11 @@ def validate_image_for_script(file: UploadFile, content: bytes) -> None:
 async def generate_script(
     file: UploadFile = File(..., description="Product image (JPG/PNG, max 20MB)"),
     duration: int = Form(4, description="Video duration in seconds"),
+    language: str = Form("en", description="Language for generated script (en, zh, ja, etc.)"),
     current_user: User = Depends(get_current_user),
 ):
     """
-    Generate professional advertising video script from product image using Gemini AI
+    Generate professional advertising video script from product image using GPT-4o
 
     Requirements:
     - User must be authenticated
@@ -110,6 +111,7 @@ async def generate_script(
         logger.info(f"  📄 Filename: {file.filename}")
         logger.info(f"  🎨 Content Type: {file.content_type}")
         logger.info(f"  ⏱️  Duration: {duration}s")
+        logger.info(f"  🌍 Language: {language}")
         logger.info(f"  💳 Subscription: {current_user.subscription_plan} ({current_user.subscription_status})")
         logger.info("=" * 60)
 
@@ -139,16 +141,17 @@ async def generate_script(
         validate_image_for_script(file, content)
         logger.info("  ✅ Image validation passed")
 
-        # Generate script using Gemini
-        logger.info("🤖 Calling Gemini AI service...")
-        logger.info(f"  Model: {gemini_service.model_name}")
+        # Generate script using GPT-4o
+        logger.info("🤖 Calling OpenAI GPT-4o service...")
+        logger.info(f"  Model: gpt-4o")
         logger.info(f"  Image size: {file_size_mb:.2f}MB")
         logger.info(f"  Target duration: {duration}s")
 
-        result = gemini_service.analyze_image_for_script(
+        result = openai_script_service.analyze_image_for_script(
             image_data=content,
             duration=duration,
-            mime_type=file.content_type or "image/jpeg"
+            mime_type=file.content_type or "image/jpeg",
+            language=language
         )
 
         # === 详细的输出日志 ===
@@ -196,6 +199,6 @@ async def generate_script(
         logger.error("Stack trace:", exc_info=True)
 
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to generate script: {str(e)}"
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="The AI service is temporarily busy. Please try again in a few moments."
         )

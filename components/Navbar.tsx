@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import dynamic from "next/dynamic";
 import { Button } from "./Button";
-import { Menu, X, LogOut, Film, Languages, Check } from "lucide-react";
+import { Menu, X, LogOut, Film, Check } from "lucide-react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
@@ -145,10 +145,10 @@ export const Navbar = () => {
               {t('home')}
             </Link>
             <Link
-              href={`/${locale}/about`}
+              href={`/${locale}/blog`}
               className="px-4 py-2 text-sm font-medium text-text-secondary hover:text-primary transition-colors"
             >
-              {t('about')}
+              {t('blog')}
             </Link>
             <button
               onClick={handlePricingClick}
@@ -331,11 +331,11 @@ export const Navbar = () => {
                 {t('home')}
               </Link>
               <Link
-                href={`/${locale}/about`}
+                href={`/${locale}/blog`}
                 onClick={() => setIsMobileMenuOpen(false)}
                 className="block w-full text-left px-4 py-2 text-sm font-medium text-text-secondary hover:text-primary hover:bg-purple-bg rounded-lg transition-colors"
               >
-                {t('about')}
+                {t('blog')}
               </Link>
               <button
                 onClick={handlePricingClick}

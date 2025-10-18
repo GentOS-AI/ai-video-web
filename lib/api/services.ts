@@ -318,11 +318,12 @@ export const creditsService = {
 // AI Service
 export const aiService = {
   /**
-   * Generate video script from uploaded product image using Gemini AI
+   * Generate video script from uploaded product image using GPT-4o
    */
   async generateScript(
     file: File,
-    duration: number = 4
+    duration: number = 4,
+    language: string = 'en'
   ): Promise<{
     script: string;
     style?: string;
@@ -333,6 +334,7 @@ export const aiService = {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('duration', duration.toString());
+    formData.append('language', language);
 
     const { data } = await apiClient.post('/ai/generate-script', formData, {
       headers: {

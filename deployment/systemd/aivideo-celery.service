@@ -1,0 +1,45 @@
+[Unit]
+Description=AdsVideo.co Celery Worker (Video Generation)
+After=network.target redis.service postgresql.service
+Wants=redis.service postgresql.service
+
+[Service]
+Type=forking
+User=aivideo
+Group=aivideo
+WorkingDirectory=/var/www/aivideo/backend
+
+# 环境变量
+Environment="PATH=/var/www/aivideo/backend/venv/bin:/usr/local/bin:/usr/bin:/bin"
+Environment="PYTHONUNBUFFERED=1"
+Environment="C_FORCE_ROOT=true"
+
+# 启动命令
+ExecStart=/var/www/aivideo/backend/venv/bin/celery -A app.core.celery_app worker \
+    --loglevel=info \
+    --concurrency=4 \
+    --max-tasks-per-child=100 \
+    --task-events \
+    --time-limit=3600 \
+    --soft-time-limit=3300 \
+    --logfile=/var/log/aivideo/celery.log \
+    --pidfile=/var/run/celery/worker.pid
+
+# 优雅停止
+ExecStop=/var/www/aivideo/backend/venv/bin/celery -A app.core.celery_app control shutdown
+TimeoutStopSec=600
+
+# 重启策略
+Restart=always
+RestartSec=10
+StartLimitInterval=0
+
+# 资源限制
+LimitNOFILE=65536
+
+# 安全加固
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

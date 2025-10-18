@@ -1,0 +1,43 @@
+[Unit]
+Description=AdsVideo.co FastAPI API Server
+After=network.target postgresql.service redis.service
+Wants=postgresql.service redis.service
+
+[Service]
+Type=notify
+User=aivideo
+Group=aivideo
+WorkingDirectory=/var/www/aivideo/backend
+
+# 环境变量
+Environment="PATH=/var/www/aivideo/backend/venv/bin:/usr/local/bin:/usr/bin:/bin"
+Environment="PYTHONUNBUFFERED=1"
+
+# 启动命令 - 使用 Gunicorn + Uvicorn Workers
+ExecStart=/var/www/aivideo/backend/venv/bin/gunicorn app.main:app \
+    --workers 4 \
+    --worker-class uvicorn.workers.UvicornWorker \
+    --bind 127.0.0.1:8000 \
+    --timeout 300 \
+    --graceful-timeout 120 \
+    --keep-alive 5 \
+    --max-requests 1000 \
+    --max-requests-jitter 50 \
+    --access-logfile /var/log/aivideo/api-access.log \
+    --error-logfile /var/log/aivideo/api-error.log \
+    --log-level info
+
+# 重启策略
+Restart=always
+RestartSec=5
+StartLimitInterval=0
+
+# 资源限制
+LimitNOFILE=65536
+
+# 安全加固
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

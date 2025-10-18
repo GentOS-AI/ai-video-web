@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { Play, Pause } from "lucide-react";
+import { useIntersectionObserver } from "@/lib/hooks/useIntersectionObserver";
 
 interface VideoPlayerProps {
   src: string;
@@ -12,6 +13,8 @@ interface VideoPlayerProps {
   preload?: "none" | "metadata" | "auto";
   onPlayStateChange?: (isPlaying: boolean) => void;
   children?: React.ReactNode;
+  playDelay?: number; // Delay in ms before playing (for staggered playback)
+  enableViewportDetection?: boolean; // Enable Intersection Observer
 }
 
 export const VideoPlayer: React.FC<VideoPlayerProps> = ({
@@ -23,9 +26,53 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   preload = "metadata",
   onPlayStateChange,
   children,
+  playDelay = 0,
+  enableViewportDetection = false,
 }) => {
-  const [isPlaying, setIsPlaying] = useState(autoPlay);
+  const [isPlaying, setIsPlaying] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const playTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Use Intersection Observer to detect if video is in viewport
+  const isInViewport = useIntersectionObserver(containerRef, {
+    threshold: 0.5, // 50% visible
+  });
+
+  // Handle autoplay with delay and viewport detection
+  useEffect(() => {
+    if (!autoPlay || !videoRef.current) return;
+
+    const shouldPlay = enableViewportDetection ? isInViewport : true;
+
+    if (shouldPlay) {
+      // Clear any existing timeout
+      if (playTimeoutRef.current) {
+        clearTimeout(playTimeoutRef.current);
+      }
+
+      // Play with delay (for staggered playback)
+      playTimeoutRef.current = setTimeout(() => {
+        videoRef.current?.play().then(() => {
+          setIsPlaying(true);
+        }).catch((error) => {
+          // Autoplay was prevented by browser
+          console.log('Autoplay prevented:', error);
+          setIsPlaying(false);
+        });
+      }, playDelay);
+    } else if (enableViewportDetection && !isInViewport && isPlaying) {
+      // Pause when out of viewport
+      videoRef.current?.pause();
+      setIsPlaying(false);
+    }
+
+    return () => {
+      if (playTimeoutRef.current) {
+        clearTimeout(playTimeoutRef.current);
+      }
+    };
+  }, [autoPlay, isInViewport, enableViewportDetection, playDelay, isPlaying]);
 
   const togglePlay = () => {
     if (videoRef.current) {
@@ -47,7 +94,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   }, [isPlaying]); // Only depend on isPlaying, not onPlayStateChange
 
   return (
-    <div className={`relative group ${className}`}>
+    <div ref={containerRef} className={`relative group ${className}`}>
       <video
         ref={videoRef}
         src={src}
@@ -55,7 +102,6 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
         className="w-full h-full object-cover"
         loop
         muted={muted}
-        autoPlay={autoPlay}
         playsInline
         preload={preload}
       />

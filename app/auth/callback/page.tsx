@@ -21,15 +21,37 @@ function AuthCallbackContent() {
     }
     hasHandledCallback.current = true;
 
+    // Helper function to get user locale
+    const getUserLocale = () => {
+      // Try to get locale from cookie first
+      const localeCookie = document.cookie
+        .split('; ')
+        .find(row => row.startsWith('NEXT_LOCALE='));
+
+      if (localeCookie) {
+        return localeCookie.split('=')[1];
+      }
+
+      // Fallback to browser language
+      const browserLang = navigator.language.toLowerCase();
+      if (browserLang.startsWith('zh')) {
+        return 'zh';
+      } else if (browserLang.startsWith('ja')) {
+        return 'ja';
+      }
+      return 'en';
+    };
+
     const handleCallback = async () => {
       const code = searchParams.get('code');
       const errorParam = searchParams.get('error');
+      const userLocale = getUserLocale();
 
       // Check for error from Google
       if (errorParam) {
         setError(`Authentication error: ${errorParam}`);
         setTimeout(() => {
-          router.push('/?error=oauth_error');
+          router.push(`/${userLocale}?error=oauth_error`);
         }, 2000);
         return;
       }
@@ -38,7 +60,7 @@ function AuthCallbackContent() {
       if (!code) {
         setError('No authorization code received');
         setTimeout(() => {
-          router.push('/?error=no_code');
+          router.push(`/${userLocale}?error=no_code`);
         }, 2000);
         return;
       }
@@ -48,8 +70,8 @@ function AuthCallbackContent() {
         const redirectUri = `${window.location.origin}/auth/callback`;
         await login(code, redirectUri);
 
-        // Redirect to home on success
-        router.push('/?login=success');
+        // Redirect to home with locale
+        router.push(`/${userLocale}?login=success`);
       } catch (err: unknown) {
         console.error('Login error:', err);
 
@@ -76,7 +98,7 @@ function AuthCallbackContent() {
         console.error('Detailed error:', errorMessage);
 
         setTimeout(() => {
-          router.push('/?error=login_failed');
+          router.push(`/${userLocale}?error=login_failed`);
         }, 5000); // Give more time to read the error
       }
     };

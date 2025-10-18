@@ -6,13 +6,19 @@ import { VideoPlayer } from "./VideoPlayer";
 import { ChevronLeft, ChevronRight, Grid, Package, Shirt, Coffee, Home, Car, Laptop } from "lucide-react";
 import { showcaseVideos } from "@/lib/assets";
 import { useTranslations } from "next-intl";
+import { useNetworkSpeed } from "@/lib/hooks/useNetworkSpeed";
 
 export const ShowcaseSection = () => {
   const t = useTranslations('showcase');
+  const networkSpeed = useNetworkSpeed();
   const [hoveredId, setHoveredId] = useState<number | null>(null);
   const [currentPage, setCurrentPage] = useState(0);
   const [playingVideos, setPlayingVideos] = useState<Set<number>>(new Set());
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
+  const [isInitialLoad, setIsInitialLoad] = useState(true); // Track if first page is loaded
+
+  // Disable autoplay on slow network or offline
+  const shouldAutoplay = isInitialLoad && currentPage === 0 && networkSpeed !== 'slow' && networkSpeed !== 'offline';
 
   // Category buttons configuration
   const categories = [
@@ -39,11 +45,23 @@ export const ShowcaseSection = () => {
   const currentVideos = filteredVideos.slice(startIndex, startIndex + videosPerPage);
 
   const nextPage = () => {
-    setCurrentPage((prev) => (prev + 1) % totalPages);
+    setCurrentPage((prev) => {
+      const newPage = (prev + 1) % totalPages;
+      if (isInitialLoad && newPage !== 0) {
+        setIsInitialLoad(false); // Disable autoplay when leaving first page
+      }
+      return newPage;
+    });
   };
 
   const prevPage = () => {
-    setCurrentPage((prev) => (prev - 1 + totalPages) % totalPages);
+    setCurrentPage((prev) => {
+      const newPage = (prev - 1 + totalPages) % totalPages;
+      if (isInitialLoad && newPage !== 0) {
+        setIsInitialLoad(false); // Disable autoplay when leaving first page
+      }
+      return newPage;
+    });
   };
 
   const handlePlayStateChange = (videoId: number, isPlaying: boolean) => {
@@ -97,6 +115,7 @@ export const ShowcaseSection = () => {
                 onClick={() => {
                   setSelectedCategory(category.name);
                   setCurrentPage(0); // Reset to first page when changing category
+                  setIsInitialLoad(false); // Disable autoplay when changing category
                 }}
                 className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg font-medium text-sm transition-all ${
                   isActive
@@ -160,8 +179,11 @@ export const ShowcaseSection = () => {
                       <VideoPlayer
                         src={video.src}
                         poster={video.poster}
-                        autoPlay={false}
-                        preload="none"
+                        autoPlay={shouldAutoplay}
+                        preload={shouldAutoplay ? "metadata" : "none"}
+                        muted={true}
+                        playDelay={index < 3 ? 0 : 500} // Top 3 videos: 0ms delay, Bottom 3: 500ms delay
+                        enableViewportDetection={shouldAutoplay} // Enable viewport detection for autoplay videos
                         onPlayStateChange={(playing) => handlePlayStateChange(video.id, playing)}
                       >
                         {/* Purple Gradient Overlay on Hover - Optimized */}
@@ -171,13 +193,6 @@ export const ShowcaseSection = () => {
                           }`}
                           style={{ willChange: "opacity" }}
                         />
-
-                        {/* Category Badge */}
-                        <div className="absolute top-3 left-3 px-3 py-1 bg-white/90 backdrop-blur-sm rounded-full z-10">
-                          <span className="text-xs font-semibold text-primary">
-                            {video.category}
-                          </span>
-                        </div>
 
                         {/* Title and Description Overlay - Hidden when playing */}
                         <div
@@ -225,7 +240,12 @@ export const ShowcaseSection = () => {
             {Array.from({ length: totalPages }).map((_, index) => (
               <button
                 key={index}
-                onClick={() => setCurrentPage(index)}
+                onClick={() => {
+                  setCurrentPage(index);
+                  if (isInitialLoad && index !== 0) {
+                    setIsInitialLoad(false); // Disable autoplay when clicking to other pages
+                  }
+                }}
                 className={`transition-all ${
                   index === currentPage
                     ? "w-8 h-2 bg-primary rounded-full"

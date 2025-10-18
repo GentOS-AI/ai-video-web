@@ -39,7 +39,17 @@ const nextConfig: NextConfig = {
         hostname: "lh3.googleusercontent.com",
       },
       {
-        // Allow loading images from local backend server
+        // Production domain (for uploaded images/videos)
+        protocol: "https",
+        hostname: "adsvideo.co",
+      },
+      {
+        // Production domain with www
+        protocol: "https",
+        hostname: "www.adsvideo.co",
+      },
+      {
+        // Allow loading images from local backend server (development only)
         protocol: "http",
         hostname: "localhost",
         port: "8000",

@@ -13,7 +13,7 @@ import type { Video, RecentUsersResponse } from "@/lib/api/services";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNotification } from "@/contexts/NotificationContext";
 import { useVideoStream } from "@/lib/hooks/useVideoStream";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 
 // Lazy load PricingModal since it's only shown on user interaction
 const PricingModal = dynamic(
@@ -33,6 +33,7 @@ const aiModels = [
 export const HeroSection = () => {
   const t = useTranslations('hero');
   const tToast = useTranslations('toast');
+  const locale = useLocale();
 
   const { isAuthenticated, user, refreshUser } = useAuth();
   const { showToast } = useNotification();
@@ -336,8 +337,8 @@ export const HeroSection = () => {
       setIsGeneratingScript(true);
       console.log("🤖 Generating script from image...");
 
-      // Call AI service
-      const result = await aiService.generateScript(uploadedFile, 4);
+      // Call AI service with language parameter
+      const result = await aiService.generateScript(uploadedFile, 4, locale);
 
       console.log("✅ Script generated:", result);
 
@@ -356,13 +357,21 @@ export const HeroSection = () => {
         });
       }
 
-    } catch (error: unknown) {
+    } catch (error: any) {
       console.error("❌ Script generation failed:", error);
-      if (error instanceof Error) {
-        showToast(error.message || tToast('scriptGenerationFailed'), "error");
-      } else {
-        showToast(tToast('scriptGenerationFailed'), "error");
+
+      // Extract error message from axios error or use fallback
+      let errorMessage = tToast('scriptGenerationFailed');
+
+      if (error?.response?.data?.detail) {
+        // Backend returned a specific error message
+        errorMessage = error.response.data.detail;
+      } else if (error?.message) {
+        // Generic error message
+        errorMessage = error.message;
       }
+
+      showToast(errorMessage, "error");
     } finally {
       setIsGeneratingScript(false);
     }
@@ -380,12 +389,6 @@ export const HeroSection = () => {
     reader.readAsDataURL(file);
 
     console.log("📁 File uploaded:", file.name, `${(file.size / (1024 * 1024)).toFixed(2)}MB`);
-
-    // Automatically trigger script generation after file upload
-    // Use setTimeout to ensure file state is updated
-    setTimeout(() => {
-      handleGenerateScript();
-    }, 100);
   };
 
   const handleFileValidationError = (error: string) => {
@@ -711,17 +714,22 @@ export const HeroSection = () => {
                       onMouseEnter={() => setShowHelperTooltip(true)}
                       onMouseLeave={() => setShowHelperTooltip(false)}
                     >
-                      <div className="w-9 h-9 rounded-lg border border-gray-200 hover:border-purple-300 hover:bg-purple-50 transition-all flex items-center justify-center relative">
+                      <button
+                        onClick={handleGenerateScript}
+                        disabled={isGeneratingScript || isGenerating}
+                        className={`w-9 h-9 rounded-lg border transition-all flex items-center justify-center relative ${
+                          isGeneratingScript || isGenerating
+                            ? "border-gray-200 bg-gray-50 cursor-not-allowed opacity-50"
+                            : "border-gray-200 hover:border-purple-300 hover:bg-purple-50 cursor-pointer"
+                        }`}
+                        title="Generate script from image"
+                      >
                         {isGeneratingScript ? (
                           <Loader2 className="w-4 h-4 text-purple-600 animate-spin" />
                         ) : (
                           <Wand2 className="w-4 h-4 text-purple-600" />
                         )}
-                        {/* Pro Badge */}
-                        <span className="absolute -top-1 -right-1 px-1 py-0.5 bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-[6px] font-bold rounded-sm pointer-events-none">
-                          PRO
-                        </span>
-                      </div>
+                      </button>
 
                       {/* Tooltip */}
                       {showHelperTooltip && !isGeneratingScript && (

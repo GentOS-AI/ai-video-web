@@ -59,6 +59,10 @@ export const HeroSection = () => {
   const [uploadedFilePreview, setUploadedFilePreview] = useState<string | null>(null);
   const [isGeneratingScript, setIsGeneratingScript] = useState(false);
 
+  // Workflow stage: 'script' or 'video'
+  const [workflowStage, setWorkflowStage] = useState<'script' | 'video'>('script');
+  const [showScriptOptionsDialog, setShowScriptOptionsDialog] = useState(false);
+
   // Use SSE Hook for real-time progress updates
   const { messages, isConnected, lastMessage } = useVideoStream({
     videoId: streamingVideoId,
@@ -136,7 +140,115 @@ export const HeroSection = () => {
     }
   };
 
-  const handleGenerate = async () => {
+  // Main button handler - routes to script or video generation based on stage
+  const handleMainButton = async () => {
+    if (workflowStage === 'script') {
+      await handleScriptGenerationFlow();
+    } else {
+      await handleVideoGeneration();
+    }
+  };
+
+  // Script generation flow with dialog if input has content
+  const handleScriptGenerationFlow = async () => {
+    // Validation
+    if (!isAuthenticated) {
+      showToast(tToast('loginToUseScriptGenerator'), "warning");
+      const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+      const redirectUri = `${window.location.origin}/auth/callback`;
+      const scope = 'openid email profile';
+
+      const googleAuthUrl =
+        `https://accounts.google.com/o/oauth2/v2/auth?` +
+        `client_id=${clientId}&` +
+        `redirect_uri=${encodeURIComponent(redirectUri)}&` +
+        `response_type=code&` +
+        `scope=${encodeURIComponent(scope)}&` +
+        `access_type=offline&` +
+        `prompt=consent`;
+
+      window.location.href = googleAuthUrl;
+      return;
+    }
+
+    // Check subscription
+    if (!user || user.subscription_plan === 'free') {
+      showToast(tToast('scriptGeneratorRequiresSubscription'), "warning");
+      setIsPricingOpen(true);
+      return;
+    }
+
+    if (user.subscription_status !== 'active') {
+      showToast(tToast('subscriptionExpired'), "warning");
+      setIsPricingOpen(true);
+      return;
+    }
+
+    // Check if image is uploaded
+    if (!uploadedFile) {
+      showToast(tToast('uploadImageForScript'), "warning");
+      return;
+    }
+
+    // Check if input has content
+    if (!prompt.trim()) {
+      // Input is empty - directly generate script
+      await generateScriptFromImage(false);
+    } else {
+      // Input has content - show options dialog
+      setShowScriptOptionsDialog(true);
+    }
+  };
+
+  // Generate script from image (with optional optimization)
+  const generateScriptFromImage = async (optimize: boolean) => {
+    try {
+      setIsGeneratingScript(true);
+      console.log(`🤖 ${optimize ? 'Optimizing' : 'Generating'} script from image...`);
+
+      // Call AI service with language parameter
+      const result = await aiService.generateScript(uploadedFile!, 4, locale);
+
+      console.log("✅ Script generated:", result);
+
+      // Fill the textarea with generated script
+      setPrompt(result.script);
+
+      // Switch to video generation stage
+      setWorkflowStage('video');
+
+      showToast(tToast('scriptGeneratedSuccess'), "success");
+
+      // Optional: Log additional info
+      if (result.style || result.camera || result.lighting) {
+        console.log("Script details:", {
+          style: result.style,
+          camera: result.camera,
+          lighting: result.lighting,
+          tokens: result.tokens_used
+        });
+      }
+
+    } catch (error: any) {
+      console.error("❌ Script generation failed:", error);
+
+      // Extract error message from axios error or use fallback
+      let errorMessage = tToast('scriptGenerationFailed');
+
+      if (error?.response?.data?.detail) {
+        errorMessage = error.response.data.detail;
+      } else if (error?.message) {
+        errorMessage = error.message;
+      }
+
+      showToast(errorMessage, "error");
+    } finally {
+      setIsGeneratingScript(false);
+      setShowScriptOptionsDialog(false);
+    }
+  };
+
+  const handleVideoGeneration = async () => {
     // Validation with Toast notifications
     if (!isAuthenticated) {
       // Redirect to Google OAuth login
@@ -292,94 +404,11 @@ export const HeroSection = () => {
     }
   };
 
-  const handleGenerateScript = async () => {
-    // Validation
-    if (!isAuthenticated) {
-      showToast(tToast('loginToUseScriptGenerator'), "warning");
-      // Redirect to Google OAuth login
-      const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
-      const redirectUri = `${window.location.origin}/auth/callback`;
-      const scope = 'openid email profile';
-
-      const googleAuthUrl =
-        `https://accounts.google.com/o/oauth2/v2/auth?` +
-        `client_id=${clientId}&` +
-        `redirect_uri=${encodeURIComponent(redirectUri)}&` +
-        `response_type=code&` +
-        `scope=${encodeURIComponent(scope)}&` +
-        `access_type=offline&` +
-        `prompt=consent`;
-
-      window.location.href = googleAuthUrl;
-      return;
-    }
-
-    // Check subscription
-    if (!user || user.subscription_plan === 'free') {
-      showToast(tToast('scriptGeneratorRequiresSubscription'), "warning");
-      setIsPricingOpen(true);
-      return;
-    }
-
-    if (user.subscription_status !== 'active') {
-      showToast(tToast('subscriptionExpired'), "warning");
-      setIsPricingOpen(true);
-      return;
-    }
-
-    // Check if image is uploaded (not thumbnail selected)
-    if (!uploadedFile) {
-      showToast(tToast('uploadImageForScript'), "warning");
-      return;
-    }
-
-    try {
-      setIsGeneratingScript(true);
-      console.log("🤖 Generating script from image...");
-
-      // Call AI service with language parameter
-      const result = await aiService.generateScript(uploadedFile, 4, locale);
-
-      console.log("✅ Script generated:", result);
-
-      // Fill the textarea with generated script
-      setPrompt(result.script);
-
-      showToast(tToast('scriptGeneratedSuccess'), "success");
-
-      // Optional: Log additional info
-      if (result.style || result.camera || result.lighting) {
-        console.log("Script details:", {
-          style: result.style,
-          camera: result.camera,
-          lighting: result.lighting,
-          tokens: result.tokens_used
-        });
-      }
-
-    } catch (error: any) {
-      console.error("❌ Script generation failed:", error);
-
-      // Extract error message from axios error or use fallback
-      let errorMessage = tToast('scriptGenerationFailed');
-
-      if (error?.response?.data?.detail) {
-        // Backend returned a specific error message
-        errorMessage = error.response.data.detail;
-      } else if (error?.message) {
-        // Generic error message
-        errorMessage = error.message;
-      }
-
-      showToast(errorMessage, "error");
-    } finally {
-      setIsGeneratingScript(false);
-    }
-  };
-
   const handleFileUpload = (file: File) => {
     setUploadedFile(file);
     setSelectedImage(null); // Clear thumbnail selection when file is uploaded
+    setWorkflowStage('script'); // Reset to script generation stage
+    setPrompt(''); // Clear previous script
 
     // Create preview URL for uploaded file
     const reader = new FileReader();
@@ -708,43 +737,6 @@ export const HeroSection = () => {
 
                   {/* Right: Icon Buttons */}
                   <div className="flex items-center gap-2 flex-shrink-0">
-                    {/* AI Script Generator Icon */}
-                    <div
-                      className="relative"
-                      onMouseEnter={() => setShowHelperTooltip(true)}
-                      onMouseLeave={() => setShowHelperTooltip(false)}
-                    >
-                      <button
-                        onClick={handleGenerateScript}
-                        disabled={isGeneratingScript || isGenerating}
-                        className={`w-9 h-9 rounded-lg border transition-all flex items-center justify-center relative ${
-                          isGeneratingScript || isGenerating
-                            ? "border-gray-200 bg-gray-50 cursor-not-allowed opacity-50"
-                            : "border-gray-200 hover:border-purple-300 hover:bg-purple-50 cursor-pointer"
-                        }`}
-                        title="Generate script from image"
-                      >
-                        {isGeneratingScript ? (
-                          <Loader2 className="w-4 h-4 text-purple-600 animate-spin" />
-                        ) : (
-                          <Wand2 className="w-4 h-4 text-purple-600" />
-                        )}
-                      </button>
-
-                      {/* Tooltip */}
-                      {showHelperTooltip && !isGeneratingScript && (
-                        <div className="absolute right-0 bottom-full mb-2 w-64 bg-purple-50 text-purple-900 text-xs rounded-lg shadow-xl shadow-purple-200/50 border-2 border-purple-300 p-3 z-[9999] pointer-events-none">
-                          <div className="relative">
-                            <div className="absolute -bottom-5 right-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-purple-50" />
-                            <p className="leading-relaxed">
-                              <strong>{t('aiScriptGenerator.tooltipTitle')}</strong><br/>
-                              {t('aiScriptGenerator.tooltipDescription')}
-                            </p>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
                     {/* Model Selector Icon */}
                     <div
                       ref={dropdownRef}
@@ -797,23 +789,33 @@ export const HeroSection = () => {
                       )}
                     </div>
 
-                    {/* Generate Button */}
+                    {/* Main Workflow Button - Script or Video Generation */}
                     <Button
                       variant="primary"
                       size="sm"
-                      onClick={handleGenerate}
+                      onClick={handleMainButton}
                       disabled={isGenerating || isGeneratingScript}
                       className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 shadow-md flex items-center gap-1.5 text-xs sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      {isGenerating ? (
+                      {isGeneratingScript ? (
+                        <>
+                          <Loader2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-spin" />
+                          Generating Script...
+                        </>
+                      ) : isGenerating ? (
                         <>
                           <Loader2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-spin" />
                           {t('button.generating')}
                         </>
+                      ) : workflowStage === 'script' ? (
+                        <>
+                          <Wand2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                          AI Pro Script
+                        </>
                       ) : (
                         <>
                           <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                          {!isAuthenticated || !user || user.subscription_plan === 'free' ? t('button.tryFree') : t('button.generate')}
+                          Generate Video
                         </>
                       )}
                     </Button>
@@ -1012,6 +1014,61 @@ export const HeroSection = () => {
         onClose={() => setIsPricingOpen(false)}
         onSubscribe={handleSubscribe}
       />
+
+      {/* Script Options Dialog */}
+      {showScriptOptionsDialog && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6"
+          >
+            <h3 className="text-xl font-bold text-gray-900 mb-4">
+              Script Generation Options
+            </h3>
+            <p className="text-gray-600 mb-6">
+              You already have content in the input field. How would you like to proceed?
+            </p>
+
+            <div className="space-y-3">
+              <button
+                onClick={() => generateScriptFromImage(true)}
+                disabled={isGeneratingScript}
+                className="w-full px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:from-purple-600 hover:to-pink-600 transition-all font-medium shadow-md hover:shadow-lg disabled:opacity-50"
+              >
+                <div className="flex items-center justify-center gap-2">
+                  <Wand2 className="w-5 h-5" />
+                  <span>Optimize Current Script</span>
+                </div>
+                <p className="text-xs text-white/80 mt-1">
+                  Enhance your existing script with AI
+                </p>
+              </button>
+
+              <button
+                onClick={() => generateScriptFromImage(false)}
+                disabled={isGeneratingScript}
+                className="w-full px-6 py-3 bg-white border-2 border-gray-300 text-gray-700 rounded-lg hover:border-purple-400 hover:bg-purple-50 transition-all font-medium disabled:opacity-50"
+              >
+                <div className="flex items-center justify-center gap-2">
+                  <Sparkles className="w-5 h-5" />
+                  <span>Generate New Professional Script</span>
+                </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  Create a fresh script from the image
+                </p>
+              </button>
+
+              <button
+                onClick={() => setShowScriptOptionsDialog(false)}
+                className="w-full px-6 py-2 text-gray-600 hover:text-gray-900 transition-colors font-medium"
+              >
+                Cancel
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </section>
   );
 };

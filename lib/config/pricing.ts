@@ -1,8 +1,8 @@
-"""
-Pricing Configuration
-
-Dynamic pricing based on environment (development/production)
-"""
+/**
+ * Pricing Configuration
+ *
+ * Dynamic pricing based on environment (development/production)
+ */
 
 // Check if we're in development mode
 const isDevelopment = process.env.NEXT_PUBLIC_STRIPE_ENVIRONMENT === 'development';

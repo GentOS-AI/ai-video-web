@@ -2,10 +2,13 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Check, Zap, Shield, Clock, Sparkles } from "lucide-react";
+import { X, Check, Zap, Shield, Clock, Sparkles, Loader2 } from "lucide-react";
 import { Button } from "./Button";
 import { useAuth } from "@/contexts/AuthContext";
-import { creditsService } from "@/lib/api/services";
+import { useNotification } from "@/contexts/NotificationContext";
+import { paymentService } from "@/lib/api/services";
+import { redirectToCheckout } from "@/lib/stripe/stripe";
+import { PRICING_CONFIG, getSuccessUrl, getCancelUrl } from "@/lib/config/pricing";
 
 interface CreditsModalProps {
   isOpen: boolean;
@@ -13,36 +16,37 @@ interface CreditsModalProps {
 }
 
 export const CreditsModal = ({ isOpen, onClose }: CreditsModalProps) => {
-  const { refreshUser } = useAuth();
+  const { isAuthenticated } = useAuth();
+  const { showToast } = useNotification();
   const [isPurchasing, setIsPurchasing] = useState(false);
-  const [purchaseSuccess, setPurchaseSuccess] = useState(false);
 
   const handlePurchase = async () => {
-    setIsPurchasing(true);
+    // Check authentication
+    if (!isAuthenticated) {
+      showToast('Please login first to purchase credits', 'error');
+      return;
+    }
 
     try {
-      // 调用后端API充值
-      const response = await creditsService.purchaseCredits({
-        package: "1000_credits",
-        payment_method: "demo", // 演示模式
-      });
+      setIsPurchasing(true);
+      console.log('🛒 Creating checkout session for credits pack...');
 
-      if (response.success) {
-        setPurchaseSuccess(true);
+      // Create Stripe Checkout Session
+      const session = await paymentService.createCheckoutSession(
+        'credits',
+        getSuccessUrl(),
+        getCancelUrl()
+      );
 
-        // 刷新用户信息以更新积分显示
-        await refreshUser();
+      console.log('✅ Session created:', session.session_id);
+      console.log('🔄 Redirecting to Stripe Checkout...');
 
-        // 2秒后关闭弹窗
-        setTimeout(() => {
-          onClose();
-          setPurchaseSuccess(false);
-        }, 2000);
-      }
+      // Redirect to Stripe Checkout
+      await redirectToCheckout(session.session_id);
+
     } catch (error) {
-      console.error("Purchase failed:", error);
-      alert("Purchase failed. Please try again.");
-    } finally {
+      console.error('❌ Failed to create checkout session:', error);
+      showToast('Failed to start checkout. Please try again.', 'error');
       setIsPurchasing(false);
     }
   };
@@ -73,7 +77,8 @@ export const CreditsModal = ({ isOpen, onClose }: CreditsModalProps) => {
               {/* Close Button */}
               <button
                 onClick={onClose}
-                className="absolute top-4 right-4 p-2 rounded-full hover:bg-gray-100 transition-colors z-10"
+                disabled={isPurchasing}
+                className="absolute top-4 right-4 p-2 rounded-full hover:bg-gray-100 transition-colors z-10 disabled:opacity-50"
                 aria-label="Close credits modal"
               >
                 <X className="w-5 h-5 text-gray-600" />
@@ -102,131 +107,116 @@ export const CreditsModal = ({ isOpen, onClose }: CreditsModalProps) => {
                   <p className="text-sm text-white/90">
                     Power up your AI video generation
                   </p>
+                  {PRICING_CONFIG.isDevelopment && (
+                    <p className="text-xs text-yellow-300 mt-2">
+                      🧪 Test Mode: ${PRICING_CONFIG.credits.priceValue}
+                    </p>
+                  )}
                 </motion.div>
               </div>
 
               {/* Content */}
               <div className="px-6 py-6">
-                {purchaseSuccess ? (
-                  // Success State
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className="text-center py-8"
-                  >
-                    <div className="w-16 h-16 mx-auto mb-4 bg-green-100 rounded-full flex items-center justify-center">
-                      <Check className="w-8 h-8 text-green-600" />
+                {/* Credits Package Card */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.1 }}
+                  className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-6 mb-6 border-2 border-green-200 hover:border-green-300 transition-colors"
+                >
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-500 rounded-lg flex items-center justify-center shadow-lg">
+                        <Zap className="w-6 h-6 text-white" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-bold text-gray-900">
+                          Credit Pack
+                        </h3>
+                        <p className="text-xs text-gray-600">
+                          {PRICING_CONFIG.credits.credits} Credits
+                        </p>
+                      </div>
                     </div>
-                    <h3 className="text-xl font-bold text-gray-900 mb-2">
-                      Purchase Successful!
-                    </h3>
-                    <p className="text-sm text-gray-600">
-                      1000 credits have been added to your account
+                    <div className="text-right">
+                      <div className="text-3xl font-bold text-gray-900">
+                        {PRICING_CONFIG.credits.price}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        USD
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Features */}
+                  <div className="space-y-2.5">
+                    <div className="flex items-center space-x-2">
+                      <div className="flex-shrink-0 w-5 h-5 rounded-full bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center">
+                        <Check className="w-3 h-3 text-white" />
+                      </div>
+                      <span className="text-sm text-gray-700">
+                        <strong>~10 AI Videos</strong> (100 credits each)
+                      </span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <div className="flex-shrink-0 w-5 h-5 rounded-full bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center">
+                        <Clock className="w-3 h-3 text-white" />
+                      </div>
+                      <span className="text-sm text-gray-700">
+                        No Expiration Date
+                      </span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <div className="flex-shrink-0 w-5 h-5 rounded-full bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center">
+                        <Zap className="w-3 h-3 text-white" />
+                      </div>
+                      <span className="text-sm text-gray-700">
+                        Instant Delivery
+                      </span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <div className="flex-shrink-0 w-5 h-5 rounded-full bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center">
+                        <Shield className="w-3 h-3 text-white" />
+                      </div>
+                      <span className="text-sm text-gray-700">
+                        Secure Payment
+                      </span>
+                    </div>
+                  </div>
+                </motion.div>
+
+                {/* Purchase Button */}
+                <Button
+                  variant="primary"
+                  size="lg"
+                  onClick={handlePurchase}
+                  disabled={isPurchasing}
+                  className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white shadow-lg hover:shadow-xl transition-all"
+                >
+                  {isPurchasing ? (
+                    <div className="flex items-center justify-center space-x-2">
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      <span>Processing...</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-center space-x-2">
+                      <Sparkles className="w-5 h-5" />
+                      <span>Purchase Now</span>
+                    </div>
+                  )}
+                </Button>
+
+                {/* Footer Note */}
+                <div className="mt-4 text-center">
+                  <p className="text-xs text-gray-500">
+                    🔒 Secure payment powered by Stripe
+                  </p>
+                  {PRICING_CONFIG.isDevelopment && (
+                    <p className="text-xs text-gray-400 mt-1">
+                      Test Mode: Use card 4242 4242 4242 4242
                     </p>
-                  </motion.div>
-                ) : (
-                  // Purchase Form
-                  <>
-                    {/* Credits Package Card */}
-                    <motion.div
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.1 }}
-                      className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-6 mb-6 border-2 border-green-200 hover:border-green-300 transition-colors"
-                    >
-                      <div className="flex items-center justify-between mb-4">
-                        <div className="flex items-center space-x-3">
-                          <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-500 rounded-lg flex items-center justify-center shadow-lg">
-                            <Zap className="w-6 h-6 text-white" />
-                          </div>
-                          <div>
-                            <h3 className="text-lg font-bold text-gray-900">
-                              Credit Pack
-                            </h3>
-                            <p className="text-xs text-gray-600">
-                              1000 Credits
-                            </p>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-3xl font-bold text-gray-900">
-                            $49.99
-                          </div>
-                          <div className="text-xs text-gray-500">
-                            USD
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Features */}
-                      <div className="space-y-2.5">
-                        <div className="flex items-center space-x-2">
-                          <div className="flex-shrink-0 w-5 h-5 rounded-full bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center">
-                            <Check className="w-3 h-3 text-white" />
-                          </div>
-                          <span className="text-sm text-gray-700">
-                            <strong>~10 AI Videos</strong> (100 credits each)
-                          </span>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <div className="flex-shrink-0 w-5 h-5 rounded-full bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center">
-                            <Clock className="w-3 h-3 text-white" />
-                          </div>
-                          <span className="text-sm text-gray-700">
-                            No Expiration Date
-                          </span>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <div className="flex-shrink-0 w-5 h-5 rounded-full bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center">
-                            <Zap className="w-3 h-3 text-white" />
-                          </div>
-                          <span className="text-sm text-gray-700">
-                            Instant Delivery
-                          </span>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <div className="flex-shrink-0 w-5 h-5 rounded-full bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center">
-                            <Shield className="w-3 h-3 text-white" />
-                          </div>
-                          <span className="text-sm text-gray-700">
-                            Secure Payment
-                          </span>
-                        </div>
-                      </div>
-                    </motion.div>
-
-                    {/* Purchase Button */}
-                    <Button
-                      variant="primary"
-                      size="lg"
-                      onClick={handlePurchase}
-                      disabled={isPurchasing}
-                      className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white shadow-lg hover:shadow-xl transition-all"
-                    >
-                      {isPurchasing ? (
-                        <div className="flex items-center justify-center space-x-2">
-                          <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                          <span>Processing...</span>
-                        </div>
-                      ) : (
-                        <div className="flex items-center justify-center space-x-2">
-                          <Sparkles className="w-5 h-5" />
-                          <span>Purchase Now</span>
-                        </div>
-                      )}
-                    </Button>
-
-                    {/* Footer Note */}
-                    <div className="mt-4 text-center">
-                      <p className="text-xs text-gray-500">
-                        🔒 Demo Mode: Credits will be added instantly
-                      </p>
-                      <p className="text-xs text-gray-400 mt-1">
-                        Secure payment integration coming soon
-                      </p>
-                    </div>
-                  </>
-                )}
+                  )}
+                </div>
               </div>
             </motion.div>
           </div>

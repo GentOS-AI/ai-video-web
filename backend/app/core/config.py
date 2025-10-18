@@ -39,6 +39,7 @@ class Settings(BaseSettings):
     UPLOAD_DIR: str = "./uploads"
     MAX_UPLOAD_SIZE: int = 10 * 1024 * 1024  # 10MB
     ALLOWED_IMAGE_TYPES: List[str] = ["image/jpeg", "image/png", "image/webp"]
+    BASE_URL: str = "http://localhost:8000"  # Base URL for file URLs
 
     # AI Models (Placeholder - need real API keys)
     SORA_API_KEY: str = ""

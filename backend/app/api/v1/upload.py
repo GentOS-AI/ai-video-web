@@ -3,6 +3,7 @@ File upload API routes
 """
 import os
 import uuid
+import logging
 from typing import List
 from fastapi import APIRouter, Depends, UploadFile, File, HTTPException, status
 from fastapi.responses import JSONResponse
@@ -15,6 +16,7 @@ from app.models.user import User
 from app.models.uploaded_image import UploadedImage
 from app.core.config import settings
 
+logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
@@ -104,26 +106,42 @@ async def upload_image(
         # Reset file pointer for saving
         await file.seek(0)
 
-        # Save file to disk
-        file_path = save_upload_file(file, current_user.id)
+        # Check if this image already exists in database (by filename and user_id)
+        # This prevents duplicate saves when the same image is used for script and video generation
+        existing_image = db.query(UploadedImage).filter(
+            UploadedImage.user_id == current_user.id,
+            UploadedImage.filename == (file.filename or "untitled.jpg"),
+            UploadedImage.file_size == file_size
+        ).order_by(UploadedImage.created_at.desc()).first()
 
-        # Create full HTTPS URL
-        base_url = settings.BASE_URL or "http://localhost:8000"
-        file_url = f"{base_url}{file_path}"
+        if existing_image:
+            # Image already exists, return existing record
+            logger.info(f"  ℹ️  Image already exists in database (ID: {existing_image.id}), skipping save")
+            file_path = existing_image.file_url.replace(settings.BASE_URL or "http://localhost:8000", "")
+            file_url = existing_image.file_url
+            db_image = existing_image
+        else:
+            # Save file to disk
+            file_path = save_upload_file(file, current_user.id)
 
-        # Save image record to database
-        db_image = UploadedImage(
-            user_id=current_user.id,
-            filename=file.filename or "untitled.jpg",
-            file_url=file_url,
-            file_size=file_size,
-            file_type=file.content_type,
-            width=width,
-            height=height,
-        )
-        db.add(db_image)
-        db.commit()
-        db.refresh(db_image)
+            # Create full HTTPS URL
+            base_url = settings.BASE_URL or "http://localhost:8000"
+            file_url = f"{base_url}{file_path}"
+
+            # Save image record to database
+            db_image = UploadedImage(
+                user_id=current_user.id,
+                filename=file.filename or "untitled.jpg",
+                file_url=file_url,
+                file_size=file_size,
+                file_type=file.content_type,
+                width=width,
+                height=height,
+            )
+            db.add(db_image)
+            db.commit()
+            db.refresh(db_image)
+            logger.info(f"  ✅ New image saved to database (ID: {db_image.id})")
 
         return JSONResponse(
             status_code=status.HTTP_200_OK,

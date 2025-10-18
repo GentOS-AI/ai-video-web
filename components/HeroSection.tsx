@@ -810,7 +810,7 @@ export const HeroSection = () => {
                       ) : workflowStage === 'script' ? (
                         <>
                           <Wand2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                          AI Pro Script
+                          AI Pro Scripting
                         </>
                       ) : (
                         <>

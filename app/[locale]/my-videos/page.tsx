@@ -31,6 +31,10 @@ export default function MediaCenterPage() {
   const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+  // Image modal states
+  const [selectedImage, setSelectedImage] = useState<UploadedImage | null>(null);
+  const [isImageModalOpen, setIsImageModalOpen] = useState(false);
+
   const [page, setPage] = useState(1);
   const [totalVideos, setTotalVideos] = useState(0);
 
@@ -88,7 +92,7 @@ export default function MediaCenterPage() {
     }
   }, [showToast]);
 
-  // Initial fetch
+  // Initial fetch - Load both videos and images on mount
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
       router.push('/');
@@ -96,13 +100,22 @@ export default function MediaCenterPage() {
     }
 
     if (isAuthenticated) {
-      if (activeTab === 'videos') {
-        fetchVideos();
-      } else if (activeTab === 'images') {
-        fetchImages();
-      }
+      // Always fetch both to show accurate counts in tabs
+      fetchVideos();
+      fetchImages();
     }
-  }, [isAuthenticated, authLoading, router, fetchVideos, fetchImages, activeTab]);
+  }, [isAuthenticated, authLoading, router, fetchVideos, fetchImages]);
+
+  // Fetch data when switching tabs
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    if (activeTab === 'videos') {
+      fetchVideos();
+    } else if (activeTab === 'images') {
+      fetchImages();
+    }
+  }, [activeTab, isAuthenticated, fetchVideos, fetchImages]);
 
   // Auto-refresh for processing videos with countdown
   useEffect(() => {
@@ -254,13 +267,11 @@ export default function MediaCenterPage() {
               >
                 <ImageIconLucide className="w-5 h-5" />
                 <span>Images</span>
-                {images.length > 0 && (
-                  <span className={`ml-1 px-2 py-0.5 rounded-full text-xs font-bold ${
-                    activeTab === 'images' ? 'bg-white/20' : 'bg-gray-100'
-                  }`}>
-                    {images.length}
-                  </span>
-                )}
+                <span className={`ml-1 px-2 py-0.5 rounded-full text-xs font-bold ${
+                  activeTab === 'images' ? 'bg-white/20' : 'bg-gray-100'
+                }`}>
+                  {images.length}
+                </span>
               </button>
               <button
                 onClick={() => setActiveTab('videos')}
@@ -272,13 +283,11 @@ export default function MediaCenterPage() {
               >
                 <Play className="w-5 h-5" />
                 <span>Videos</span>
-                {videos.length > 0 && (
-                  <span className={`ml-1 px-2 py-0.5 rounded-full text-xs font-bold ${
-                    activeTab === 'videos' ? 'bg-white/20' : 'bg-gray-100'
-                  }`}>
-                    {videos.length}
-                  </span>
-                )}
+                <span className={`ml-1 px-2 py-0.5 rounded-full text-xs font-bold ${
+                  activeTab === 'videos' ? 'bg-white/20' : 'bg-gray-100'
+                }`}>
+                  {videos.length}
+                </span>
               </button>
             </div>
 
@@ -413,33 +422,70 @@ export default function MediaCenterPage() {
                     </button>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                    {images.map((image) => (
-                      <motion.div
-                        key={image.id}
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        className="relative group aspect-square rounded-lg overflow-hidden bg-gray-100 border border-gray-200 hover:border-purple-300 hover:shadow-lg transition-all cursor-pointer"
-                      >
-                        <Image
-                          src={image.file_url}
-                          alt={image.filename}
-                          fill
-                          className="object-cover"
-                          sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                        />
-                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-end p-3">
-                          <div className="translate-y-8 group-hover:translate-y-0 transition-transform">
-                            <p className="text-white text-sm font-medium truncate">
-                              {image.filename}
-                            </p>
-                            <p className="text-white/80 text-xs">
-                              {image.width} x {image.height} • {(image.file_size / 1024 / 1024).toFixed(2)} MB
-                            </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {images.map((image) => {
+                      const aspectRatio = image.width / image.height;
+                      const isLandscape = aspectRatio > 1.2;
+                      const isPortrait = aspectRatio < 0.8;
+
+                      return (
+                        <motion.div
+                          key={image.id}
+                          initial={{ opacity: 0, scale: 0.9 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          onClick={() => {
+                            setSelectedImage(image);
+                            setIsImageModalOpen(true);
+                          }}
+                          className="relative group rounded-xl overflow-hidden bg-gradient-to-br from-amber-900/20 via-amber-800/15 to-amber-700/20 border border-amber-700/30 hover:border-purple-400 hover:shadow-xl transition-all cursor-pointer"
+                          style={{
+                            aspectRatio: isLandscape
+                              ? '16 / 9'
+                              : isPortrait
+                              ? '9 / 16'
+                              : '1 / 1'
+                          }}
+                        >
+                          {/* Brown/Amber Background Layer */}
+                          <div className="absolute inset-0 bg-gradient-to-br from-amber-900/10 to-amber-700/5" />
+
+                          <Image
+                            src={image.file_url}
+                            alt={image.filename}
+                            fill
+                            className="object-contain p-2"
+                            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                          />
+
+                          {/* Hover Overlay */}
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-4">
+                            <div className="transform translate-y-4 group-hover:translate-y-0 transition-transform">
+                              <p className="text-white text-sm font-medium truncate mb-1">
+                                {image.filename}
+                              </p>
+                              <div className="flex items-center gap-3 text-white/80 text-xs">
+                                <span className="px-2 py-0.5 bg-white/10 rounded-md backdrop-blur-sm">
+                                  {image.width} × {image.height}
+                                </span>
+                                <span className="px-2 py-0.5 bg-white/10 rounded-md backdrop-blur-sm">
+                                  {(image.file_size / 1024 / 1024).toFixed(2)} MB
+                                </span>
+                                <span className="px-2 py-0.5 bg-white/10 rounded-md backdrop-blur-sm">
+                                  {isLandscape ? 'Landscape' : isPortrait ? 'Portrait' : 'Square'}
+                                </span>
+                              </div>
+                            </div>
                           </div>
-                        </div>
-                      </motion.div>
-                    ))}
+
+                          {/* Click to Enlarge Hint */}
+                          <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div className="px-2 py-1 bg-purple-600 text-white text-xs font-medium rounded-md shadow-lg backdrop-blur-sm">
+                              Click to enlarge
+                            </div>
+                          </div>
+                        </motion.div>
+                      );
+                    })}
                   </div>
                 )}
               </motion.div>
@@ -457,6 +503,79 @@ export default function MediaCenterPage() {
           setSelectedVideo(null);
         }}
       />
+
+      {/* Image Enlarge Modal */}
+      <AnimatePresence>
+        {isImageModalOpen && selectedImage && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => {
+              setIsImageModalOpen(false);
+              setSelectedImage(null);
+            }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              transition={{ type: "spring", duration: 0.3 }}
+              onClick={(e) => e.stopPropagation()}
+              className="relative max-w-7xl max-h-[90vh] w-full h-full flex items-center justify-center"
+            >
+              {/* Close Button */}
+              <button
+                onClick={() => {
+                  setIsImageModalOpen(false);
+                  setSelectedImage(null);
+                }}
+                className="absolute top-4 right-4 z-10 p-3 bg-white/10 hover:bg-white/20 rounded-full backdrop-blur-md transition-colors"
+              >
+                <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+
+              {/* Image Container */}
+              <div className="relative w-full h-full flex items-center justify-center">
+                <Image
+                  src={selectedImage.file_url}
+                  alt={selectedImage.filename}
+                  fill
+                  className="object-contain"
+                  sizes="100vw"
+                  priority
+                />
+              </div>
+
+              {/* Image Info */}
+              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-6">
+                <div className="max-w-4xl mx-auto">
+                  <h3 className="text-white text-lg font-semibold mb-2">
+                    {selectedImage.filename}
+                  </h3>
+                  <div className="flex flex-wrap items-center gap-3 text-white/80 text-sm">
+                    <span className="px-3 py-1 bg-white/10 rounded-lg backdrop-blur-sm">
+                      📐 {selectedImage.width} × {selectedImage.height}
+                    </span>
+                    <span className="px-3 py-1 bg-white/10 rounded-lg backdrop-blur-sm">
+                      💾 {(selectedImage.file_size / 1024 / 1024).toFixed(2)} MB
+                    </span>
+                    <span className="px-3 py-1 bg-white/10 rounded-lg backdrop-blur-sm">
+                      📁 {selectedImage.file_type.toUpperCase()}
+                    </span>
+                    <span className="px-3 py-1 bg-white/10 rounded-lg backdrop-blur-sm">
+                      🕒 {new Date(selectedImage.created_at).toLocaleDateString()}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

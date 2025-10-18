@@ -1,14 +1,21 @@
 """
 AI API routes for script generation and image analysis
 """
+import os
+import uuid
 import logging
+from io import BytesIO
+from PIL import Image as PILImage
 from fastapi import APIRouter, Depends, UploadFile, File, HTTPException, status, Form
 from pydantic import BaseModel
 from typing import Optional
+from sqlalchemy.orm import Session
 
-from app.api.deps import get_current_user
+from app.api.deps import get_current_user, get_db
 from app.models.user import User
+from app.models.uploaded_image import UploadedImage
 from app.services.openai_script_service import openai_script_service
+from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -81,6 +88,7 @@ async def generate_script(
     duration: int = Form(4, description="Video duration in seconds"),
     language: str = Form("en", description="Language for generated script (en, zh, ja, etc.)"),
     current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
 ):
     """
     Generate professional advertising video script from product image using GPT-4o
@@ -140,6 +148,54 @@ async def generate_script(
         logger.info("🔍 Validating image format and size...")
         validate_image_for_script(file, content)
         logger.info("  ✅ Image validation passed")
+
+        # Save uploaded image to database
+        logger.info("💾 Saving image to database...")
+        try:
+            # Get image dimensions
+            image = PILImage.open(BytesIO(content))
+            width, height = image.size
+
+            # Create user upload directory
+            user_upload_dir = os.path.join(settings.UPLOAD_DIR, f"user_{current_user.id}")
+            os.makedirs(user_upload_dir, exist_ok=True)
+
+            # Generate unique filename
+            file_extension = os.path.splitext(file.filename or "image.jpg")[1]
+            unique_filename = f"{uuid.uuid4()}{file_extension}"
+            file_path = os.path.join(user_upload_dir, unique_filename)
+
+            # Save file to disk
+            with open(file_path, "wb") as f:
+                f.write(content)
+
+            # Create file URL
+            relative_path = f"/uploads/user_{current_user.id}/{unique_filename}"
+            base_url = settings.BASE_URL or "http://localhost:8000"
+            file_url = f"{base_url}{relative_path}"
+
+            # Save to database
+            db_image = UploadedImage(
+                user_id=current_user.id,
+                filename=file.filename or "untitled.jpg",
+                file_url=file_url,
+                file_size=len(content),
+                file_type=file.content_type,
+                width=width,
+                height=height,
+            )
+            db.add(db_image)
+            db.commit()
+            db.refresh(db_image)
+
+            logger.info(f"  ✅ Image saved to database (ID: {db_image.id})")
+            logger.info(f"  📁 File path: {file_path}")
+            logger.info(f"  🔗 URL: {file_url}")
+
+        except Exception as save_error:
+            logger.warning(f"  ⚠️  Failed to save image to database: {str(save_error)}")
+            db.rollback()
+            # Continue with script generation even if image save fails
 
         # Generate script using GPT-4o
         logger.info("🤖 Calling OpenAI GPT-4o service...")

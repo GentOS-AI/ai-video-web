@@ -30,6 +30,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   enableViewportDetection = false,
 }) => {
   const [isPlaying, setIsPlaying] = useState(false);
+  const [userInteracted, setUserInteracted] = useState(false); // Track if user manually paused
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const playTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -41,7 +42,8 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
 
   // Handle autoplay with delay and viewport detection
   useEffect(() => {
-    if (!autoPlay || !videoRef.current) return;
+    // Don't autoplay if user has manually interacted (paused)
+    if (!autoPlay || !videoRef.current || userInteracted) return;
 
     const shouldPlay = enableViewportDetection ? isInViewport : true;
 
@@ -72,10 +74,13 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
         clearTimeout(playTimeoutRef.current);
       }
     };
-  }, [autoPlay, isInViewport, enableViewportDetection, playDelay, isPlaying]);
+  }, [autoPlay, isInViewport, enableViewportDetection, playDelay, isPlaying, userInteracted]);
 
   const togglePlay = () => {
     if (videoRef.current) {
+      // Mark that user has manually interacted
+      setUserInteracted(true);
+
       if (isPlaying) {
         videoRef.current.pause();
       } else {

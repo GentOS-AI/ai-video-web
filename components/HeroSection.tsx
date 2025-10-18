@@ -497,21 +497,19 @@ export const HeroSection = () => {
             {/* Heading */}
             <div className="space-y-2 sm:space-y-3 md:space-y-4">
               <h1 className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">
-                {t('title.prefix')}{" "}
-                {t('title.professional')}{" "}
+                Image to Professional{" "}
                 <span className="bg-gradient-to-r from-purple-600 via-pink-500 to-yellow-400 bg-clip-text text-transparent">
-                  {t('title.ads')} {t('title.video')}
-                </span>{" "}
-                {t('title.by')}{" "}
-                {t('title.oneClick')}
+                  Ads Video
+                </span>
+                {" "}Only One Click Away.
               </h1>
               <p className="text-sm sm:text-lg md:text-xl text-text-secondary leading-relaxed">
-                {t('subtitle')}
+                Professional AI scripting, video generation, and instant social media publishing.
               </p>
             </div>
 
             {/* Integrated Input Card */}
-            <div className="relative bg-white border border-gray-200 rounded-2xl overflow-visible transition-all duration-300 hover:border-purple-200 hover:shadow-xl hover:shadow-purple-500/10">
+            <div className="relative bg-white border border-purple-200 shadow-xl shadow-purple-500/10 rounded-2xl overflow-visible transition-all duration-300 hover:border-purple-400 hover:shadow-2xl hover:shadow-purple-600/20">
               {/* Main Input Area */}
               <div className="p-4 sm:p-6">
                 <textarea
@@ -870,7 +868,7 @@ export const HeroSection = () => {
                 <VideoPlayer
                   src={currentVideo.src}
                   poster={currentVideo.poster}
-                  autoPlay={false}
+                  autoPlay={true}
                 />
               )}
 

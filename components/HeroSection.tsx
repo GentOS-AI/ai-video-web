@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import dynamic from "next/dynamic";
 import { Button } from "./Button";
 import { VideoPlayer } from "./VideoPlayer";
-import { Wand2, Sparkles, Loader2, AlertCircle, Brain, Upload } from "lucide-react";
+import { Wand2, Sparkles, Loader2, AlertCircle, Upload } from "lucide-react";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import { heroVideos, trialImages } from "@/lib/assets";
@@ -26,8 +26,8 @@ const sampleVideos = heroVideos;
 
 // AI Models for dropdown with credit costs
 const aiModels = [
-  { id: "sora-2", name: "Sora-2", version: "Standard", credits: 100 },
-  { id: "sora-2-pro", name: "Sora-2 Pro", version: "Premium", credits: 300 },
+  { id: "sora-2", name: "Sora2", version: "Standard", credits: 100 },
+  { id: "sora-2-pro", name: "Sora2 Pro", version: "Premium", credits: 300 },
 ];
 
 export const HeroSection = () => {
@@ -514,31 +514,42 @@ export const HeroSection = () => {
             <div className="space-y-2 sm:space-y-3">
               <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold leading-[1.15] tracking-tight">
                 <span className="block text-gray-900 mb-1.5">
-                  Image to Professional
-                </span>
-                <span className="block relative">
+                  From Image to{" "}
                   <span className="relative inline-block">
                     {/* Glow effect background */}
                     <span className="absolute inset-0 blur-2xl opacity-30 bg-gradient-to-r from-purple-600 to-pink-500"></span>
                     {/* Main gradient text */}
                     <span className="relative bg-gradient-to-r from-purple-600 via-pink-500 to-purple-600 bg-clip-text text-transparent animate-gradient">
-                      Ads Video
+                      AI Videos
                     </span>
                   </span>
+                  {" "}for Ads
                 </span>
                 <span className="block text-gray-900 mt-1.5">
-                  Only{" "}
                   <span className="relative inline-block">
                     <span className="text-purple-600">One Click</span>
                     <svg className="absolute -bottom-1.5 left-0 right-0 h-2.5" viewBox="0 0 200 12" preserveAspectRatio="none">
                       <path d="M0,7 Q50,0 100,7 T200,7" fill="none" stroke="currentColor" strokeWidth="3" className="text-purple-600/30" />
                     </svg>
                   </span>
-                  {" "}Away.
+                  {" "}Away
                 </span>
               </h1>
               <p className="text-base sm:text-lg md:text-xl text-gray-600 leading-relaxed max-w-2xl">
-                Professional AI scripting, video generation, and instant social media publishing.
+                Professional AI scripting, video generation, and instant social media publishing.{" "}
+                <span className="inline-flex items-center gap-1 text-[10px] sm:text-xs whitespace-nowrap">
+                  <span className="text-gray-400 font-medium">POWERED BY</span>
+                  <span className="relative inline-block px-1.5 py-0.5 rounded-md bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200">
+                    {/* Main text with gradient */}
+                    <span className="bg-gradient-to-r from-purple-600 via-pink-500 to-purple-600 bg-clip-text text-transparent font-bold tracking-tight">
+                      Moky.ai
+                    </span>
+                    {/* Four-pointed star in top-right corner */}
+                    <svg className="absolute -top-1 -right-1 w-2.5 h-2.5 text-purple-300" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M12 0L14.59 9.41L24 12L14.59 14.59L12 24L9.41 14.59L0 12L9.41 9.41L12 0Z" />
+                    </svg>
+                  </span>
+                </span>
               </p>
             </div>
 
@@ -769,17 +780,17 @@ export const HeroSection = () => {
 
                   {/* Right: Icon Buttons */}
                   <div className="flex items-center gap-2 flex-shrink-0">
-                    {/* Model Selector Icon */}
+                    {/* Model Selector Text */}
                     <div
                       ref={dropdownRef}
                       className="relative"
                     >
                       <button
                         onClick={() => setIsModelDropdownOpen(!isModelDropdownOpen)}
-                        className="w-9 h-9 rounded-lg border border-gray-200 hover:border-purple-300 hover:bg-purple-50 transition-all flex items-center justify-center"
+                        className="px-3 h-9 rounded-lg border border-gray-200 hover:border-purple-300 hover:bg-purple-50 transition-all flex items-center justify-center"
                         title={selectedModel?.name}
                       >
-                        <Brain className="w-4 h-4 text-purple-600" />
+                        <span className="text-sm font-medium text-purple-600">{selectedModel?.name}</span>
                       </button>
 
                       {/* Dropdown Menu */}

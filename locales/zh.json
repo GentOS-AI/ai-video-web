@@ -80,14 +80,14 @@
     "ctaButtonMobile": "开始免费试用"
   },
   "pricing": {
-    "title": "选择您的套餐",
+    "title": "加入会员",
     "subtitle": "释放AI视频生成的强大力量",
     "subscribeNow": "立即订阅",
     "popular": "热门",
     "monthlyCredits": "{count} 积分/月",
     "yearlyCredits": "{count} 积分/年",
     "basic": {
-      "name": "基础版",
+      "name": "月度套餐",
       "price": "$29.99",
       "period": "/月",
       "description": "适合个人和小型项目",
@@ -99,7 +99,7 @@
       "feature6": "10GB云存储空间"
     },
     "pro": {
-      "name": "专业版",
+      "name": "年度套餐",
       "price": "$129.99",
       "period": "/年",
       "description": "最适合专业人士和企业",

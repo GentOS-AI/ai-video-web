@@ -80,14 +80,14 @@
     "ctaButtonMobile": "Start Free"
   },
   "pricing": {
-    "title": "Choose Your Plan",
+    "title": "Join Our Membership",
     "subtitle": "Unlock the power of AI video generation",
     "subscribeNow": "Subscribe Now",
     "popular": "POPULAR",
     "monthlyCredits": "{count} credits/month",
     "yearlyCredits": "{count} credits/year",
     "basic": {
-      "name": "Basic",
+      "name": "Monthly Plan",
       "price": "$29.99",
       "period": "/month",
       "description": "Perfect for individuals and small projects",
@@ -99,7 +99,7 @@
       "feature6": "10GB cloud storage"
     },
     "pro": {
-      "name": "Pro",
+      "name": "Yearly Plan",
       "price": "$129.99",
       "period": "/year",
       "description": "Best for professionals and businesses",

@@ -144,7 +144,7 @@ export const PricingModal = ({ isOpen, onClose }: PricingModalProps) => {
               </button>
 
               {/* Header */}
-              <div className="bg-gradient-to-r from-purple-600 to-purple-500 px-4 py-3 sm:px-6 sm:py-4 text-center">
+              <div className="bg-gradient-to-r from-purple-600 to-purple-500 px-4 py-6 sm:px-6 sm:py-8 text-center">
                 <h2 className="text-xl sm:text-2xl font-bold text-white mb-1">
                   {t('title')}
                 </h2>

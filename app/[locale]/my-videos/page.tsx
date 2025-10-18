@@ -422,66 +422,49 @@ export default function MediaCenterPage() {
                     </button>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                     {images.map((image) => {
-                      const aspectRatio = image.width / image.height;
-                      const isLandscape = aspectRatio > 1.2;
-                      const isPortrait = aspectRatio < 0.8;
-
                       return (
                         <motion.div
                           key={image.id}
-                          initial={{ opacity: 0, scale: 0.9 }}
+                          initial={{ opacity: 0, scale: 0.95 }}
                           animate={{ opacity: 1, scale: 1 }}
+                          transition={{ duration: 0.2 }}
                           onClick={() => {
                             setSelectedImage(image);
                             setIsImageModalOpen(true);
                           }}
-                          className="relative group rounded-xl overflow-hidden bg-gradient-to-br from-amber-900/20 via-amber-800/15 to-amber-700/20 border border-amber-700/30 hover:border-purple-400 hover:shadow-xl transition-all cursor-pointer"
-                          style={{
-                            aspectRatio: isLandscape
-                              ? '16 / 9'
-                              : isPortrait
-                              ? '9 / 16'
-                              : '1 / 1'
-                          }}
+                          className="relative group cursor-pointer"
                         >
-                          {/* Brown/Amber Background Layer */}
-                          <div className="absolute inset-0 bg-gradient-to-br from-amber-900/10 to-amber-700/5" />
+                          {/* Image Container - Fixed Square */}
+                          <div className="relative w-full aspect-square bg-slate-900 rounded-lg overflow-hidden border border-gray-700 hover:border-purple-400 transition-all duration-200 hover:shadow-lg hover:shadow-purple-500/30">
+                            <Image
+                              src={image.file_url}
+                              alt={image.filename}
+                              fill
+                              className="object-contain p-3 group-hover:scale-110 transition-transform duration-300"
+                              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
+                            />
 
-                          <Image
-                            src={image.file_url}
-                            alt={image.filename}
-                            fill
-                            className="object-contain p-2"
-                            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                          />
-
-                          {/* Hover Overlay */}
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-4">
-                            <div className="transform translate-y-4 group-hover:translate-y-0 transition-transform">
-                              <p className="text-white text-sm font-medium truncate mb-1">
-                                {image.filename}
-                              </p>
-                              <div className="flex items-center gap-3 text-white/80 text-xs">
-                                <span className="px-2 py-0.5 bg-white/10 rounded-md backdrop-blur-sm">
-                                  {image.width} × {image.height}
-                                </span>
-                                <span className="px-2 py-0.5 bg-white/10 rounded-md backdrop-blur-sm">
-                                  {(image.file_size / 1024 / 1024).toFixed(2)} MB
-                                </span>
-                                <span className="px-2 py-0.5 bg-white/10 rounded-md backdrop-blur-sm">
-                                  {isLandscape ? 'Landscape' : isPortrait ? 'Portrait' : 'Square'}
-                                </span>
+                            {/* Hover Overlay */}
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
+                              <div className="text-white text-center">
+                                <svg className="w-10 h-10 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
+                                </svg>
+                                <p className="text-sm font-medium">Click to enlarge</p>
                               </div>
                             </div>
                           </div>
 
-                          {/* Click to Enlarge Hint */}
-                          <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <div className="px-2 py-1 bg-purple-600 text-white text-xs font-medium rounded-md shadow-lg backdrop-blur-sm">
-                              Click to enlarge
-                            </div>
+                          {/* Image Info */}
+                          <div className="mt-2 px-1">
+                            <p className="text-sm text-gray-700 dark:text-gray-300 truncate font-medium">
+                              {image.filename}
+                            </p>
+                            <p className="text-xs text-gray-500 mt-0.5">
+                              {image.width} × {image.height}
+                            </p>
                           </div>
                         </motion.div>
                       );

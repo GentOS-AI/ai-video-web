@@ -23,7 +23,7 @@ export const PricingModal = ({ isOpen, onClose, onSubscribe }: PricingModalProps
       price: t('basic.price'),
       period: t('basic.period'),
       description: t('basic.description'),
-      credits: t('monthlyCredits', { count: 100 }),
+      credits: t('monthlyCredits', { count: 500 }),
       features: [
         t('basic.feature1'),
         t('basic.feature2'),
@@ -41,7 +41,7 @@ export const PricingModal = ({ isOpen, onClose, onSubscribe }: PricingModalProps
       price: t('pro.price'),
       period: t('pro.period'),
       description: t('pro.description'),
-      credits: t('monthlyCredits', { count: 500 }),
+      credits: t('yearlyCredits', { count: 3000 }),
       features: [
         t('pro.feature1'),
         t('pro.feature2'),

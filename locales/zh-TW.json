@@ -85,29 +85,30 @@
     "subscribeNow": "立即訂閱",
     "popular": "熱門",
     "monthlyCredits": "{count} 點數/月",
+    "yearlyCredits": "{count} 點數/年",
     "basic": {
       "name": "基礎版",
-      "price": "$19",
+      "price": "$29.99",
       "period": "/月",
       "description": "適合個人和小型專案",
-      "feature1": "每月100次AI影片生成",
+      "feature1": "500點數/月 (~5個影片)",
       "feature2": "高清解析度（1080p）",
-      "feature3": "基礎AI模型（Sora 1）",
+      "feature3": "Sora 2 AI模型",
       "feature4": "標準處理速度",
       "feature5": "郵件支援",
-      "feature6": "5GB雲端儲存空間"
+      "feature6": "10GB雲端儲存空間"
     },
     "pro": {
       "name": "專業版",
-      "price": "$49",
-      "period": "/月",
+      "price": "$129.99",
+      "period": "/年",
       "description": "最適合專業人士和企業",
-      "feature1": "每月500次AI影片生成",
+      "feature1": "3000點數/年 (~30個影片)",
       "feature2": "支援4K解析度",
-      "feature3": "所有AI模型（Sora 2、Runway Gen-3）",
+      "feature3": "Sora 2 Pro AI模型",
       "feature4": "優先處理（快3倍）",
       "feature5": "優先支援（24/7）",
-      "feature6": "50GB雲端儲存空間",
+      "feature6": "100GB雲端儲存空間",
       "feature7": "自訂浮水印移除",
       "feature8": "進階編輯工具",
       "feature9": "API存取權限"
@@ -122,24 +123,24 @@
     "currentBalance": "目前餘額：{balance} 點數",
     "packages": {
       "starter": {
-        "name": "入門包",
-        "credits": "100點數",
-        "price": "$10",
-        "description": "適合試用"
+        "name": "點數包",
+        "credits": "1000點數",
+        "price": "$49.99",
+        "description": "~10個影片"
       },
       "professional": {
         "name": "專業包",
-        "credits": "500點數",
-        "price": "$45",
-        "bonus": "省10%",
-        "description": "最適合常規使用者"
+        "credits": "2500點數",
+        "price": "$99.99",
+        "bonus": "省20%",
+        "description": "~25個影片（超值）"
       },
       "business": {
         "name": "企業包",
-        "credits": "1000點數",
-        "price": "$80",
-        "bonus": "省20%",
-        "description": "團隊的理想選擇"
+        "credits": "5000點數",
+        "price": "$179.99",
+        "bonus": "省28%",
+        "description": "~50個影片（最受歡迎）"
       }
     },
     "purchaseButton": "立即購買",

@@ -85,29 +85,30 @@
     "subscribeNow": "立即订阅",
     "popular": "热门",
     "monthlyCredits": "{count} 积分/月",
+    "yearlyCredits": "{count} 积分/年",
     "basic": {
       "name": "基础版",
-      "price": "$19",
+      "price": "$29.99",
       "period": "/月",
       "description": "适合个人和小型项目",
-      "feature1": "每月100次AI视频生成",
+      "feature1": "500积分/月 (~5个视频)",
       "feature2": "高清分辨率（1080p）",
-      "feature3": "基础AI模型（Sora 1）",
+      "feature3": "Sora 2 AI模型",
       "feature4": "标准处理速度",
       "feature5": "邮件支持",
-      "feature6": "5GB云存储空间"
+      "feature6": "10GB云存储空间"
     },
     "pro": {
       "name": "专业版",
-      "price": "$49",
-      "period": "/月",
+      "price": "$129.99",
+      "period": "/年",
       "description": "最适合专业人士和企业",
-      "feature1": "每月500次AI视频生成",
+      "feature1": "3000积分/年 (~30个视频)",
       "feature2": "支持4K分辨率",
-      "feature3": "所有AI模型（Sora 2、Runway Gen-3）",
+      "feature3": "Sora 2 Pro AI模型",
       "feature4": "优先处理（快3倍）",
       "feature5": "优先支持（24/7）",
-      "feature6": "50GB云存储空间",
+      "feature6": "100GB云存储空间",
       "feature7": "自定义水印移除",
       "feature8": "高级编辑工具",
       "feature9": "API访问权限"
@@ -122,24 +123,24 @@
     "currentBalance": "当前余额：{balance} 积分",
     "packages": {
       "starter": {
-        "name": "入门包",
-        "credits": "100积分",
-        "price": "$10",
-        "description": "适合试用"
+        "name": "积分包",
+        "credits": "1000积分",
+        "price": "$49.99",
+        "description": "~10个视频"
       },
       "professional": {
         "name": "专业包",
-        "credits": "500积分",
-        "price": "$45",
-        "bonus": "省10%",
-        "description": "最适合常规用户"
+        "credits": "2500积分",
+        "price": "$99.99",
+        "bonus": "省20%",
+        "description": "~25个视频（超值）"
       },
       "business": {
         "name": "企业包",
-        "credits": "1000积分",
-        "price": "$80",
-        "bonus": "省20%",
-        "description": "团队的理想选择"
+        "credits": "5000积分",
+        "price": "$179.99",
+        "bonus": "省28%",
+        "description": "~50个视频（最受欢迎）"
       }
     },
     "purchaseButton": "立即购买",

@@ -85,29 +85,30 @@
     "subscribeNow": "Subscribe Now",
     "popular": "POPULAR",
     "monthlyCredits": "{count} credits/month",
+    "yearlyCredits": "{count} credits/year",
     "basic": {
       "name": "Basic",
-      "price": "$19",
+      "price": "$29.99",
       "period": "/month",
       "description": "Perfect for individuals and small projects",
-      "feature1": "100 AI video generations per month",
+      "feature1": "500 credits/month (~5 videos)",
       "feature2": "HD resolution (1080p)",
-      "feature3": "Basic AI models (Sora 1)",
+      "feature3": "Sora 2 AI model",
       "feature4": "Standard processing speed",
       "feature5": "Email support",
-      "feature6": "5GB cloud storage"
+      "feature6": "10GB cloud storage"
     },
     "pro": {
       "name": "Pro",
-      "price": "$49",
-      "period": "/month",
+      "price": "$129.99",
+      "period": "/year",
       "description": "Best for professionals and businesses",
-      "feature1": "500 AI video generations per month",
+      "feature1": "3000 credits/year (~30 videos)",
       "feature2": "4K resolution support",
-      "feature3": "All AI models (Sora 2, Runway Gen-3)",
+      "feature3": "Sora 2 Pro AI model",
       "feature4": "Priority processing (3x faster)",
       "feature5": "Priority support (24/7)",
-      "feature6": "50GB cloud storage",
+      "feature6": "100GB cloud storage",
       "feature7": "Custom watermark removal",
       "feature8": "Advanced editing tools",
       "feature9": "API access"
@@ -122,24 +123,24 @@
     "currentBalance": "Current Balance: {balance} credits",
     "packages": {
       "starter": {
-        "name": "Starter Pack",
-        "credits": "100 credits",
-        "price": "$10",
-        "description": "Perfect for trying out"
+        "name": "Credit Pack",
+        "credits": "1000 credits",
+        "price": "$49.99",
+        "description": "~10 videos"
       },
       "professional": {
         "name": "Professional Pack",
-        "credits": "500 credits",
-        "price": "$45",
-        "bonus": "Save 10%",
-        "description": "Best for regular users"
+        "credits": "2500 credits",
+        "price": "$99.99",
+        "bonus": "Save 20%",
+        "description": "~25 videos (Best Value)"
       },
       "business": {
         "name": "Business Pack",
-        "credits": "1000 credits",
-        "price": "$80",
-        "bonus": "Save 20%",
-        "description": "Ideal for teams"
+        "credits": "5000 credits",
+        "price": "$179.99",
+        "bonus": "Save 28%",
+        "description": "~50 videos (Most Popular)"
       }
     },
     "purchaseButton": "Purchase Now",

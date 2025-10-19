@@ -869,7 +869,7 @@ export const HeroSection = () => {
                   <span className="hidden sm:inline">
                     {t('upload.instructions')}
                   </span>
-                  <span className="sm:hidden">{t('upload.swipeHint')}</span>
+                  <span className="min-[340px]:block sm:hidden hidden">{t('upload.swipeHint')}</span>
                 </p>
               </div>
             </div>

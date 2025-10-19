@@ -272,7 +272,7 @@ export default function MediaCenterPage() {
                   Media Center
                 </h1>
                 <p className="text-gray-600 mt-1">
-                  {user?.name ? `${user.name}&apos;s media library` : 'Manage your AI-generated content'}
+                  {user?.name ? `${user.name}'s media library` : 'Manage your AI-generated content'}
                 </p>
               </div>
             </div>

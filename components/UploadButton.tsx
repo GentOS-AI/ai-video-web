@@ -16,10 +16,10 @@ const ALLOWED_TYPES = ["image/jpeg", "image/jpg", "image/png"];
 const ALLOWED_EXTENSIONS = [".jpg", ".jpeg", ".png"];
 
 // Sora 2 API supported image dimensions (width x height)
+// ONLY 1280x720 and 720x1280 are supported
 const SUPPORTED_DIMENSIONS = [
   { width: 1280, height: 720, label: "1280x720 (16:9 Landscape)" },
   { width: 720, height: 1280, label: "720x1280 (9:16 Portrait)" },
-  { width: 1024, height: 1024, label: "1024x1024 (1:1 Square)" },
 ];
 
 export const UploadButton: React.FC<UploadButtonProps> = ({
@@ -185,7 +185,7 @@ export const UploadButton: React.FC<UploadButtonProps> = ({
                 JPG/PNG, max 20MB
               </p>
               <p className="text-xs text-text-muted font-medium">
-                Supported sizes: 1280x720, 720x1280, 1024x1024
+                Only 1280x720 or 720x1280
               </p>
             </>
           )}

@@ -4,16 +4,26 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Cookie, X } from "lucide-react";
 import Link from "next/link";
+import { getCookie, setCookie } from "@/lib/utils/cookies";
 
 const COOKIE_CONSENT_KEY = "cookie-consent";
+const COOKIE_CONSENT_DAYS = 365; // Cookie valid for 1 year
 
 export const CookieConsent = () => {
   const [showBanner, setShowBanner] = useState(false);
 
   useEffect(() => {
-    // Check if user has already given consent
-    const consent = localStorage.getItem(COOKIE_CONSENT_KEY);
-    if (!consent) {
+    // Check both cookie and localStorage for backward compatibility
+    const cookieConsent = getCookie(COOKIE_CONSENT_KEY);
+    const localStorageConsent = localStorage.getItem(COOKIE_CONSENT_KEY);
+
+    // If we have consent in localStorage but not in cookie, migrate it
+    if (!cookieConsent && localStorageConsent) {
+      setCookie(COOKIE_CONSENT_KEY, localStorageConsent, COOKIE_CONSENT_DAYS);
+    }
+
+    // Show banner if no consent in either storage
+    if (!cookieConsent && !localStorageConsent) {
       // Show banner after a short delay for better UX
       const timer = setTimeout(() => {
         setShowBanner(true);
@@ -24,11 +34,15 @@ export const CookieConsent = () => {
   }, []);
 
   const handleAccept = () => {
+    // Store in both cookie and localStorage for redundancy
+    setCookie(COOKIE_CONSENT_KEY, "accepted", COOKIE_CONSENT_DAYS);
     localStorage.setItem(COOKIE_CONSENT_KEY, "accepted");
     setShowBanner(false);
   };
 
   const handleDecline = () => {
+    // Store in both cookie and localStorage for redundancy
+    setCookie(COOKIE_CONSENT_KEY, "declined", COOKIE_CONSENT_DAYS);
     localStorage.setItem(COOKIE_CONSENT_KEY, "declined");
     setShowBanner(false);
   };

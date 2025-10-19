@@ -11,6 +11,9 @@
 
 export const dynamic = 'force-dynamic';
 
+// Get API URL from environment variable
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
+
 // Unified HTML page that handles OAuth callback for all locales
 const html = `
 <!DOCTYPE html>
@@ -90,8 +93,8 @@ const html = `
       }
 
       try {
-        // Get API URL (use production URL for consistency)
-        const apiUrl = 'https://adsvideo.co/api/v1';
+        // Get API URL from the page (injected from server-side environment variable)
+        const apiUrl = '${API_URL}';
 
         // IMPORTANT: Use the unified redirect URI that was sent to Google
         // This must match exactly what was configured in Google Cloud Console

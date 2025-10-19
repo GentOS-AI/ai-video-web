@@ -120,7 +120,13 @@ export const authService = {
       await apiClient.post('/auth/logout');
     } finally {
       if (typeof window !== 'undefined') {
+        // Save cookie consent before clearing
+        const cookieConsent = localStorage.getItem('cookie-consent');
         localStorage.clear();
+        // Restore cookie consent after clearing
+        if (cookieConsent) {
+          localStorage.setItem('cookie-consent', cookieConsent);
+        }
       }
     }
   },
@@ -376,6 +382,72 @@ export const aiService = {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
+    });
+    return data;
+  },
+
+  /**
+   * Enhanced script generation with gpt-image-1 and GPT-4o
+   * Process:
+   * 1. Auto-detect image orientation from uploaded image
+   * 2. GPT-4o analyzes image and generates gpt-image-1 prompt
+   * 3. gpt-image-1 generates enhanced advertising image (1536x1024 or 1024x1536)
+   * 4. Resize for video (1280x720 or 720x1280)
+   * 5. GPT-4o generates professional advertising script
+   */
+  async enhanceAndGenerateScript(
+    file: File,
+    userDescription?: string,
+    options?: {
+      duration?: number;
+      language?: string;
+    }
+  ): Promise<{
+    script: string;
+    enhanced_image_url: string;
+    enhancement_details: {
+      mode: string;
+      original_size_kb: number;
+      enhanced_size_kb: number;
+      original_dimensions: string;
+      enhanced_dimensions: string;
+      adjustments: string[];
+      size_reduction?: string;
+      resized: boolean;
+      auto_oriented: boolean;
+    };
+    product_analysis: {
+      product_type?: string;
+      key_features?: string[];
+      target_audience?: string;
+      unique_selling_points?: string[];
+      market_position?: string;
+      emotional_appeal?: string;
+    };
+    style?: string;
+    camera?: string;
+    lighting?: string;
+    tokens_used: number;
+    processing_time: number;
+    user_input_used: boolean;
+  }> {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    // Add optional user description
+    if (userDescription) {
+      formData.append('user_description', userDescription);
+    }
+
+    // Add options with defaults
+    formData.append('duration', (options?.duration || 4).toString());
+    formData.append('language', options?.language || 'en');
+
+    const { data } = await apiClient.post('/ai/enhance-and-script', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+      timeout: 120000, // 120 seconds (gpt-image-1 edit takes ~90s + script generation ~30s)
     });
     return data;
   },

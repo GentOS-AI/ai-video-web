@@ -43,13 +43,35 @@ export default function PaymentSuccessPage() {
           status: 'complete',
         });
 
-        // Refresh user data to show updated credits/subscription
-        // This will work if user is logged in, otherwise silently fail
-        try {
-          await refreshUser();
-        } catch {
-          console.log('Note: Unable to refresh user data (user may not be logged in)');
-        }
+        // Refresh user data with retry mechanism
+        // Webhook might take a moment to process, so we retry a few times
+        let retryCount = 0;
+        const maxRetries = 5;
+        const retryDelay = 2000; // 2 seconds
+
+        const refreshWithRetry = async (): Promise<void> => {
+          try {
+            console.log(`🔄 Refreshing user data (attempt ${retryCount + 1}/${maxRetries})...`);
+            await refreshUser();
+            console.log('✅ User data refreshed successfully');
+          } catch (error) {
+            console.error(`❌ Refresh failed:`, error);
+
+            if (retryCount < maxRetries) {
+              retryCount++;
+              console.log(`⏳ Retrying in ${retryDelay}ms...`);
+              await new Promise(resolve => setTimeout(resolve, retryDelay));
+              return refreshWithRetry();
+            } else {
+              console.log('⚠️ Max retries reached, user may need to refresh page manually');
+            }
+          }
+        };
+
+        // Start first refresh after a short delay to give webhook time to process
+        setTimeout(() => {
+          refreshWithRetry();
+        }, 1000);
 
         console.log('✅ Success page loaded');
       } catch (err) {

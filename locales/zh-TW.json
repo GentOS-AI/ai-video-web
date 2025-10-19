@@ -21,7 +21,7 @@
     },
     "subtitle": "AI驅動的腳本撰寫、影片生成，並發布到您的社群媒體。",
     "input": {
-      "placeholder": "描述您的影片：電影級產品展示，流暢的相機運動、專業照明和鮮豔的色彩..."
+      "placeholder": "描述您的產品和廣告創意 — 或讓我們的 Ads Pro AI 為您增強。"
     },
     "button": {
       "generate": "生成",
@@ -40,7 +40,7 @@
       "uploadTitle": "上傳圖片",
       "uploadedTitle": "已上傳圖片 - 點擊更換",
       "selectedTitle": "已選擇圖片 - 點擊更換",
-      "instructions": "上傳 (1280x720, 720x1280, 或 1024x1024) 或選擇圖片開始。",
+      "instructions": "上傳 (僅支援 1280x720 或 720x1280) 或選擇圖片開始。",
       "swipeHint": "← 滑動查看更多圖片"
     },
     "status": {

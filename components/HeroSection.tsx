@@ -68,7 +68,6 @@ export const HeroSection = () => {
 
   // Workflow stage: 'script' or 'video'
   const [workflowStage, setWorkflowStage] = useState<'script' | 'video'>('script');
-  const [showScriptOptionsDialog, setShowScriptOptionsDialog] = useState(false);
 
   // Replace confirmation dialog state
   const [showReplaceConfirmDialog, setShowReplaceConfirmDialog] = useState(false);
@@ -160,7 +159,7 @@ export const HeroSection = () => {
     }
   };
 
-  // Script generation flow with dialog if input has content
+  // Script generation flow - simplified
   const handleScriptGenerationFlow = async () => {
     // Validation
     if (!isAuthenticated) {
@@ -201,48 +200,64 @@ export const HeroSection = () => {
       return;
     }
 
-    // Check if input has content
-    if (!prompt.trim()) {
-      // Input is empty - directly generate script
-      await generateScriptFromImage(false);
-    } else {
-      // Input has content - show options dialog
-      setShowScriptOptionsDialog(true);
-    }
+    // Directly generate script with user input (empty or not)
+    await generateScriptFromImage();
   };
 
-  // Generate script from image (with optional optimization)
-  const generateScriptFromImage = async (optimize: boolean) => {
+  // Generate script from image
+  const generateScriptFromImage = async () => {
     try {
       setIsGeneratingScript(true);
-      console.log(`🤖 ${optimize ? 'Optimizing' : 'Generating'} script from image...`);
+      console.log('🤖 Generating enhanced script from image...');
 
-      // Call AI service with language parameter
-      const result = await aiService.generateScript(uploadedFile!, 4, locale);
+      // Always use enhanced API (gpt-image-1 + GPT-4o)
+      console.log("📝 Using ENHANCED API (gpt-image-1 + GPT-4o)");
+      console.log("  User Description:", prompt || "Empty (AI will auto-analyze)");
+      console.log("  Auto-detect orientation from uploaded image");
+
+      const result = await aiService.enhanceAndGenerateScript(
+        uploadedFile!,
+        prompt,  // Pass user input directly (empty string if no input)
+        {
+          duration: 4,
+          language: locale
+        }
+      );
+
+      // Set enhanced image URL
+      if (result.enhanced_image_url) {
+        setAiOptimizedImage(result.enhanced_image_url);
+        console.log("🖼️ Enhanced image received:", result.enhanced_image_url);
+      }
+
+      // Log product analysis
+      if (result.product_analysis) {
+        console.log("📊 Product Analysis:", result.product_analysis);
+      }
+
+      // Log enhancement details
+      if (result.enhancement_details) {
+        console.log("🎨 Enhancement Details:", result.enhancement_details);
+      }
 
       console.log("✅ Script generated:", result);
 
       // Fill the textarea with generated script
       setPrompt(result.script);
 
-      // If backend returns optimized image URL, set it
-      if (result.optimized_image_url) {
-        setAiOptimizedImage(result.optimized_image_url);
-        console.log("🖼️ AI optimized image received:", result.optimized_image_url);
-      }
-
       // Switch to video generation stage
       setWorkflowStage('video');
 
       showToast(tToast('scriptGeneratedSuccess'), "success");
 
-      // Optional: Log additional info
+      // Log additional info
       if (result.style || result.camera || result.lighting) {
         console.log("Script details:", {
           style: result.style,
           camera: result.camera,
           lighting: result.lighting,
-          tokens: result.tokens_used
+          tokens: result.tokens_used || 0,
+          processing_time: 'processing_time' in result ? (result as { processing_time: number }).processing_time : 0
         });
       }
 
@@ -264,7 +279,6 @@ export const HeroSection = () => {
       showToast(errorMessage, "error");
     } finally {
       setIsGeneratingScript(false);
-      setShowScriptOptionsDialog(false);
     }
   };
 
@@ -583,6 +597,7 @@ export const HeroSection = () => {
 
             {/* Integrated Input Card */}
             <div className="relative bg-white border border-purple-200 shadow-xl shadow-purple-500/10 rounded-2xl overflow-visible transition-all duration-300 hover:border-purple-400 hover:shadow-2xl hover:shadow-purple-600/20">
+
               {/* Main Input Area */}
               <div className="p-4 sm:p-6 relative">
                 {/* Sora Model Selector - Positioned at top right inside input area */}
@@ -791,11 +806,10 @@ export const HeroSection = () => {
                             const width = img.width;
                             const height = img.height;
 
-                            // Sora 2 API supported dimensions
+                            // Sora 2 API supported dimensions - ONLY 1280x720 and 720x1280
                             const SUPPORTED_DIMENSIONS = [
                               { width: 1280, height: 720, label: "1280x720 (16:9 Landscape)" },
                               { width: 720, height: 1280, label: "720x1280 (9:16 Portrait)" },
-                              { width: 1024, height: 1024, label: "1024x1024 (1:1 Square)" },
                             ];
 
                             const isSupported = SUPPORTED_DIMENSIONS.some(
@@ -943,7 +957,7 @@ export const HeroSection = () => {
             <div className="relative aspect-video rounded-2xl overflow-hidden shadow-2xl" style={{ willChange: "transform" }}>
               {/* Priority 1: Show AI optimized image if available (script generation completed) */}
               {aiOptimizedImage ? (
-                <div className="relative w-full h-full bg-gradient-to-br from-purple-50 to-pink-50">
+                <div className="relative w-full h-full bg-gradient-to-br from-purple-50 to-pink-50 group">
                   <Image
                     src={aiOptimizedImage}
                     alt="AI Optimized Image"
@@ -958,15 +972,15 @@ export const HeroSection = () => {
                     <span className="text-xs font-semibold">AI Optimized</span>
                   </div>
 
-                  {/* Image Info Overlay */}
-                  <div className="absolute bottom-4 left-4 right-4 bg-black/60 backdrop-blur-sm rounded-lg px-4 py-3 text-white">
+                  {/* Image Info Overlay - Show on hover */}
+                  <div className="absolute bottom-4 left-4 right-4 bg-black/60 backdrop-blur-sm rounded-lg px-4 py-3 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                     <p className="text-sm font-medium mb-1">✨ Image optimized for video generation</p>
                     <p className="text-xs text-gray-300">Ready to generate your AI video</p>
                   </div>
                 </div>
               ) : showUploadedPreview && uploadedFilePreview ? (
                 /* Priority 2: Show uploaded file preview */
-                <div className="relative w-full h-full bg-gradient-to-br from-purple-50 to-pink-50">
+                <div className="relative w-full h-full bg-gradient-to-br from-purple-50 to-pink-50 group">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={uploadedFilePreview}
@@ -979,15 +993,15 @@ export const HeroSection = () => {
                     <span className="text-xs font-semibold">Uploaded</span>
                   </div>
 
-                  {/* Image Info Overlay */}
-                  <div className="absolute bottom-4 left-4 right-4 bg-black/60 backdrop-blur-sm rounded-lg px-4 py-3 text-white">
+                  {/* Image Info Overlay - Show on hover */}
+                  <div className="absolute bottom-4 left-4 right-4 bg-black/60 backdrop-blur-sm rounded-lg px-4 py-3 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                     <p className="text-sm font-medium mb-1">📤 Your uploaded image</p>
                     <p className="text-xs text-gray-300">Click &ldquo;Enhance &amp; Scripting&rdquo; to generate professional script, or click &ldquo;Upload&rdquo; to change image</p>
                   </div>
                 </div>
               ) : showThumbnailPreview && selectedImage !== null ? (
                 /* Priority 3: Show selected thumbnail preview */
-                <div className="relative w-full h-full bg-gradient-to-br from-purple-50 to-pink-50">
+                <div className="relative w-full h-full bg-gradient-to-br from-purple-50 to-pink-50 group">
                   <Image
                     src={trialImages.find(img => img.id === selectedImage)?.highResSrc || ""}
                     alt={trialImages.find(img => img.id === selectedImage)?.alt || "Selected Image"}
@@ -1002,8 +1016,8 @@ export const HeroSection = () => {
                     <span className="text-xs font-semibold">Selected</span>
                   </div>
 
-                  {/* Image Info Overlay */}
-                  <div className="absolute bottom-4 left-4 right-4 bg-black/60 backdrop-blur-sm rounded-lg px-4 py-3 text-white">
+                  {/* Image Info Overlay - Show on hover */}
+                  <div className="absolute bottom-4 left-4 right-4 bg-black/60 backdrop-blur-sm rounded-lg px-4 py-3 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                     <p className="text-sm font-medium mb-1">🖼️ {trialImages.find(img => img.id === selectedImage)?.alt}</p>
                     <p className="text-xs text-gray-300">Click &ldquo;Enhance &amp; Scripting&rdquo; to generate professional script</p>
                   </div>
@@ -1202,60 +1216,6 @@ export const HeroSection = () => {
         </div>
       )}
 
-      {/* Script Options Dialog */}
-      {showScriptOptionsDialog && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6"
-          >
-            <h3 className="text-xl font-bold text-gray-900 mb-4">
-              Script Generation Options
-            </h3>
-            <p className="text-gray-600 mb-6">
-              You already have content in the input field. How would you like to proceed?
-            </p>
-
-            <div className="space-y-3">
-              <button
-                onClick={() => generateScriptFromImage(true)}
-                disabled={isGeneratingScript}
-                className="w-full px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:from-purple-600 hover:to-pink-600 transition-all font-medium shadow-md hover:shadow-lg disabled:opacity-50"
-              >
-                <div className="flex items-center justify-center gap-2">
-                  <Wand2 className="w-5 h-5" />
-                  <span>Optimize Current Script</span>
-                </div>
-                <p className="text-xs text-white/80 mt-1">
-                  Enhance your existing script with AI
-                </p>
-              </button>
-
-              <button
-                onClick={() => generateScriptFromImage(false)}
-                disabled={isGeneratingScript}
-                className="w-full px-6 py-3 bg-white border-2 border-gray-300 text-gray-700 rounded-lg hover:border-purple-400 hover:bg-purple-50 transition-all font-medium disabled:opacity-50"
-              >
-                <div className="flex items-center justify-center gap-2">
-                  <Sparkles className="w-5 h-5" />
-                  <span>Generate New Professional Script</span>
-                </div>
-                <p className="text-xs text-gray-500 mt-1">
-                  Create a fresh script from the image
-                </p>
-              </button>
-
-              <button
-                onClick={() => setShowScriptOptionsDialog(false)}
-                className="w-full px-6 py-2 text-gray-600 hover:text-gray-900 transition-colors font-medium"
-              >
-                Cancel
-              </button>
-            </div>
-          </motion.div>
-        </div>
-      )}
     </section>
   );
 };

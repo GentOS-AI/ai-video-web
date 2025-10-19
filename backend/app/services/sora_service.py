@@ -24,7 +24,7 @@ class SoraVideoGenerator:
         self.client = OpenAI(api_key=settings.OPENAI_API_KEY)
         self.model = "sora-2"  # Valid models: 'sora-2' or 'sora-2-pro'
         self.duration = 4  # Valid durations: 4, 8, or 12 seconds
-        self.resolution = "1280x720"  # Landscape format
+        # Resolution will be determined from input image dimensions
 
     async def download_image_as_base64(self, image_url: str) -> str:
         """
@@ -71,6 +71,40 @@ class SoraVideoGenerator:
             encoded_image = base64.b64encode(image_file.read()).decode("utf-8")
         return encoded_image
 
+    def detect_resolution_from_image(self, image_data: bytes) -> str:
+        """
+        Detect appropriate video resolution based on input image dimensions
+
+        Args:
+            image_data: Image bytes
+
+        Returns:
+            Resolution string: "1280x720" (landscape) or "720x1280" (portrait)
+        """
+        from PIL import Image
+        from io import BytesIO
+
+        img = Image.open(BytesIO(image_data))
+        width, height = img.size
+
+        print(f"   Detected image dimensions: {width}x{height}")
+
+        # Determine orientation based on aspect ratio
+        if width > height:
+            # Landscape
+            resolution = "1280x720"
+            print(f"   → Using landscape resolution: {resolution}")
+        elif height > width:
+            # Portrait
+            resolution = "720x1280"
+            print(f"   → Using portrait resolution: {resolution}")
+        else:
+            # Square - default to landscape
+            resolution = "1280x720"
+            print(f"   → Square image, defaulting to landscape: {resolution}")
+
+        return resolution
+
     async def generate_video(
         self,
         prompt: str,
@@ -102,15 +136,16 @@ class SoraVideoGenerator:
                 print(f"📂 Reading local image: {image_url}")
                 encoded_image = self.encode_local_image_to_base64(image_url)
 
+            # Detect resolution from image dimensions
+            image_bytes = base64.b64decode(encoded_image)
+            resolution = self.detect_resolution_from_image(image_bytes)
+
             print(f"🎬 Initiating Sora 2 video generation...")
             print(f"   Model: {self.model}")
             print(f"   Duration: {self.duration}s")
-            print(f"   Resolution: {self.resolution}")
+            print(f"   Resolution: {resolution}")
 
             # Call OpenAI Sora 2 API
-            # Convert base64 back to bytes and create a file-like object with MIME type
-            image_bytes = base64.b64decode(encoded_image)
-
             # Create a tuple with (filename, file_content, mime_type)
             # OpenAI expects this format for file uploads
             from io import BytesIO
@@ -121,7 +156,7 @@ class SoraVideoGenerator:
                 input_reference=image_file,
                 model=self.model,
                 seconds=self.duration,
-                size=self.resolution,
+                size=resolution,
             )
 
             job_id = response.id
@@ -269,23 +304,24 @@ class SoraVideoGenerator:
                 print(f"📂 Reading local image: {image_url}")
                 encoded_image = self.encode_local_image_to_base64(image_url)
 
+            # Detect resolution from image dimensions
+            image_bytes = base64.b64decode(encoded_image)
+            resolution = self.detect_resolution_from_image(image_bytes)
+
             if logger:
-                logger.publish(2, "✅ Image processed successfully")
+                logger.publish(2, f"✅ Image processed ({resolution})")
 
             # Step 3: Call Sora API
             if logger:
-                logger.publish(3, f"🤖 Calling OpenAI Sora 2 API (model: {self.model})...")
+                logger.publish(3, f"🤖 Calling OpenAI Sora 2 API (model: {self.model}, {resolution})...")
 
             print(f"🎬 Initiating Sora 2 video generation...")
             print(f"   Model: {self.model}")
             print(f"   Duration: {self.duration}s")
-            print(f"   Resolution: {self.resolution}")
+            print(f"   Resolution: {resolution}")
             print(f"   Prompt: {prompt[:100]}...")
 
             # Call OpenAI Sora 2 API
-            # Convert base64 back to bytes and create a file-like object with MIME type
-            image_bytes = base64.b64decode(encoded_image)
-
             # Create a tuple with (filename, file_content, mime_type)
             # OpenAI expects this format for file uploads
             from io import BytesIO
@@ -296,7 +332,7 @@ class SoraVideoGenerator:
                 input_reference=image_file,
                 model=self.model,
                 seconds=self.duration,
-                size=self.resolution,
+                size=resolution,
             )
 
             job_id = response.id

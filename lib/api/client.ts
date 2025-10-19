@@ -60,14 +60,22 @@ apiClient.interceptors.response.use(
             return axios(originalRequest);
           } catch {
             // Refresh failed, clear tokens and redirect to login
+            const cookieConsent = localStorage.getItem('cookie-consent');
             localStorage.clear();
+            if (cookieConsent) {
+              localStorage.setItem('cookie-consent', cookieConsent);
+            }
             if (typeof window !== 'undefined') {
               window.location.href = '/?error=session_expired';
             }
           }
         } else {
           // No refresh token, redirect to login
+          const cookieConsent = localStorage.getItem('cookie-consent');
           localStorage.clear();
+          if (cookieConsent) {
+            localStorage.setItem('cookie-consent', cookieConsent);
+          }
           if (typeof window !== 'undefined') {
             window.location.href = '/?error=no_token';
           }

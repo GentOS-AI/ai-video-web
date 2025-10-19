@@ -70,7 +70,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.error('Logout failed:', error);
     } finally {
       setUser(null);
+      // Save cookie consent before clearing
+      const cookieConsent = localStorage.getItem('cookie-consent');
       localStorage.clear();
+      // Restore cookie consent after clearing
+      if (cookieConsent) {
+        localStorage.setItem('cookie-consent', cookieConsent);
+      }
     }
   };
 
@@ -83,8 +89,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(userData);
     } catch (error) {
       console.error('Failed to fetch user:', error);
+      // Save cookie consent before clearing
+      const cookieConsent = localStorage.getItem('cookie-consent');
       // Clear invalid tokens
       localStorage.clear();
+      // Restore cookie consent after clearing
+      if (cookieConsent) {
+        localStorage.setItem('cookie-consent', cookieConsent);
+      }
       setUser(null);
     } finally {
       setLoading(false);

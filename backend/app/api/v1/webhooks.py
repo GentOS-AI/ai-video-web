@@ -82,9 +82,13 @@ async def stripe_webhook(
             # Payment completed successfully
             session = event["data"]["object"]
             print(f"   Session ID: {session['id']}")
-            print(f"   Amount: ${session['amount_total'] / 100} {session['currency'].upper()}")
+            print(f"   Payment Status: {session.get('payment_status', 'N/A')}")
+            print(f"   Amount: ${session.get('amount_total', 0) / 100} {session.get('currency', 'usd').upper()}")
+            print(f"   Customer Email: {session.get('customer_email', 'N/A')}")
 
+            # Process the checkout completion
             stripe_service.handle_checkout_completed(session, db)
+            print(f"   ✅ Checkout processing completed")
 
         elif event_type == "customer.subscription.created":
             # New subscription created

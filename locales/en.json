@@ -21,7 +21,7 @@
     },
     "subtitle": "AI-powered script writing, video generation, and publish to your social media.",
     "input": {
-      "placeholder": "Describe your video: A cinematic product showcase with smooth camera movements, professional lighting, and vibrant colors..."
+      "placeholder": "Describe your product and advertising ideas — or let our Ads Pro AI enhance it for you."
     },
     "button": {
       "generate": "Generate",
@@ -40,7 +40,7 @@
       "uploadTitle": "Upload image",
       "uploadedTitle": "Uploaded image - click to change",
       "selectedTitle": "Selected image - click to change",
-      "instructions": "Upload (1280x720, 720x1280, or 1024x1024) or select an image to start.",
+      "instructions": "Upload (1280x720 or 720x1280 only) or select an image to start.",
       "swipeHint": "← Swipe to view more images"
     },
     "status": {

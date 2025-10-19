@@ -124,7 +124,7 @@ class StripeService:
             # Invalid payload
             print(f"❌ Invalid webhook payload: {e}")
             return None
-        except stripe.error.SignatureVerificationError as e:
+        except stripe.SignatureVerificationError as e:
             # Invalid signature
             print(f"❌ Invalid webhook signature: {e}")
             return None
@@ -139,38 +139,83 @@ class StripeService:
             session: Stripe Checkout Session data
             db: Database session
         """
-        user_id = int(session["metadata"]["user_id"])
-        product_type = session["metadata"]["product_type"]
+        try:
+            # Extract metadata with validation
+            user_id = int(session["metadata"]["user_id"])
+            product_type = session["metadata"]["product_type"]
 
-        print(f"✅ Checkout completed for user {user_id}, product: {product_type}")
+            print(f"\n🔔 Processing checkout.session.completed:")
+            print(f"   Session ID: {session.get('id', 'N/A')}")
+            print(f"   User ID: {user_id}")
+            print(f"   Product Type: {product_type}")
+            print(f"   Amount: ${session.get('amount_total', 0) / 100}")
+            print(f"   Payment Status: {session.get('payment_status', 'N/A')}")
 
-        # Get user from database
-        user = db.query(User).filter(User.id == user_id).first()
-        if not user:
-            print(f"❌ User {user_id} not found")
-            return
+            # Get user from database
+            user = db.query(User).filter(User.id == user_id).first()
+            if not user:
+                print(f"❌ ERROR: User {user_id} not found in database")
+                return
 
-        # Handle different product types
-        if product_type == "credits":
-            # One-time credits purchase
-            credits_to_add = 1000
-            user.credits += credits_to_add
-            print(f"   💰 Added {credits_to_add} credits to user {user.email}")
+            print(f"   Found user: {user.email}")
+            print(f"   Current credits: {user.credits}")
+            print(f"   Current plan: {user.subscription_plan}")
 
-        elif product_type == "basic":
-            # Monthly Basic subscription
-            user.subscription_plan = "basic"
-            user.subscription_status = "active"
-            print(f"   📦 Activated Basic plan for user {user.email}")
+            # Handle different product types
+            if product_type == "credits":
+                # One-time credits purchase
+                credits_to_add = 1000
+                old_credits = float(user.credits)
+                user.credits = old_credits + credits_to_add
 
-        elif product_type == "pro":
-            # Yearly Pro subscription
-            user.subscription_plan = "pro"
-            user.subscription_status = "active"
-            print(f"   👑 Activated Pro plan for user {user.email}")
+                print(f"   💰 Adding {credits_to_add} credits")
+                print(f"   Credits before: {old_credits}")
+                print(f"   Credits after: {user.credits}")
 
-        db.commit()
-        print(f"✅ Database updated successfully")
+            elif product_type == "basic":
+                # Monthly Basic subscription
+                old_plan = user.subscription_plan
+                old_status = user.subscription_status
+
+                user.subscription_plan = "basic"
+                user.subscription_status = "active"
+
+                print(f"   📦 Activating Basic plan")
+                print(f"   Plan before: {old_plan} ({old_status})")
+                print(f"   Plan after: {user.subscription_plan} ({user.subscription_status})")
+
+            elif product_type == "pro":
+                # Yearly Pro subscription
+                old_plan = user.subscription_plan
+                old_status = user.subscription_status
+
+                user.subscription_plan = "pro"
+                user.subscription_status = "active"
+
+                print(f"   👑 Activating Pro plan")
+                print(f"   Plan before: {old_plan} ({old_status})")
+                print(f"   Plan after: {user.subscription_plan} ({user.subscription_status})")
+
+            else:
+                print(f"   ⚠️ Unknown product type: {product_type}")
+                return
+
+            # Commit the transaction
+            print("   💾 Committing to database...")
+            db.commit()
+
+            # Verify the update
+            db.refresh(user)
+            print(f"   ✅ Database updated successfully")
+            print(f"   Final credits: {user.credits}")
+            print(f"   Final plan: {user.subscription_plan}")
+            print(f"   Final status: {user.subscription_status}")
+
+        except Exception as e:
+            print(f"❌ ERROR in handle_checkout_completed: {str(e)}")
+            print(f"   Exception type: {type(e).__name__}")
+            db.rollback()
+            raise
 
     def handle_subscription_updated(
         self, subscription: Dict[str, Any], db: Session

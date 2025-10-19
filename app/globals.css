@@ -189,6 +189,7 @@ textarea {
 }
 
 /* Improve touch target sizes on mobile */
+/* Commented out - causing button style issues on mobile
 @media (max-width: 640px) {
   button,
   a {
@@ -196,6 +197,7 @@ textarea {
     min-width: 44px;
   }
 }
+*/
 
 /* Line clamp utility for text truncation */
 .line-clamp-2 {

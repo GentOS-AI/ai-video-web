@@ -502,13 +502,13 @@ export const HeroSection = () => {
   return (
     <section className="pt-20 sm:pt-24 pb-12 sm:pb-16">
       <div className="w-full md:max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
-        <div className="grid lg:grid-cols-[53%_47%] gap-6 sm:gap-8 lg:gap-12 items-end">
+        <div className="flex flex-col lg:grid lg:grid-cols-[53%_47%] gap-6 sm:gap-8 lg:gap-12 lg:items-end">
           {/* Left Side - Generation Form */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, ease: "easeOut" }}
-            className="space-y-4 sm:space-y-6 order-2 lg:order-1"
+            className="space-y-4 sm:space-y-6 pt-6 md:pt-0"
           >
             {/* Heading */}
             <div className="space-y-2 sm:space-y-3">
@@ -523,32 +523,33 @@ export const HeroSection = () => {
                       AI Videos
                     </span>
                   </span>
-                  {" "}for Ads
-                </span>
-                <span className="block text-gray-900 mt-1.5">
+                  {" "}
                   <span className="relative inline-block">
-                    <span className="text-purple-600">One Click</span>
-                    <svg className="absolute -bottom-1.5 left-0 right-0 h-2.5" viewBox="0 0 200 12" preserveAspectRatio="none">
+                    <span className="text-purple-600">for Ads</span>
+                    <svg className="absolute -bottom-1.5 left-0 right-0" viewBox="0 0 200 12" preserveAspectRatio="none">
                       <path d="M0,7 Q50,0 100,7 T200,7" fill="none" stroke="currentColor" strokeWidth="3" className="text-purple-600/30" />
                     </svg>
                   </span>
-                  {" "}Away
+                </span>
+                <span className="block text-gray-900 mt-1.5">
+                  One Click{" "}Away
                 </span>
               </h1>
               <p className="text-base sm:text-lg md:text-xl text-gray-600 leading-relaxed max-w-2xl">
                 Professional AI scripting, video generation, and instant social media publishing.{" "}
                 <span className="inline-flex items-center gap-1 text-[10px] sm:text-xs whitespace-nowrap">
                   <span className="text-gray-400 font-medium">POWERED BY</span>
-                  <span className="relative inline-block px-1.5 py-0.5 rounded-md bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200">
+                  <a
+                    href="https://moky.ai"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="relative inline-block px-1.5 py-0.5 rounded-md bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 hover:border-purple-300 hover:shadow-md hover:shadow-purple-200/50 active:scale-95 transition-all duration-200 cursor-pointer"
+                  >
                     {/* Main text with gradient */}
                     <span className="bg-gradient-to-r from-purple-600 via-pink-500 to-purple-600 bg-clip-text text-transparent font-bold tracking-tight">
                       Moky.ai
                     </span>
-                    {/* Four-pointed star in top-right corner */}
-                    <svg className="absolute -top-1 -right-1 w-2.5 h-2.5 text-purple-300" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M12 0L14.59 9.41L24 12L14.59 14.59L12 24L9.41 14.59L0 12L9.41 9.41L12 0Z" />
-                    </svg>
-                  </span>
+                  </a>
                 </span>
               </p>
             </div>
@@ -744,8 +745,8 @@ export const HeroSection = () => {
                     }}
                   />
 
-                  {/* Trial Images Slider with gradient hint */}
-                  <div className="flex-1 relative overflow-hidden">
+                  {/* Trial Images Slider with gradient hint - Hidden on small screens */}
+                  <div className="flex-1 relative overflow-hidden hidden min-[500px]:block">
                     {/* Gradient hints for scrollability */}
                     <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-gray-50/90 to-transparent pointer-events-none z-10" />
                     <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-gray-50/90 to-transparent pointer-events-none z-10" />
@@ -780,10 +781,10 @@ export const HeroSection = () => {
 
                   {/* Right: Icon Buttons */}
                   <div className="flex items-center gap-2 flex-shrink-0">
-                    {/* Model Selector Text */}
+                    {/* Model Selector Text - Hidden on very small screens */}
                     <div
                       ref={dropdownRef}
-                      className="relative"
+                      className="relative hidden min-[340px]:block"
                     >
                       <button
                         onClick={() => setIsModelDropdownOpen(!isModelDropdownOpen)}
@@ -879,7 +880,7 @@ export const HeroSection = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.1, ease: "easeOut" }}
-            className="relative order-1 lg:order-2 pt-8 lg:pt-0"
+            className="relative pt-8 lg:pt-0"
             style={{ willChange: "transform, opacity" }}
           >
             {/* Simplified Background - Lightweight gradient */}

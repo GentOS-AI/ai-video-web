@@ -175,8 +175,8 @@ export const PricingModal = ({ isOpen, onClose }: PricingModalProps) => {
                     >
                       {/* Popular Badge */}
                       {plan.popular && (
-                        <div className="absolute top-3 right-3">
-                          <div className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-xs font-bold px-2.5 py-1 rounded-full shadow-lg">
+                        <div className="absolute top-2 right-2 sm:top-3 sm:right-3">
+                          <div className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-[10px] sm:text-xs font-bold px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full shadow-lg">
                             {t('popular')}
                           </div>
                         </div>
@@ -273,7 +273,7 @@ export const PricingModal = ({ isOpen, onClose }: PricingModalProps) => {
                               ? plan.popular
                                 ? "bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white shadow-md"
                                 : "bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white shadow-md"
-                              : "border-2 border-gray-300 hover:border-primary hover:text-primary bg-white"
+                              : "border-2 border-gray-300 hover:border-primary hover:bg-primary hover:text-white bg-white text-gray-700"
                           }`}
                         >
                           {isProcessing && selectedPlan === plan.name ? (

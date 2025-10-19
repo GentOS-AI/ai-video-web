@@ -4,10 +4,10 @@ import { useState, useEffect, useRef } from "react";
 import dynamic from "next/dynamic";
 import { Button } from "./Button";
 import { VideoPlayer } from "./VideoPlayer";
-import { Wand2, Sparkles, Loader2, AlertCircle, Upload } from "lucide-react";
+import { Wand2, Sparkles, Loader2, AlertCircle, Upload, X } from "lucide-react";
 import { motion } from "framer-motion";
 import Image from "next/image";
-import { heroVideos, trialImages } from "@/lib/assets";
+import { showcaseVideos, trialImages } from "@/lib/assets";
 import { videoService, userService, aiService } from "@/lib/api/services";
 import type { Video, RecentUsersResponse } from "@/lib/api/services";
 import { useAuth } from "@/contexts/AuthContext";
@@ -21,8 +21,8 @@ const PricingModal = dynamic(
   { ssr: false }
 );
 
-// Use imported data
-const sampleVideos = heroVideos;
+// Use ShowcaseSection's 3rd video (index 2) as default Hero video
+const defaultHeroVideo = showcaseVideos[2]!; // "Food & Beverage Ad" - Non-null assertion since we know it exists
 
 // AI Models for dropdown with credit costs
 const aiModels = [
@@ -39,12 +39,9 @@ export const HeroSection = () => {
   const { showToast } = useNotification();
   const [prompt, setPrompt] = useState("");
   const [selectedImage, setSelectedImage] = useState<number | null>(null);
-  const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
   const [selectedModel, setSelectedModel] = useState(aiModels[0]);
   const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false);
   const [isPricingOpen, setIsPricingOpen] = useState(false);
-  const [videoKey, setVideoKey] = useState(0); // Key to force video remount
-  const [hasUserInteracted, setHasUserInteracted] = useState(false); // Track if user has clicked
   const dropdownRef = useRef<HTMLDivElement>(null);
   const maxChars = 5000;
 
@@ -60,9 +57,22 @@ export const HeroSection = () => {
   const [uploadedFilePreview, setUploadedFilePreview] = useState<string | null>(null);
   const [isGeneratingScript, setIsGeneratingScript] = useState(false);
 
+  // AI optimized image state
+  const [aiOptimizedImage, setAiOptimizedImage] = useState<string | null>(null);
+
+  // Thumbnail preview state - show selected thumbnail in preview area
+  const [showThumbnailPreview, setShowThumbnailPreview] = useState(false);
+
+  // Uploaded file preview state - show uploaded file in preview area
+  const [showUploadedPreview, setShowUploadedPreview] = useState(false);
+
   // Workflow stage: 'script' or 'video'
   const [workflowStage, setWorkflowStage] = useState<'script' | 'video'>('script');
   const [showScriptOptionsDialog, setShowScriptOptionsDialog] = useState(false);
+
+  // Replace confirmation dialog state
+  const [showReplaceConfirmDialog, setShowReplaceConfirmDialog] = useState(false);
+  const [pendingThumbnailId, setPendingThumbnailId] = useState<number | null>(null);
 
   // Use SSE Hook for real-time progress updates
   const { messages, isConnected, lastMessage } = useVideoStream({
@@ -214,6 +224,12 @@ export const HeroSection = () => {
 
       // Fill the textarea with generated script
       setPrompt(result.script);
+
+      // If backend returns optimized image URL, set it
+      if (result.optimized_image_url) {
+        setAiOptimizedImage(result.optimized_image_url);
+        console.log("🖼️ AI optimized image received:", result.optimized_image_url);
+      }
 
       // Switch to video generation stage
       setWorkflowStage('video');
@@ -411,8 +427,11 @@ export const HeroSection = () => {
   const handleFileUpload = (file: File) => {
     setUploadedFile(file);
     setSelectedImage(null); // Clear thumbnail selection when file is uploaded
+    setShowThumbnailPreview(false); // Hide thumbnail preview when file is uploaded
+    setShowUploadedPreview(true); // Show uploaded file preview in right panel
     setWorkflowStage('script'); // Reset to script generation stage
     setPrompt(''); // Clear previous script
+    setAiOptimizedImage(null); // Clear AI optimized image when new file is uploaded
 
     // Create preview URL for uploaded file
     const reader = new FileReader();
@@ -464,16 +483,30 @@ export const HeroSection = () => {
     setIsPricingOpen(false);
   };
 
-  // Handle video switch - stop current video and switch to new one
-  const handleVideoSwitch = (index: number) => {
-    // Mark that user has interacted
-    setHasUserInteracted(true);
+  // Handle replace confirmation
+  const handleConfirmReplace = () => {
+    if (pendingThumbnailId !== null) {
+      // Replace uploaded file with selected thumbnail
+      setUploadedFile(null);
+      setUploadedFilePreview(null);
+      setSelectedImage(pendingThumbnailId);
+      setShowUploadedPreview(false);
+      setShowThumbnailPreview(true);
 
-    if (index !== currentVideoIndex) {
-      // Force video component to remount by changing key
-      setVideoKey(prev => prev + 1);
-      setCurrentVideoIndex(index);
+      console.log("✅ Replaced uploaded image with thumbnail:", pendingThumbnailId);
+      showToast("Switched to selected thumbnail image", "success");
     }
+
+    // Close dialog and reset pending state
+    setShowReplaceConfirmDialog(false);
+    setPendingThumbnailId(null);
+  };
+
+  const handleCancelReplace = () => {
+    // Just close the dialog without making changes
+    setShowReplaceConfirmDialog(false);
+    setPendingThumbnailId(null);
+    console.log("❌ Replace cancelled");
   };
 
   // Close dropdown when clicking outside
@@ -492,12 +525,6 @@ export const HeroSection = () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [isModelDropdownOpen]);
-
-  // Get current video safely
-  const currentVideo = sampleVideos[currentVideoIndex];
-  if (!currentVideo) {
-    return null; // Safety check, should never happen
-  }
 
   return (
     <section className="pt-20 sm:pt-24 pb-12 sm:pb-16">
@@ -532,11 +559,11 @@ export const HeroSection = () => {
                   </span>
                 </span>
                 <span className="block text-gray-900 mt-1.5">
-                  One Click{" "}Away
+                  with Simple Clicks
                 </span>
               </h1>
               <p className="text-base sm:text-lg md:text-xl text-gray-600 leading-relaxed max-w-2xl">
-                Professional AI scripting, video generation, and instant social media publishing.{" "}
+                All-in-one AI solution for image enhancement, script generation, and video creation for your product ads.{" "}
                 <span className="inline-flex items-center gap-1 text-[10px] sm:text-xs whitespace-nowrap">
                   <span className="text-gray-400 font-medium">POWERED BY</span>
                   <a
@@ -557,14 +584,66 @@ export const HeroSection = () => {
             {/* Integrated Input Card */}
             <div className="relative bg-white border border-purple-200 shadow-xl shadow-purple-500/10 rounded-2xl overflow-visible transition-all duration-300 hover:border-purple-400 hover:shadow-2xl hover:shadow-purple-600/20">
               {/* Main Input Area */}
-              <div className="p-4 sm:p-6">
+              <div className="p-4 sm:p-6 relative">
+                {/* Sora Model Selector - Positioned at top right inside input area */}
+                <div
+                  ref={dropdownRef}
+                  className="absolute top-4 right-4 z-10"
+                >
+                  <button
+                    onClick={() => setIsModelDropdownOpen(!isModelDropdownOpen)}
+                    className="px-2.5 py-1.5 rounded-lg bg-purple-50 border border-purple-200 hover:border-purple-400 hover:bg-purple-100 transition-all flex items-center justify-center group"
+                    title={selectedModel?.name}
+                  >
+                    <span className="text-xs font-medium text-purple-600 group-hover:text-purple-700">{selectedModel?.name}</span>
+                  </button>
+
+                  {/* Dropdown Menu */}
+                  {isModelDropdownOpen && (
+                    <div className="absolute right-0 top-full mt-2 w-52 bg-white border border-gray-200 rounded-lg shadow-lg z-20">
+                      {aiModels.map((model) => (
+                        <button
+                          key={model.id}
+                          onClick={() => {
+                            setSelectedModel(model);
+                            setIsModelDropdownOpen(false);
+                          }}
+                          className={`w-full px-3 py-2.5 text-left hover:bg-purple-50 transition-colors first:rounded-t-lg last:rounded-b-lg ${
+                            selectedModel?.id === model.id ? "bg-purple-50" : ""
+                          }`}
+                        >
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex-1">
+                              <div className="text-xs font-medium text-text-primary">
+                                {model.name}
+                              </div>
+                              <div className="text-[10px] text-text-muted">
+                                {model.version}
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-1 px-2 py-1 bg-purple-100 rounded-full">
+                              <span className="text-[10px] font-semibold text-purple-600">
+                                {model.credits}
+                              </span>
+                              <svg className="w-3 h-3 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z"/>
+                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V5z" clipRule="evenodd"/>
+                              </svg>
+                            </div>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
                 <textarea
                   id="prompt"
                   value={prompt}
                   onChange={handlePromptChange}
                   onPaste={handlePaste}
                   placeholder={t('input.placeholder')}
-                  className="w-full px-0 py-0 border-0 focus:outline-none focus:ring-0 resize-none text-sm sm:text-base text-text-primary placeholder:text-text-muted"
+                  className="w-full px-0 py-0 pr-20 border-0 focus:outline-none focus:ring-0 resize-none text-sm sm:text-base text-text-primary placeholder:text-text-muted"
                   rows={6}
                 />
               </div>
@@ -633,6 +712,11 @@ export const HeroSection = () => {
                           className="w-full h-full object-cover"
                         />
 
+                        {/* Hover Overlay with Upload Icon */}
+                        <div className="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
+                          <Upload className="w-8 h-8 text-white drop-shadow-lg" />
+                        </div>
+
                         {/* Upload Badge (different from selection checkmark) */}
                         <div className="absolute -top-2 -right-2 w-7 h-7 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center shadow-lg border-2 border-white z-10">
                           <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -655,6 +739,11 @@ export const HeroSection = () => {
                           sizes="80px"
                           loading="lazy"
                         />
+
+                        {/* Hover Overlay with Upload Icon */}
+                        <div className="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
+                          <Upload className="w-8 h-8 text-white drop-shadow-lg" />
+                        </div>
 
                         {/* Checkmark Badge */}
                         <div className="absolute -top-2 -right-2 w-7 h-7 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center shadow-lg border-2 border-white z-10">
@@ -756,7 +845,20 @@ export const HeroSection = () => {
                         {trialImages.map((img) => (
                           <button
                             key={img.id}
-                            onClick={() => setSelectedImage(img.id)}
+                            onClick={() => {
+                              // If user has uploaded a file, show confirmation dialog
+                              if (uploadedFile && showUploadedPreview) {
+                                setPendingThumbnailId(img.id);
+                                setShowReplaceConfirmDialog(true);
+                                console.log("⚠️ Replace confirmation needed for:", img.alt);
+                              } else {
+                                // No uploaded file, directly select thumbnail
+                                setSelectedImage(img.id);
+                                setShowThumbnailPreview(true);
+                                setShowUploadedPreview(false);
+                                console.log("📸 Thumbnail selected:", img.alt);
+                              }
+                            }}
                             className={`relative flex-shrink-0 w-16 h-16 sm:w-14 sm:h-14 rounded-lg overflow-hidden border-2 transition-all hover:scale-105 ${
                               selectedImage === img.id
                                 ? "border-purple-500 ring-2 ring-purple-300 opacity-100"
@@ -779,61 +881,9 @@ export const HeroSection = () => {
                   </div>
                 </div>
 
-                  {/* Right: Icon Buttons */}
+                  {/* Right: Main Workflow Button - Script or Video Generation */}
                   <div className="flex items-center gap-2 flex-shrink-0">
-                    {/* Model Selector Text - Hidden on very small screens */}
-                    <div
-                      ref={dropdownRef}
-                      className="relative hidden min-[340px]:block"
-                    >
-                      <button
-                        onClick={() => setIsModelDropdownOpen(!isModelDropdownOpen)}
-                        className="px-3 h-9 rounded-lg border border-gray-200 hover:border-purple-300 hover:bg-purple-50 transition-all flex items-center justify-center"
-                        title={selectedModel?.name}
-                      >
-                        <span className="text-sm font-medium text-purple-600">{selectedModel?.name}</span>
-                      </button>
-
-                      {/* Dropdown Menu */}
-                      {isModelDropdownOpen && (
-                        <div className="absolute right-0 bottom-full mb-2 w-52 bg-white border border-gray-200 rounded-lg shadow-lg z-20">
-                          {aiModels.map((model) => (
-                            <button
-                              key={model.id}
-                              onClick={() => {
-                                setSelectedModel(model);
-                                setIsModelDropdownOpen(false);
-                              }}
-                              className={`w-full px-3 py-2.5 text-left hover:bg-purple-50 transition-colors first:rounded-t-lg last:rounded-b-lg ${
-                                selectedModel?.id === model.id ? "bg-purple-50" : ""
-                              }`}
-                            >
-                              <div className="flex items-center justify-between gap-2">
-                                <div className="flex-1">
-                                  <div className="text-xs font-medium text-text-primary">
-                                    {model.name}
-                                  </div>
-                                  <div className="text-[10px] text-text-muted">
-                                    {model.version}
-                                  </div>
-                                </div>
-                                <div className="flex items-center gap-1 px-2 py-1 bg-purple-100 rounded-full">
-                                  <span className="text-[10px] font-semibold text-purple-600">
-                                    {model.credits}
-                                  </span>
-                                  <svg className="w-3 h-3 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
-                                    <path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z"/>
-                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V5z" clipRule="evenodd"/>
-                                  </svg>
-                                </div>
-                              </div>
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Main Workflow Button - Script or Video Generation */}
+                    {/* Main Workflow Button */}
                     <Button
                       variant="primary"
                       size="sm"
@@ -854,7 +904,7 @@ export const HeroSection = () => {
                       ) : workflowStage === 'script' ? (
                         <>
                           <Wand2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                          AI Pro Scripting
+                          Enhance & Scripting
                         </>
                       ) : (
                         <>
@@ -889,17 +939,84 @@ export const HeroSection = () => {
               <div className="absolute inset-0 bg-gradient-to-br from-purple-50 via-transparent to-pink-50 opacity-40" />
             </div>
 
-            {/* Main Video Container */}
+            {/* Main Video/Image Container */}
             <div className="relative aspect-video rounded-2xl overflow-hidden shadow-2xl" style={{ willChange: "transform" }}>
-              {/* Show generated video if available */}
-              {generatedVideo && generatedVideo.video_url ? (
+              {/* Priority 1: Show AI optimized image if available (script generation completed) */}
+              {aiOptimizedImage ? (
+                <div className="relative w-full h-full bg-gradient-to-br from-purple-50 to-pink-50">
+                  <Image
+                    src={aiOptimizedImage}
+                    alt="AI Optimized Image"
+                    fill
+                    className="object-contain"
+                    sizes="(max-width: 768px) 100vw, 50vw"
+                    priority
+                  />
+
+                  {/* Status Badge - Not clickable */}
+                  <div className="absolute top-4 right-4 px-3 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg shadow-lg flex items-center gap-2">
+                    <span className="text-xs font-semibold">AI Optimized</span>
+                  </div>
+
+                  {/* Image Info Overlay */}
+                  <div className="absolute bottom-4 left-4 right-4 bg-black/60 backdrop-blur-sm rounded-lg px-4 py-3 text-white">
+                    <p className="text-sm font-medium mb-1">✨ Image optimized for video generation</p>
+                    <p className="text-xs text-gray-300">Ready to generate your AI video</p>
+                  </div>
+                </div>
+              ) : showUploadedPreview && uploadedFilePreview ? (
+                /* Priority 2: Show uploaded file preview */
+                <div className="relative w-full h-full bg-gradient-to-br from-purple-50 to-pink-50">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={uploadedFilePreview}
+                    alt="Uploaded Image"
+                    className="w-full h-full object-contain"
+                  />
+
+                  {/* Status Badge - Not clickable */}
+                  <div className="absolute top-4 right-4 px-3 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg shadow-lg flex items-center gap-2">
+                    <span className="text-xs font-semibold">Uploaded</span>
+                  </div>
+
+                  {/* Image Info Overlay */}
+                  <div className="absolute bottom-4 left-4 right-4 bg-black/60 backdrop-blur-sm rounded-lg px-4 py-3 text-white">
+                    <p className="text-sm font-medium mb-1">📤 Your uploaded image</p>
+                    <p className="text-xs text-gray-300">Click &ldquo;Enhance &amp; Scripting&rdquo; to generate professional script, or click &ldquo;Upload&rdquo; to change image</p>
+                  </div>
+                </div>
+              ) : showThumbnailPreview && selectedImage !== null ? (
+                /* Priority 3: Show selected thumbnail preview */
+                <div className="relative w-full h-full bg-gradient-to-br from-purple-50 to-pink-50">
+                  <Image
+                    src={trialImages.find(img => img.id === selectedImage)?.highResSrc || ""}
+                    alt={trialImages.find(img => img.id === selectedImage)?.alt || "Selected Image"}
+                    fill
+                    className="object-contain"
+                    sizes="(max-width: 768px) 100vw, 50vw"
+                    priority
+                  />
+
+                  {/* Status Badge - Not clickable */}
+                  <div className="absolute top-4 right-4 px-3 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg shadow-lg flex items-center gap-2">
+                    <span className="text-xs font-semibold">Selected</span>
+                  </div>
+
+                  {/* Image Info Overlay */}
+                  <div className="absolute bottom-4 left-4 right-4 bg-black/60 backdrop-blur-sm rounded-lg px-4 py-3 text-white">
+                    <p className="text-sm font-medium mb-1">🖼️ {trialImages.find(img => img.id === selectedImage)?.alt}</p>
+                    <p className="text-xs text-gray-300">Click &ldquo;Enhance &amp; Scripting&rdquo; to generate professional script</p>
+                  </div>
+                </div>
+              ) : generatedVideo && generatedVideo.video_url ? (
+                /* Priority 4: Show generated video if available */
                 <VideoPlayer
                   src={`${process.env.NEXT_PUBLIC_API_URL?.replace('/api/v1', '')}${generatedVideo.video_url}`}
                   poster={generatedVideo.poster_url || undefined}
                   autoPlay={true}
                 />
               ) : isGenerating ? (
-                /* Loading state */
+                /* Priority 5: Loading state */
                 <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-purple-100 to-pink-100">
                   <Loader2 className="w-16 h-16 text-purple-600 animate-spin mb-4" />
                   <p className="text-purple-600 font-semibold text-lg mb-2">
@@ -910,33 +1027,14 @@ export const HeroSection = () => {
                   </p>
                 </div>
               ) : (
-                /* Default sample video */
+                /* Priority 6: Default sample video - ShowcaseSection 3rd video */
                 <VideoPlayer
-                  key={videoKey}
-                  src={currentVideo.src}
-                  poster={currentVideo.poster}
-                  autoPlay={!hasUserInteracted}
+                  src={defaultHeroVideo.src}
+                  poster={defaultHeroVideo.poster}
+                  autoPlay={true}
                 />
               )}
 
-              {/* Video Indicators (only show for sample videos) */}
-              {!generatedVideo && !isGenerating && (
-                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex space-x-2 z-50 pointer-events-auto">
-                  {sampleVideos.map((_, index) => (
-                    <button
-                      key={index}
-                      onClick={() => handleVideoSwitch(index)}
-                      className={`rounded-full transition-all cursor-pointer pointer-events-auto ${
-                        index === currentVideoIndex
-                          ? "bg-white w-8 h-2 shadow-lg"
-                          : "bg-white/60 hover:bg-white/90 w-2 h-2 hover:scale-150"
-                      }`}
-                      aria-label={`Go to video ${index + 1}`}
-                      title={`Switch to video ${index + 1}`}
-                    />
-                  ))}
-                </div>
-              )}
             </div>
 
             {/* Tech Badges - Smaller size */}
@@ -967,7 +1065,7 @@ export const HeroSection = () => {
                   </>
                 ) : (
                   <>
-                    {t('videoArea.example')}: <span className="text-purple-600 font-semibold">{currentVideo.title}</span>
+                    {t('videoArea.example')}: <span className="text-purple-600 font-semibold">{defaultHeroVideo.title}</span>
                   </>
                 )}
               </p>
@@ -1059,6 +1157,50 @@ export const HeroSection = () => {
         onClose={() => setIsPricingOpen(false)}
         onSubscribe={handleSubscribe}
       />
+
+      {/* Replace Image Confirmation Dialog */}
+      {showReplaceConfirmDialog && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 relative"
+          >
+            {/* Close Button */}
+            <button
+              onClick={handleCancelReplace}
+              className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors text-gray-400 hover:text-gray-600"
+              title="Close"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <h3 className="text-xl font-bold text-gray-900 text-center mb-4 pr-8">
+              Replace Uploaded Image?
+            </h3>
+
+            <p className="text-gray-600 text-center mb-6">
+              You currently have an uploaded image. Do you want to replace it with the selected thumbnail?
+            </p>
+
+            <div className="flex gap-3">
+              <button
+                onClick={handleCancelReplace}
+                className="flex-1 px-6 py-3 bg-white border-2 border-gray-300 text-gray-700 rounded-lg hover:border-gray-400 hover:bg-gray-50 transition-all font-medium"
+              >
+                Cancel
+              </button>
+
+              <button
+                onClick={handleConfirmReplace}
+                className="flex-1 px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:from-purple-600 hover:to-pink-600 transition-all font-medium shadow-md hover:shadow-lg"
+              >
+                Yes, Continue
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
 
       {/* Script Options Dialog */}
       {showScriptOptionsDialog && (

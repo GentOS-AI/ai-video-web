@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import dynamic from "next/dynamic";
 import { Button } from "./Button";
-import { Menu, X, LogOut, Film, Check } from "lucide-react";
+import { Menu, X, LogOut, Film } from "lucide-react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
@@ -38,6 +38,7 @@ export const Navbar = () => {
   const [isPricingOpen, setIsPricingOpen] = useState(false);
   const [isCreditsModalOpen, setIsCreditsModalOpen] = useState(false);
   const [isLangMenuOpen, setIsLangMenuOpen] = useState(false);
+  const [isMobileLangMenuOpen, setIsMobileLangMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
   const langMenuRef = useRef<HTMLDivElement>(null);
 
@@ -319,7 +320,12 @@ export const Navbar = () => {
           {/* Mobile Menu Button */}
           <button
             className="md:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            onClick={() => {
+              setIsMobileMenuOpen(!isMobileMenuOpen);
+              if (isMobileMenuOpen) {
+                setIsMobileLangMenuOpen(false);
+              }
+            }}
             aria-label="Toggle menu"
           >
             {isMobileMenuOpen ? (
@@ -361,28 +367,54 @@ export const Navbar = () => {
                 {t('pricing')}
               </button>
 
-              {/* Language Switcher - Mobile */}
+              {/* Language Switcher - Mobile (Collapsible) */}
               <div className="border-t border-gray-200 pt-3 mt-3">
-                <p className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Language / 语言
-                </p>
-                <div className="space-y-1">
-                  {languages.map((lang) => (
-                    <button
-                      key={lang.code}
-                      onClick={() => switchLanguage(lang.code)}
-                      className={`w-full px-4 py-2 text-sm hover:bg-purple-bg rounded-lg transition-colors flex items-center gap-3 ${
-                        locale === lang.code ? 'bg-purple-bg text-purple-600 font-semibold' : 'text-text-secondary'
-                      }`}
+                <button
+                  onClick={() => setIsMobileLangMenuOpen(!isMobileLangMenuOpen)}
+                  className="w-full px-4 py-2 text-left flex items-center justify-between hover:bg-purple-bg rounded-lg transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="text-2xl">{localeFlags[locale]}</span>
+                    <span className="text-sm font-medium text-text-secondary">
+                      {localeNames[locale]}
+                    </span>
+                  </div>
+                  <svg
+                    className={`w-4 h-4 text-text-muted transition-transform ${isMobileLangMenuOpen ? 'rotate-180' : ''}`}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+                <AnimatePresence>
+                  {isMobileLangMenuOpen && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="overflow-hidden"
                     >
-                      <span className="text-2xl">{lang.flag}</span>
-                      <span>{lang.name}</span>
-                      {locale === lang.code && (
-                        <Check className="w-4 h-4 ml-auto text-purple-600" />
-                      )}
-                    </button>
-                  ))}
-                </div>
+                      <div className="mt-1 space-y-1">
+                        {languages.filter(lang => lang.code !== locale).map((lang) => (
+                          <button
+                            key={lang.code}
+                            onClick={() => {
+                              switchLanguage(lang.code);
+                              setIsMobileLangMenuOpen(false);
+                            }}
+                            className="w-full px-4 py-2 text-sm hover:bg-purple-bg rounded-lg transition-colors flex items-center gap-3 text-text-secondary"
+                          >
+                            <span className="text-2xl">{lang.flag}</span>
+                            <span>{lang.name}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
 
               {loading ? (

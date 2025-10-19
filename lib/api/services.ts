@@ -365,6 +365,7 @@ export const aiService = {
     camera?: string;
     lighting?: string;
     tokens_used: number;
+    optimized_image_url?: string; // AI optimized image URL (optional, backend will add this)
   }> {
     const formData = new FormData();
     formData.append('file', file);

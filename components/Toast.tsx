@@ -79,7 +79,7 @@ export const Toast = ({
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: -20, scale: 0.95 }}
           transition={{ duration: 0.3, ease: "easeOut" }}
-          className="fixed top-4 left-1/2 -translate-x-1/2 z-50 max-w-md w-full mx-4"
+          className="fixed top-4 left-1/2 -translate-x-1/2 z-[9999] max-w-md w-full mx-4"
         >
           <div
             className={`

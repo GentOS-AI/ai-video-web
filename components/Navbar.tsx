@@ -146,11 +146,11 @@ export const Navbar = () => {
           {/* Logo Section */}
           <Link href={`/${locale}`} className="flex items-center space-x-2 cursor-pointer hover:opacity-80 transition-opacity">
             <AnimatedLogo size={32} />
-            <span className="text-xl font-bold flex items-center gap-0.5">
+            <span className="text-xl font-bold flex items-center gap-0">
               <span className="bg-gradient-to-r from-purple-600 via-pink-500 to-purple-600 bg-clip-text text-transparent">
                 Moky
               </span>
-              <span className="text-text-primary">Play</span>
+              <span className="text-gray-900">Video</span>
             </span>
           </Link>
 

@@ -39,11 +39,11 @@ export const Footer = () => {
           <div className="space-y-4">
             <div className="flex items-center space-x-2">
               <AnimatedLogo size={32} />
-              <span className="text-xl font-bold flex items-center gap-0.5">
+              <span className="text-xl font-bold flex items-center gap-0">
                 <span className="bg-gradient-to-r from-purple-600 via-pink-500 to-purple-600 bg-clip-text text-transparent">
                   Moky
                 </span>
-                <span className="text-text-primary">Play</span>
+                <span className="text-gray-900">Video</span>
               </span>
             </div>
             <p className="text-sm text-text-secondary">

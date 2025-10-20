@@ -606,7 +606,7 @@ export const HeroSection = () => {
                 </span>
               </h1>
               <p className="text-base sm:text-lg md:text-xl text-gray-600 leading-relaxed max-w-2xl">
-                All-in-one AI solution for image enhancement, PRO scripting, and video generation for your product ads.{" "}
+                All-in-one AI solution for image enhancement, video scripting and generation for your product advertising.{" "}
                 <span className="inline-flex items-center gap-1 text-[10px] sm:text-xs whitespace-nowrap">
                   <span className="text-gray-400 font-medium">POWERED BY</span>
                   <a
@@ -1030,8 +1030,9 @@ export const HeroSection = () => {
                                       {mode.name}
                                     </span>
                                     {isPro && (
-                                      <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-gradient-to-r from-amber-400 to-orange-500 text-white text-[10px] font-bold shadow-sm">
-                                        Subscribe
+                                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-gradient-to-r from-amber-400 to-orange-500 text-white text-[10px] font-bold shadow-sm">
+                                        <Crown className="w-3 h-3" />
+                                        PRO
                                       </span>
                                     )}
                                   </div>

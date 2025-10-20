@@ -960,16 +960,16 @@ export const HeroSection = () => {
                           )}
                         </button>
 
-                        {/* Dropdown Toggle Button - Match Sora2 Button Style with 1:1 ratio */}
+                        {/* Dropdown Toggle Button - Purple Gradient Fill */}
                         <button
                           onClick={() => setIsModeDropdownOpen(!isModeDropdownOpen)}
                           disabled={isGenerating || isGeneratingScript}
-                          className="relative p-2.5 w-10 h-10 rounded-lg bg-purple-50 border border-purple-200 hover:border-purple-400 hover:bg-purple-100 transition-all flex items-center justify-center group disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="relative p-2.5 w-9 h-9 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 transition-all flex items-center justify-center group disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg"
                           title="Select generation mode"
                         >
-                          <ChevronDown className={`w-4 h-4 transition-all duration-300 ${isModeDropdownOpen ? 'rotate-180' : ''}`} style={{ color: '#c974ff' }} />
-                          {/* Light purple dot indicator */}
-                          <span className="absolute top-1.5 right-1.5 w-1 h-1 rounded-full" style={{ backgroundColor: '#e5abff' }}></span>
+                          <ChevronDown className={`w-4 h-4 text-white transition-all duration-300 ${isModeDropdownOpen ? 'rotate-180' : ''}`} />
+                          {/* White dot indicator */}
+                          <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-white/60"></span>
                         </button>
                       </div>
 

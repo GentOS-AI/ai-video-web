@@ -280,7 +280,7 @@ export const Navbar = () => {
                           </p>
                           <button
                             onClick={handleAddCredits}
-                            className="px-2 py-0.5 text-[10px] font-bold bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-full hover:from-green-600 hover:to-emerald-600 transition-all shadow-sm hover:shadow-md"
+                            className="px-2 py-0.5 text-[10px] font-bold bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-full hover:from-purple-600 hover:to-pink-600 transition-all shadow-sm hover:shadow-md"
                           >
                             Add
                           </button>

@@ -88,7 +88,7 @@ export const CreditsModal = ({ isOpen, onClose }: CreditsModalProps) => {
               </button>
 
               {/* Header with Gradient - Optimized */}
-              <div className="bg-gradient-to-r from-green-500 to-emerald-500 px-6 py-8 text-center relative overflow-hidden">
+              <div className="bg-gradient-to-r from-purple-500 to-pink-500 px-6 py-8 text-center relative overflow-hidden">
                 {/* Simplified Background Pattern - No motion */}
                 <div className="absolute inset-0 opacity-10 pointer-events-none">
                   <div className="absolute top-0 left-0 w-32 h-32 bg-white rounded-full -translate-x-1/2 -translate-y-1/2" />
@@ -117,10 +117,10 @@ export const CreditsModal = ({ isOpen, onClose }: CreditsModalProps) => {
               {/* Content */}
               <div className="px-6 py-6">
                 {/* Credits Package Card - Removed motion for better performance */}
-                <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-6 mb-6 border-2 border-green-200 hover:border-green-300 transition-colors">
+                <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl p-6 mb-6 border-2 border-purple-200 hover:border-purple-300 transition-colors">
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center space-x-3">
-                      <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-500 rounded-lg flex items-center justify-center shadow-lg">
+                      <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center shadow-lg">
                         <Zap className="w-6 h-6 text-white" />
                       </div>
                       <div>
@@ -145,7 +145,7 @@ export const CreditsModal = ({ isOpen, onClose }: CreditsModalProps) => {
                   {/* Features */}
                   <div className="space-y-2.5">
                     <div className="flex items-center space-x-2">
-                      <div className="flex-shrink-0 w-5 h-5 rounded-full bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center">
+                      <div className="flex-shrink-0 w-5 h-5 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
                         <Check className="w-3 h-3 text-white" />
                       </div>
                       <span className="text-sm text-gray-700">
@@ -153,7 +153,7 @@ export const CreditsModal = ({ isOpen, onClose }: CreditsModalProps) => {
                       </span>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <div className="flex-shrink-0 w-5 h-5 rounded-full bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center">
+                      <div className="flex-shrink-0 w-5 h-5 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
                         <Clock className="w-3 h-3 text-white" />
                       </div>
                       <span className="text-sm text-gray-700">
@@ -161,7 +161,7 @@ export const CreditsModal = ({ isOpen, onClose }: CreditsModalProps) => {
                       </span>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <div className="flex-shrink-0 w-5 h-5 rounded-full bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center">
+                      <div className="flex-shrink-0 w-5 h-5 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
                         <Zap className="w-3 h-3 text-white" />
                       </div>
                       <span className="text-sm text-gray-700">
@@ -169,7 +169,7 @@ export const CreditsModal = ({ isOpen, onClose }: CreditsModalProps) => {
                       </span>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <div className="flex-shrink-0 w-5 h-5 rounded-full bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center">
+                      <div className="flex-shrink-0 w-5 h-5 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
                         <Shield className="w-3 h-3 text-white" />
                       </div>
                       <span className="text-sm text-gray-700">
@@ -185,7 +185,7 @@ export const CreditsModal = ({ isOpen, onClose }: CreditsModalProps) => {
                   size="lg"
                   onClick={handlePurchase}
                   disabled={isPurchasing}
-                  className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white shadow-lg hover:shadow-xl transition-all"
+                  className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white shadow-lg hover:shadow-xl transition-all"
                 >
                   {isPurchasing ? (
                     <div className="flex items-center justify-center space-x-2">

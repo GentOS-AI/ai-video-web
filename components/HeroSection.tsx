@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import dynamic from "next/dynamic";
 import { VideoPlayer } from "./VideoPlayer";
-import { Sparkles, Loader2, AlertCircle, Upload, X, ChevronDown, Check, Crown } from "lucide-react";
+import { Sparkles, Loader2, AlertCircle, Upload, X, ChevronDown, Check, Crown, Wand2 } from "lucide-react";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import { showcaseVideos, trialImages } from "@/lib/assets";
@@ -38,7 +38,7 @@ const generationModes = [
     name: 'All-In-One Generation',
     buttonLabel: 'All-In-One Generate',
     description: 'Full workflow: enhance, script & video',
-    icon: Sparkles,
+    icon: Wand2,
     requiresPro: false,
   },
   {
@@ -967,11 +967,9 @@ export const HeroSection = () => {
                           className="relative p-2.5 w-10 h-10 rounded-lg bg-purple-50 border border-purple-200 hover:border-purple-400 hover:bg-purple-100 transition-all flex items-center justify-center group disabled:opacity-50 disabled:cursor-not-allowed"
                           title="Select generation mode"
                         >
-                          <ChevronDown className={`w-4 h-4 text-purple-600 group-hover:text-purple-700 transition-all duration-300 ${isModeDropdownOpen ? 'rotate-180' : ''}`} />
-                          {/* Pink sparkle indicator */}
-                          <svg className="absolute top-1 right-1 w-2 h-2 text-pink-500" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M12 0L14.59 9.41L24 12L14.59 14.59L12 24L9.41 14.59L0 12L9.41 9.41L12 0Z" />
-                          </svg>
+                          <ChevronDown className={`w-4 h-4 transition-all duration-300 ${isModeDropdownOpen ? 'rotate-180' : ''}`} style={{ color: '#c974ff' }} />
+                          {/* Light purple dot indicator */}
+                          <span className="absolute top-1.5 right-1.5 w-1 h-1 rounded-full" style={{ backgroundColor: '#e5abff' }}></span>
                         </button>
                       </div>
 

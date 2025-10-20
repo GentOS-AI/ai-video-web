@@ -265,22 +265,30 @@ export const PricingModal = ({ isOpen, onClose }: PricingModalProps) => {
                       </div>
 
                       {/* Subscribe Button */}
-                      <Button
-                        variant="primary"
-                        size="md"
-                        disabled={isProcessing}
-                        onClick={handleSubscribe}
-                        className={`w-full text-sm bg-gradient-to-r ${currentPlan.gradient} hover:opacity-90 text-white shadow-lg`}
-                      >
-                        {isProcessing ? (
-                          <div className="flex items-center justify-center gap-2">
-                            <Loader2 className="w-5 h-5 animate-spin" />
-                            <span>Processing...</span>
-                          </div>
-                        ) : (
-                          t('subscribeNow')
-                        )}
-                      </Button>
+                      <div className="space-y-2">
+                        <Button
+                          variant="primary"
+                          size="md"
+                          disabled={isProcessing}
+                          onClick={handleSubscribe}
+                          className={`w-full text-sm bg-gradient-to-r ${currentPlan.gradient} hover:opacity-90 text-white shadow-lg`}
+                        >
+                          {isProcessing ? (
+                            <div className="flex items-center justify-center gap-2">
+                              <Loader2 className="w-5 h-5 animate-spin" />
+                              <span>Processing...</span>
+                            </div>
+                          ) : (
+                            t('subscribeNow')
+                          )}
+                        </Button>
+
+                        {/* Stripe Security Badge */}
+                        <p className="text-[10px] text-center text-gray-500 flex items-center justify-center gap-1">
+                          <span>🔒</span>
+                          <span>Secure payment powered by Stripe</span>
+                        </p>
+                      </div>
                     </div>
                   </motion.div>
                 </AnimatePresence>

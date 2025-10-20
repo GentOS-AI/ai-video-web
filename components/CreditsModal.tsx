@@ -100,10 +100,10 @@ export const CreditsModal = ({ isOpen, onClose }: CreditsModalProps) => {
                   <div className="w-16 h-16 mx-auto mb-4 bg-white/20 rounded-full flex items-center justify-center">
                     <Sparkles className="w-8 h-8 text-white" />
                   </div>
-                  <h2 className="text-2xl font-bold text-white mb-2">
+                  <h2 className="text-xl min-[400px]:text-2xl font-bold text-white mb-2">
                     Add Credits
                   </h2>
-                  <p className="text-sm text-white/90">
+                  <p className="text-xs min-[400px]:text-sm text-white/90">
                     Power up your AI video generation
                   </p>
                   {PRICING_CONFIG.isDevelopment && (

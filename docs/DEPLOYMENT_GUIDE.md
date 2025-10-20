@@ -150,11 +150,25 @@ GOOGLE_CLIENT_SECRET=your-google-client-secret
 # API URL (必须是生产域名!)
 NEXT_PUBLIC_API_URL=https://adsvideo.co/api/v1
 
-# Stripe Payment (生产环境密钥)
-STRIPE_SECRET_KEY=sk_live_...
-NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_live_...
-STRIPE_WEBHOOK_SECRET=whsec_...
-NEXT_PUBLIC_STRIPE_ENVIRONMENT=production
+# Stripe Payment (⚠️ 当前使用测试模式进行支付测试)
+# 注意：使用测试模式不会产生真实费用
+STRIPE_ENVIRONMENT=development
+NEXT_PUBLIC_STRIPE_ENVIRONMENT=development
+STRIPE_SECRET_KEY_TEST=sk_test_51XXX...XXX  # 从本地backend/.env获取
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_51XXX...XXX  # 从本地.env获取
+STRIPE_WEBHOOK_SECRET=whsec_Wzm6u9jcNSvJXoSsM3ZMbIt7anAT0gfi
+
+# Test Price IDs (测试价格 $0.01/$0.02/$0.03)
+STRIPE_BASIC_PRICE_ID_TEST=price_1SJZcfLTlM1HADkrHyuweMsU
+STRIPE_PRO_PRICE_ID_TEST=price_1SJZd4LTlM1HADkrH2F6iaZg
+STRIPE_CREDITS_PRICE_ID_TEST=price_1SJZdRLTlM1HADkrTeBrJId4
+
+# 切换到生产模式时使用以下配置：
+# STRIPE_ENVIRONMENT=production
+# NEXT_PUBLIC_STRIPE_ENVIRONMENT=production
+# STRIPE_SECRET_KEY_LIVE=sk_live_...
+# NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_live_...
+# STRIPE_WEBHOOK_SECRET_LIVE=whsec_...
 
 # AI API Keys
 OPENAI_API_KEY=sk-proj-...
@@ -183,6 +197,15 @@ JWT_SECRET_KEY=$(openssl rand -hex 32)
 # AI API Keys (与前端保持一致)
 OPENAI_API_KEY=sk-proj-...
 GEMINI_API_KEY=AIza...
+
+# Stripe Payment (⚠️ 当前使用测试模式)
+STRIPE_ENVIRONMENT=development
+STRIPE_SECRET_KEY_TEST=sk_test_51XXX...XXX  # 从本地backend/.env获取
+STRIPE_PUBLISHABLE_KEY_TEST=pk_test_51XXX...XXX  # 从本地backend/.env获取
+STRIPE_WEBHOOK_SECRET_TEST=whsec_Wzm6u9jcNSvJXoSsM3ZMbIt7anAT0gfi
+STRIPE_BASIC_PRICE_ID_TEST=price_1SJZcfLTlM1HADkrHyuweMsU
+STRIPE_PRO_PRICE_ID_TEST=price_1SJZd4LTlM1HADkrH2F6iaZg
+STRIPE_CREDITS_PRICE_ID_TEST=price_1SJZdRLTlM1HADkrTeBrJId4
 
 # Database
 DATABASE_URL=sqlite:///./aivideo.db
@@ -258,6 +281,137 @@ cp -r "$BACKUP/.next" .
 # 重启服务
 pm2 restart all
 ```
+
+---
+
+## 💳 Stripe支付配置（测试模式）
+
+### 当前配置状态
+
+⚠️ **生产环境当前使用Stripe测试模式** - 不会产生真实费用,可安全测试支付流程
+
+### 测试模式配置
+
+**为什么使用测试模式**:
+- ✅ 可以在生产环境安全测试完整支付流程
+- ✅ 不会产生任何真实费用
+- ✅ 使用Stripe测试卡进行模拟支付
+- ✅ 所有支付数据在Stripe测试仪表板可见
+
+**配置要点**:
+```bash
+# 前端和后端都必须设置
+STRIPE_ENVIRONMENT=development
+NEXT_PUBLIC_STRIPE_ENVIRONMENT=development
+
+# 使用测试密钥
+STRIPE_SECRET_KEY_TEST=sk_test_51SJZZgLTlM1HADkr...
+STRIPE_PUBLISHABLE_KEY_TEST=pk_test_51SJZZgLTlM1HADkr...
+STRIPE_WEBHOOK_SECRET_TEST=whsec_Wzm6u9jcNSvJXoSsM3ZMbIt7anAT0gfi
+
+# 测试价格(低价便于测试)
+Basic Plan: $0.01/month
+Pro Plan: $0.02/month
+Credits: $0.03 one-time
+```
+
+### Stripe测试卡
+
+在生产环境使用以下测试卡进行支付测试:
+
+| 测试场景 | 卡号 | 结果 |
+|---------|------|------|
+| **成功支付** | `4242 4242 4242 4242` | ✅ 支付成功 |
+| **需要3D验证** | `4000 0027 6000 3184` | ✅ 需要额外验证 |
+| **卡被拒绝** | `4000 0000 0000 0002` | ❌ 卡被拒绝 |
+| **余额不足** | `4000 0000 0000 9995` | ❌ 余额不足 |
+
+**其他测试信息** (任意值):
+- 过期日期: 任意未来日期 (如 `12/34`)
+- CVC: 任意3位数 (如 `123`)
+- 邮编: 任意5位数 (如 `12345`)
+
+### Webhook配置
+
+**Webhook URL**: `https://adsvideo.co/api/v1/webhooks/stripe`
+
+**监听事件** (必须在Stripe Dashboard配置):
+```
+✅ checkout.session.completed
+✅ customer.subscription.created
+✅ customer.subscription.updated
+✅ customer.subscription.deleted
+✅ invoice.payment_succeeded
+✅ invoice.payment_failed
+```
+
+**配置步骤**:
+1. 访问 [Stripe Dashboard - Webhooks](https://dashboard.stripe.com/test/webhooks)
+2. 点击 "Add endpoint"
+3. URL: `https://adsvideo.co/api/v1/webhooks/stripe`
+4. 选择上述6个事件
+5. 保存后复制 **Signing secret** (`whsec_...`)
+6. 更新环境变量中的 `STRIPE_WEBHOOK_SECRET_TEST`
+
+### 切换到生产模式
+
+当准备接受真实支付时:
+
+1. **获取生产密钥**
+   - 访问 https://dashboard.stripe.com/apikeys (切换到Live mode)
+   - 复制 Secret key 和 Publishable key
+
+2. **创建生产价格**
+   - 访问 https://dashboard.stripe.com/products
+   - 创建产品和价格,设置真实价格
+   - 复制 Price IDs
+
+3. **更新环境变量**
+   ```bash
+   # 前端 .env.production
+   STRIPE_ENVIRONMENT=production
+   NEXT_PUBLIC_STRIPE_ENVIRONMENT=production
+   STRIPE_SECRET_KEY_LIVE=sk_live_...
+   NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_live_...
+
+   # 后端 backend/.env
+   STRIPE_ENVIRONMENT=production
+   STRIPE_SECRET_KEY_LIVE=sk_live_...
+   STRIPE_WEBHOOK_SECRET_LIVE=whsec_... (生产webhook secret)
+   STRIPE_BASIC_PRICE_ID_LIVE=price_...
+   STRIPE_PRO_PRICE_ID_LIVE=price_...
+   STRIPE_CREDITS_PRICE_ID_LIVE=price_...
+   ```
+
+4. **重新部署**
+   ```bash
+   npm run build
+   pm2 restart all
+   ```
+
+### 常见问题
+
+**Q: 为什么支付后返回500错误?**
+
+A: 检查以下配置:
+```bash
+# 1. 确认后端使用正确的测试密钥
+ssh -p3200 -lroot 23.95.254.67
+grep "STRIPE_SECRET_KEY_TEST" /root/ai-video-web/backend/.env
+
+# 2. 确认环境变量设置为development
+grep "STRIPE_ENVIRONMENT" /root/ai-video-web/backend/.env
+
+# 3. 重启后端加载新配置
+pm2 restart ai-video-api
+
+# 4. 查看后端日志
+pm2 logs ai-video-api --lines 50
+```
+
+**Q: Stripe测试密钥无效怎么办?**
+
+A: 确保使用本地 `backend/.env` 中的有效密钥,复制其中的 `STRIPE_SECRET_KEY_TEST` 和相关配置到服务器。
 
 ---
 

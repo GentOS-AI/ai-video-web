@@ -1,10 +1,9 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import dynamic from "next/dynamic";
-import { Button } from "./Button";
 import { VideoPlayer } from "./VideoPlayer";
-import { Wand2, Sparkles, Loader2, AlertCircle, Upload, X } from "lucide-react";
+import { Sparkles, Loader2, AlertCircle, Upload, X, ChevronDown, Check, Crown } from "lucide-react";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import { showcaseVideos, trialImages } from "@/lib/assets";
@@ -30,6 +29,28 @@ const aiModels = [
   { id: "sora-2-pro", name: "Sora2 Pro", version: "Premium", credits: 300 },
 ];
 
+// Generation modes for dropdown
+type GenerationMode = 'all-in-one' | 'video-only' | 'enhance-script';
+
+const generationModes = [
+  {
+    id: 'all-in-one' as GenerationMode,
+    name: 'All-In-One Generation',
+    buttonLabel: 'All-In-One Generate',
+    description: 'Full workflow: enhance, script & video',
+    icon: Sparkles,
+    requiresPro: false,
+  },
+  {
+    id: 'enhance-script' as GenerationMode,
+    name: 'Ads Pro Enhance',
+    buttonLabel: 'Ads Pro Enhance',
+    description: 'Professional image and scripting',
+    icon: Crown,
+    requiresPro: true,
+  },
+];
+
 export const HeroSection = () => {
   const t = useTranslations('hero');
   const tToast = useTranslations('toast');
@@ -44,6 +65,11 @@ export const HeroSection = () => {
   const [isPricingOpen, setIsPricingOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const maxChars = 5000;
+
+  // Generation mode dropdown state
+  const [selectedMode, setSelectedMode] = useState<GenerationMode>('all-in-one');
+  const [isModeDropdownOpen, setIsModeDropdownOpen] = useState(false);
+  const modeDropdownRef = useRef<HTMLDivElement>(null);
 
   // Video generation states
   const [isGenerating, setIsGenerating] = useState(false);
@@ -529,16 +555,19 @@ export const HeroSection = () => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsModelDropdownOpen(false);
       }
+      if (modeDropdownRef.current && !modeDropdownRef.current.contains(event.target as Node)) {
+        setIsModeDropdownOpen(false);
+      }
     };
 
-    if (isModelDropdownOpen) {
+    if (isModelDropdownOpen || isModeDropdownOpen) {
       document.addEventListener("mousedown", handleClickOutside);
     }
 
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [isModelDropdownOpen]);
+  }, [isModelDropdownOpen, isModeDropdownOpen]);
 
   return (
     <section className="pt-20 sm:pt-24 pb-12 sm:pb-16">
@@ -573,11 +602,11 @@ export const HeroSection = () => {
                   </span>
                 </span>
                 <span className="block text-gray-900 mt-1.5">
-                  with Simple Clicks
+                  by One Click
                 </span>
               </h1>
               <p className="text-base sm:text-lg md:text-xl text-gray-600 leading-relaxed max-w-2xl">
-                All-in-one AI solution for image enhancement, script generation, and video creation for your product ads.{" "}
+                All-in-one AI solution for image enhancement, PRO scripting, and video generation for your product ads.{" "}
                 <span className="inline-flex items-center gap-1 text-[10px] sm:text-xs whitespace-nowrap">
                   <span className="text-gray-400 font-medium">POWERED BY</span>
                   <a
@@ -895,38 +924,125 @@ export const HeroSection = () => {
                   </div>
                 </div>
 
-                  {/* Right: Main Workflow Button - Script or Video Generation */}
-                  <div className="flex items-center gap-2 flex-shrink-0">
-                    {/* Main Workflow Button */}
-                    <Button
-                      variant="primary"
-                      size="sm"
-                      onClick={handleMainButton}
-                      disabled={isGenerating || isGeneratingScript}
-                      className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 shadow-md flex items-center gap-1.5 text-xs sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {isGeneratingScript ? (
-                        <>
-                          <Loader2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-spin" />
-                          Generating Script...
-                        </>
-                      ) : isGenerating ? (
-                        <>
-                          <Loader2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-spin" />
-                          {t('button.generating')}
-                        </>
-                      ) : workflowStage === 'script' ? (
-                        <>
-                          <Wand2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                          Enhance & Scripting
-                        </>
-                      ) : (
-                        <>
-                          <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                          Generate Video
-                        </>
+                  {/* Right: Main Workflow Button with Dropdown */}
+                  <div className="flex items-center gap-2 flex-shrink-0" ref={modeDropdownRef}>
+                    <div className="relative">
+                      {/* Main Generate Button with Dropdown - Separated Design */}
+                      <div className="flex items-center gap-1.5">
+                        {/* Primary Action Button - Redesigned */}
+                        <button
+                          onClick={handleMainButton}
+                          disabled={isGenerating || isGeneratingScript}
+                          className="relative bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 shadow-lg hover:shadow-xl px-4 sm:px-5 py-2.5 rounded-xl flex items-center gap-2 text-xs sm:text-sm font-semibold text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+                        >
+                          {isGeneratingScript ? (
+                            <>
+                              <Loader2 className="w-4 h-4 sm:w-4.5 sm:h-4.5 animate-spin" />
+                              <span>Generating...</span>
+                            </>
+                          ) : isGenerating ? (
+                            <>
+                              <Loader2 className="w-4 h-4 sm:w-4.5 sm:h-4.5 animate-spin" />
+                              <span>{t('button.generating')}</span>
+                            </>
+                          ) : (
+                            <>
+                              {(() => {
+                                const CurrentIcon = generationModes.find(m => m.id === selectedMode)?.icon || Sparkles;
+                                return <CurrentIcon className="w-4 h-4 sm:w-4.5 sm:h-4.5" />;
+                              })()}
+                              <span className="hidden sm:inline">{generationModes.find(m => m.id === selectedMode)?.buttonLabel || 'Generate'}</span>
+                              <span className="sm:hidden">Generate</span>
+                            </>
+                          )}
+                        </button>
+
+                        {/* Dropdown Toggle Button - Elegant Separated Design */}
+                        <button
+                          onClick={() => setIsModeDropdownOpen(!isModeDropdownOpen)}
+                          disabled={isGenerating || isGeneratingScript}
+                          className="relative bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 shadow-lg hover:shadow-xl p-2.5 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 hover:scale-[1.05] active:scale-95 group"
+                          title="Select generation mode"
+                        >
+                          <ChevronDown className={`w-4 h-4 text-white transition-all duration-300 ${isModeDropdownOpen ? 'rotate-180' : ''} group-hover:scale-110`} />
+                          {/* Subtle indicator dot */}
+                          <span className="absolute top-1 right-1 w-1.5 h-1.5 bg-white/60 rounded-full"></span>
+                        </button>
+                      </div>
+
+                      {/* Dropdown Menu */}
+                      {isModeDropdownOpen && (
+                        <motion.div
+                          initial={{ opacity: 0, y: -10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -10 }}
+                          transition={{ duration: 0.15 }}
+                          className="absolute right-0 top-full mt-2 w-64 bg-white border border-gray-200 rounded-xl shadow-xl z-30 overflow-hidden"
+                        >
+                          {generationModes.map((mode, index) => {
+                            const Icon = mode.icon;
+                            const isSelected = selectedMode === mode.id;
+                            const isPro = mode.requiresPro;
+                            const hasProAccess = user?.subscription_plan !== 'free';
+
+                            return (
+                              <button
+                                key={mode.id}
+                                onClick={() => {
+                                  if (isPro && !hasProAccess) {
+                                    showToast('Pro subscription required for this feature', 'warning');
+                                    setIsPricingOpen(true);
+                                    setIsModeDropdownOpen(false);
+                                    return;
+                                  }
+                                  setSelectedMode(mode.id);
+                                  setIsModeDropdownOpen(false);
+                                }}
+                                className={`w-full px-4 py-3 text-left hover:bg-purple-50 transition-colors flex items-start gap-3 ${
+                                  index === 0 ? 'rounded-t-xl' : ''
+                                } ${
+                                  index === generationModes.length - 1 ? 'rounded-b-xl' : 'border-b border-gray-100'
+                                } ${
+                                  isSelected ? 'bg-purple-50' : ''
+                                } ${
+                                  isPro && !hasProAccess ? 'opacity-75' : ''
+                                }`}
+                              >
+                                {/* Icon and Checkmark */}
+                                <div className="flex items-center gap-2 flex-shrink-0 pt-0.5">
+                                  <div className={`w-5 h-5 rounded-full flex items-center justify-center ${
+                                    isSelected ? 'bg-purple-500' : 'bg-gray-200'
+                                  }`}>
+                                    {isSelected ? (
+                                      <Check className="w-3 h-3 text-white" strokeWidth={3} />
+                                    ) : (
+                                      <Icon className="w-3 h-3 text-gray-500" />
+                                    )}
+                                  </div>
+                                </div>
+
+                                {/* Text Content */}
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2 mb-0.5">
+                                    <span className={`text-sm font-semibold ${
+                                      isSelected ? 'text-purple-600' : 'text-gray-900'
+                                    }`}>
+                                      {mode.name}
+                                    </span>
+                                    {isPro && (
+                                      <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-gradient-to-r from-amber-400 to-orange-500 text-white text-[10px] font-bold shadow-sm">
+                                        Subscribe
+                                      </span>
+                                    )}
+                                  </div>
+                                  <p className="text-xs text-gray-500 line-clamp-1">{mode.description}</p>
+                                </div>
+                              </button>
+                            );
+                          })}
+                        </motion.div>
                       )}
-                    </Button>
+                    </div>
                   </div>
                 </div>
                 <p className="text-xs text-text-muted mt-2">

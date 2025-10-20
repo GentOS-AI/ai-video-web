@@ -960,16 +960,18 @@ export const HeroSection = () => {
                           )}
                         </button>
 
-                        {/* Dropdown Toggle Button - Purple Gradient Fill */}
+                        {/* Dropdown Toggle Button - Match Sora2 Button Style with 1:1 ratio */}
                         <button
                           onClick={() => setIsModeDropdownOpen(!isModeDropdownOpen)}
                           disabled={isGenerating || isGeneratingScript}
-                          className="relative bg-gradient-to-br from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 p-2.5 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 hover:scale-[1.05] active:scale-95 group shadow-lg hover:shadow-xl"
+                          className="relative p-2.5 w-10 h-10 rounded-lg bg-purple-50 border border-purple-200 hover:border-purple-400 hover:bg-purple-100 transition-all flex items-center justify-center group disabled:opacity-50 disabled:cursor-not-allowed"
                           title="Select generation mode"
                         >
-                          <ChevronDown className={`w-4 h-4 text-white transition-all duration-300 ${isModeDropdownOpen ? 'rotate-180' : ''} group-hover:scale-110`} />
-                          {/* White indicator dot */}
-                          <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-white/60"></span>
+                          <ChevronDown className={`w-4 h-4 text-purple-600 group-hover:text-purple-700 transition-all duration-300 ${isModeDropdownOpen ? 'rotate-180' : ''}`} />
+                          {/* Pink sparkle indicator */}
+                          <svg className="absolute top-1 right-1 w-2 h-2 text-pink-500" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 0L14.59 9.41L24 12L14.59 14.59L12 24L9.41 14.59L0 12L9.41 9.41L12 0Z" />
+                          </svg>
                         </button>
                       </div>
 

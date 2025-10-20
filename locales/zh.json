@@ -40,7 +40,7 @@
       "uploadTitle": "上传图片",
       "uploadedTitle": "已上传图片 - 点击更换",
       "selectedTitle": "已选择图片 - 点击更换",
-      "instructions": "上传 (仅支持 1280x720 或 720x1280) 或选择图片开始。",
+      "instructions": "上传 (仅支持 1280x720 或 720x1280) 或选择图片免费试用。",
       "swipeHint": "← 滑动查看更多图片"
     },
     "status": {
@@ -80,10 +80,12 @@
     "ctaButtonMobile": "开始免费试用"
   },
   "pricing": {
-    "title": "订阅Pro套餐",
+    "title": "加入我们的PRO会员",
     "subtitle": "释放AI视频生成的强大力量",
     "subscribeNow": "立即订阅",
     "popular": "热门",
+    "billedAnnually": "按年收费",
+    "billedMonthly": "按月收费",
     "monthlyCredits": "{count} 积分/月",
     "yearlyCredits": "{count} 积分/年",
     "basic": {

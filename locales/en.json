@@ -40,7 +40,7 @@
       "uploadTitle": "Upload image",
       "uploadedTitle": "Uploaded image - click to change",
       "selectedTitle": "Selected image - click to change",
-      "instructions": "Upload (1280x720 or 720x1280 only) or select an image to start.",
+      "instructions": "Upload (1280x720 or 720x1280 only) or select an image to free trial.",
       "swipeHint": "← Swipe to view more images"
     },
     "status": {
@@ -80,10 +80,12 @@
     "ctaButtonMobile": "Start Free"
   },
   "pricing": {
-    "title": "Subscribe to Pro Plan",
+    "title": "Join Our PRO Membership",
     "subtitle": "Unlock the power of AI video generation",
     "subscribeNow": "Subscribe Now",
     "popular": "POPULAR",
+    "billedAnnually": "Billed annually",
+    "billedMonthly": "Billed monthly",
     "monthlyCredits": "{count} credits/month",
     "yearlyCredits": "{count} credits/year",
     "basic": {

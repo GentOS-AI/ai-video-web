@@ -283,7 +283,7 @@ export default function MediaCenterPage() {
                 onClick={() => setActiveTab('images')}
                 className={`flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all ${
                   activeTab === 'images'
-                    ? 'bg-purple-500 text-white shadow-lg shadow-purple-500/25'
+                    ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg shadow-purple-500/25'
                     : 'bg-white text-gray-600 border border-gray-200 hover:border-purple-300 hover:text-purple-600'
                 }`}
               >
@@ -299,7 +299,7 @@ export default function MediaCenterPage() {
                 onClick={() => setActiveTab('videos')}
                 className={`flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all ${
                   activeTab === 'videos'
-                    ? 'bg-purple-500 text-white shadow-lg shadow-purple-500/25'
+                    ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg shadow-purple-500/25'
                     : 'bg-white text-gray-600 border border-gray-200 hover:border-purple-300 hover:text-purple-600'
                 }`}
               >

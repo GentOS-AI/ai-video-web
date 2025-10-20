@@ -119,7 +119,7 @@ export const ShowcaseSection = () => {
                 }}
                 className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg font-medium text-sm transition-all ${
                   isActive
-                    ? "bg-purple-500 text-white shadow-lg shadow-purple-500/25 scale-105"
+                    ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg shadow-purple-500/25 scale-105"
                     : "bg-white text-gray-600 border border-gray-200 hover:border-purple-300 hover:text-purple-600 hover:shadow-md"
                 }`}
               >

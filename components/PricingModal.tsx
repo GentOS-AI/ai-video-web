@@ -30,8 +30,9 @@ export const PricingModal = ({ isOpen, onClose }: PricingModalProps) => {
       return {
         id: "pro",
         name: t('pro.name'),
-        price: PRICING_CONFIG.pro.price,
-        period: t('pro.period'),
+        price: "$19.99",
+        period: "/mo.",
+        billingNote: t('billedAnnually'),
         description: t('pro.description'),
         credits: t('yearlyCredits', { count: 3000 }),
         features: [
@@ -47,13 +48,16 @@ export const PricingModal = ({ isOpen, onClose }: PricingModalProps) => {
         ],
         gradient: "from-purple-500 to-pink-500",
         productType: 'pro' as const,
+        isPopular: true,
       };
     } else {
       return {
         id: "basic",
         name: t('basic.name'),
         price: PRICING_CONFIG.basic.price,
-        period: t('basic.period'),
+        period: "/mo.",
+        billingNote: t('billedMonthly'),
+        billingNoteColor: 'gray',
         description: t('basic.description'),
         credits: t('monthlyCredits', { count: 500 }),
         features: [
@@ -66,6 +70,7 @@ export const PricingModal = ({ isOpen, onClose }: PricingModalProps) => {
         ],
         gradient: "from-blue-500 to-cyan-500",
         productType: 'basic' as const,
+        isPopular: false,
       };
     }
   }, [billingCycle, t]);
@@ -131,59 +136,58 @@ export const PricingModal = ({ isOpen, onClose }: PricingModalProps) => {
               <button
                 onClick={onClose}
                 disabled={isProcessing}
-                className="absolute top-3 right-3 p-2 rounded-full hover:bg-gray-100 transition-colors z-10 disabled:opacity-50"
+                className="absolute top-3 right-3 p-2 rounded-full hover:bg-white/20 transition-colors z-10 disabled:opacity-50"
                 aria-label="Close pricing modal"
               >
-                <X className="w-5 h-5 text-gray-600" />
+                <X className="w-5 h-5 text-white" />
               </button>
 
-              {/* Header */}
-              <div className="bg-gradient-to-r from-purple-600 to-purple-500 px-4 py-6 sm:px-6 sm:py-8 text-center">
-                <h2 className="text-xl sm:text-2xl font-bold text-white mb-1">
-                  {t('title')}
-                </h2>
-                <p className="text-xs sm:text-sm text-white/90">
-                  {t('subtitle')}
-                </p>
-                {PRICING_CONFIG.isDevelopment && (
-                  <p className="text-xs text-yellow-300 mt-2">
-                    🧪 Test Mode: ${PRICING_CONFIG.basic.priceValue} / ${PRICING_CONFIG.pro.priceValue}
+              {/* Header with Integrated Switch */}
+              <div className="bg-gradient-to-r from-purple-600 to-purple-500 px-4 py-5 sm:px-6 sm:py-6">
+                <div className="text-center mb-4">
+                  <h2 className="text-xl sm:text-2xl font-bold text-white mb-1">
+                    {t('title')}
+                  </h2>
+                  <p className="text-xs sm:text-sm text-white/90">
+                    {t('subtitle')}
                   </p>
-                )}
-              </div>
+                </div>
 
-              {/* Billing Cycle Toggle Switch */}
-              <div className="px-4 py-3 sm:px-5 sm:py-4 bg-gradient-to-b from-white to-purple-50/30">
-                <div className="flex items-center justify-center mb-4">
-                  <div className="inline-flex items-center bg-gray-100 rounded-full p-0.5">
+                {/* Billing Cycle Toggle Switch - Integrated in Header */}
+                <div className="flex items-center justify-center">
+                  <div className="inline-flex items-center bg-white/20 backdrop-blur-sm rounded-full p-0.5">
                     <button
                       onClick={() => setBillingCycle('monthly')}
-                      className={`relative px-4 py-1.5 rounded-full text-xs font-semibold transition-all duration-200 ${
+                      className={`relative px-5 py-2 rounded-full text-xs font-semibold transition-all duration-200 ${
                         billingCycle === 'monthly'
-                          ? 'bg-white text-purple-600 shadow-md'
-                          : 'text-gray-600 hover:text-gray-900'
+                          ? 'bg-white text-purple-600 shadow-lg'
+                          : 'text-white/80 hover:text-white'
                       }`}
                     >
                       Monthly
                     </button>
                     <button
                       onClick={() => setBillingCycle('yearly')}
-                      className={`relative px-4 py-1.5 rounded-full text-xs font-semibold transition-all duration-200 ${
+                      className={`relative px-5 py-2 rounded-full text-xs font-semibold transition-all duration-200 ${
                         billingCycle === 'yearly'
-                          ? 'bg-white text-purple-600 shadow-md'
-                          : 'text-gray-600 hover:text-gray-900'
+                          ? 'bg-white text-purple-600 shadow-lg'
+                          : 'text-white/80 hover:text-white'
                       }`}
                     >
-                      <span className="flex items-center gap-1">
-                        Yearly
-                        <span className="inline-flex items-center px-1.5 py-0.5 rounded-full bg-gradient-to-r from-amber-400 to-orange-500 text-white text-[9px] font-bold">
-                          POPULAR
-                        </span>
-                      </span>
+                      Yearly
                     </button>
                   </div>
                 </div>
 
+                {PRICING_CONFIG.isDevelopment && (
+                  <p className="text-xs text-yellow-300 mt-3 text-center">
+                    🧪 Test Mode: ${PRICING_CONFIG.basic.priceValue} / ${PRICING_CONFIG.pro.priceValue}
+                  </p>
+                )}
+              </div>
+
+              {/* Plan Card Container */}
+              <div className="px-4 py-4 sm:px-5 sm:py-5 bg-gradient-to-b from-white to-purple-50/30">
                 {/* Single Plan Card with Animation */}
                 <AnimatePresence mode="wait">
                   <motion.div
@@ -192,37 +196,54 @@ export const PricingModal = ({ isOpen, onClose }: PricingModalProps) => {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -20 }}
                     transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-                    className="relative bg-white rounded-xl overflow-hidden shadow-2xl ring-2 ring-purple-500"
+                    className={`relative bg-white rounded-xl overflow-hidden shadow-2xl ring-2 ${
+                      billingCycle === 'yearly' ? 'ring-purple-500' : 'ring-blue-400'
+                    }`}
                   >
+                    {/* POPULAR Badge - Only for Yearly Plan */}
+                    {currentPlan.isPopular && (
+                      <div className="absolute top-3 right-3 z-10">
+                        <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-gradient-to-r from-amber-400 to-orange-500 text-white text-[10px] font-bold shadow-lg">
+                          {t('popular')}
+                        </span>
+                      </div>
+                    )}
+
                     <div className="p-4">
-                      {/* Plan Header */}
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center space-x-2.5">
+                      {/* Plan Header with Price */}
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-3">
                           <div
                             className={`p-2 rounded-lg bg-gradient-to-br ${currentPlan.gradient} text-white shadow-md`}
                           >
                             <Crown className="w-5 h-5" />
                           </div>
                           <div>
-                            <h3 className="text-lg font-bold text-text-primary">
-                              {currentPlan.name}
-                            </h3>
-                            <p className="text-xs text-text-muted">{currentPlan.credits}</p>
+                            <div className="flex items-baseline space-x-1">
+                              <span className="text-2xl font-bold text-text-primary">
+                                {currentPlan.price}
+                              </span>
+                              <span className="text-sm text-text-secondary">
+                                {currentPlan.period}
+                              </span>
+                            </div>
+                            {'billingNote' in currentPlan && (
+                              <p className={`text-[10px] font-medium ${
+                                'billingNoteColor' in currentPlan && currentPlan.billingNoteColor === 'gray'
+                                  ? 'text-gray-500'
+                                  : 'text-purple-600'
+                              }`}>
+                                {currentPlan.billingNote}
+                              </p>
+                            )}
                           </div>
                         </div>
                       </div>
 
-                      {/* Price */}
+                      {/* Credits & Description */}
                       <div className="mb-4">
-                        <div className="flex items-baseline space-x-1">
-                          <span className="text-3xl font-bold text-text-primary">
-                            {currentPlan.price}
-                          </span>
-                          <span className="text-base text-text-secondary">
-                            {currentPlan.period}
-                          </span>
-                        </div>
-                        <p className="text-xs text-text-secondary mt-0.5">
+                        <p className="text-xs text-text-muted mb-1">{currentPlan.credits}</p>
+                        <p className="text-xs text-text-secondary">
                           {currentPlan.description}
                         </p>
                       </div>

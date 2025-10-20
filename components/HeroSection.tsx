@@ -645,38 +645,51 @@ export const HeroSection = () => {
                   {/* Dropdown Menu */}
                   {isModelDropdownOpen && (
                     <div className="absolute right-0 top-full mt-2 w-52 bg-white border border-gray-200 rounded-lg shadow-lg z-20">
-                      {aiModels.map((model) => (
-                        <button
-                          key={model.id}
-                          onClick={() => {
-                            setSelectedModel(model);
-                            setIsModelDropdownOpen(false);
-                          }}
-                          className={`w-full px-3 py-2.5 text-left hover:bg-purple-50 transition-colors first:rounded-t-lg last:rounded-b-lg ${
-                            selectedModel?.id === model.id ? "bg-purple-50" : ""
-                          }`}
-                        >
-                          <div className="flex items-center justify-between gap-2">
-                            <div className="flex-1">
-                              <div className="text-xs font-medium text-text-primary">
-                                {model.name}
+                      {aiModels.map((model) => {
+                        const isPro = model.id === 'sora-2-pro';
+
+                        return (
+                          <button
+                            key={model.id}
+                            onClick={() => {
+                              setSelectedModel(model);
+                              setIsModelDropdownOpen(false);
+                            }}
+                            className={`w-full px-3 py-2.5 text-left hover:bg-purple-50 transition-colors first:rounded-t-lg last:rounded-b-lg ${
+                              selectedModel?.id === model.id ? "bg-purple-50" : ""
+                            }`}
+                          >
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="flex-1">
+                                <div className="text-xs font-medium text-text-primary">
+                                  {model.name}
+                                </div>
+                                <div className="text-[10px] text-text-muted">
+                                  {model.version}
+                                </div>
                               </div>
-                              <div className="text-[10px] text-text-muted">
-                                {model.version}
-                              </div>
+                              {isPro ? (
+                                <div className="flex items-center gap-1 px-2 py-1 bg-gradient-to-r from-amber-400 to-orange-500 rounded-full">
+                                  <Crown className="w-3 h-3 text-white" />
+                                  <span className="text-[10px] font-semibold text-white">
+                                    PRO
+                                  </span>
+                                </div>
+                              ) : (
+                                <div className="flex items-center gap-1 px-2 py-1 bg-purple-100 rounded-full">
+                                  <span className="text-[10px] font-semibold text-purple-600">
+                                    {model.credits}
+                                  </span>
+                                  <svg className="w-3 h-3 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z"/>
+                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V5z" clipRule="evenodd"/>
+                                  </svg>
+                                </div>
+                              )}
                             </div>
-                            <div className="flex items-center gap-1 px-2 py-1 bg-purple-100 rounded-full">
-                              <span className="text-[10px] font-semibold text-purple-600">
-                                {model.credits}
-                              </span>
-                              <svg className="w-3 h-3 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
-                                <path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z"/>
-                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V5z" clipRule="evenodd"/>
-                              </svg>
-                            </div>
-                          </div>
-                        </button>
-                      ))}
+                          </button>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
@@ -732,17 +745,17 @@ export const HeroSection = () => {
               )}
 
               {/* Bottom Toolbar: Images on left, Buttons on right */}
-              <div className="px-4 py-3 sm:px-6 sm:py-4 bg-gray-50/50 border-t border-gray-100">
+              <div className="px-4 py-3 sm:px-6 sm:py-4 sm:pr-3 bg-gray-50/50 border-t border-gray-100">
                 <div className="flex items-center justify-between gap-3">
                   {/* Left: Upload Button + Image Thumbnails */}
                   <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
-                    {/* Upload Button with Uploaded File or Selected Image Preview */}
+                    {/* Upload Button with Uploaded File or Selected Image Preview - PURPLE HIGHLIGHT WHEN ACTIVE */}
                     <button
                     onClick={() => document.getElementById("file-upload")?.click()}
-                    className={`relative flex-shrink-0 rounded-lg transition-all ${
+                    className={`relative flex-shrink-0 rounded-xl transition-all ${
                       uploadedFilePreview || selectedImage !== null
-                        ? "w-20 h-20 sm:w-18 sm:h-18 border-4 border-purple-500 shadow-lg shadow-purple-500/50 ring-4 ring-purple-200 scale-110 hover:scale-115"
-                        : "w-16 h-16 sm:w-14 sm:h-14 border-2 border-dashed border-gray-300 hover:border-purple-400 hover:bg-purple-50"
+                        ? "w-16 h-16 sm:w-14 sm:h-14 border-3 border-purple-500 shadow-lg shadow-purple-500/30 ring-2 ring-purple-200"
+                        : "w-12 h-12 sm:w-11 sm:h-11 border border-dashed border-gray-300 hover:border-gray-400 hover:bg-gray-50"
                     } flex items-center justify-center overflow-hidden`}
                     title={uploadedFilePreview ? t('upload.uploadedTitle') : selectedImage !== null ? t('upload.selectedTitle') : t('upload.uploadTitle')}
                   >
@@ -756,21 +769,15 @@ export const HeroSection = () => {
                           className="w-full h-full object-cover"
                         />
 
-                        {/* Hover Overlay with Upload Icon */}
-                        <div className="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
-                          <Upload className="w-8 h-8 text-white drop-shadow-lg" />
+                        {/* Hover Overlay with Upload Icon - SUBTLE */}
+                        <div className="absolute inset-0 bg-black/30 opacity-0 hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
+                          <Upload className="w-4 h-4 text-white" />
                         </div>
 
-                        {/* Upload Badge (different from selection checkmark) */}
-                        <div className="absolute -top-2 -right-2 w-7 h-7 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center shadow-lg border-2 border-white z-10">
-                          <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                          </svg>
+                        {/* Upload Badge - Blue indicator */}
+                        <div className="absolute -top-2 -right-2 w-6 h-6 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center shadow-md border-2 border-white z-10">
+                          <Upload className="w-3 h-3 text-white" strokeWidth={2.5} />
                         </div>
-
-                        {/* Corner Accent */}
-                        <div className="absolute top-0 left-0 w-3 h-3 bg-blue-500 rounded-br-lg" />
-                        <div className="absolute bottom-0 right-0 w-3 h-3 bg-blue-500 rounded-tl-lg" />
                       </>
                     ) : selectedImage !== null ? (
                       <>
@@ -784,24 +791,20 @@ export const HeroSection = () => {
                           loading="lazy"
                         />
 
-                        {/* Hover Overlay with Upload Icon */}
-                        <div className="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
-                          <Upload className="w-8 h-8 text-white drop-shadow-lg" />
+                        {/* Hover Overlay with Upload Icon - SUBTLE */}
+                        <div className="absolute inset-0 bg-black/30 opacity-0 hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
+                          <Upload className="w-4 h-4 text-white" />
                         </div>
 
-                        {/* Checkmark Badge */}
-                        <div className="absolute -top-2 -right-2 w-7 h-7 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center shadow-lg border-2 border-white z-10">
-                          <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        {/* Checkmark Badge - Green check indicator */}
+                        <div className="absolute -top-2 -right-2 w-6 h-6 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center shadow-md border-2 border-white z-10">
+                          <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                           </svg>
                         </div>
-
-                        {/* Corner Accent */}
-                        <div className="absolute top-0 left-0 w-3 h-3 bg-purple-500 rounded-br-lg" />
-                        <div className="absolute bottom-0 right-0 w-3 h-3 bg-purple-500 rounded-tl-lg" />
                       </>
                     ) : (
-                      <Upload className="w-6 h-6 sm:w-6 sm:h-6 text-text-muted" />
+                      <Upload className="w-5 h-5 sm:w-4 sm:h-4 text-gray-400" />
                     )}
                   </button>
                   <input
@@ -902,10 +905,10 @@ export const HeroSection = () => {
                                 console.log("📸 Thumbnail selected:", img.alt);
                               }
                             }}
-                            className={`relative flex-shrink-0 w-16 h-16 sm:w-14 sm:h-14 rounded-lg overflow-hidden border-2 transition-all hover:scale-105 ${
+                            className={`relative flex-shrink-0 w-12 h-12 sm:w-11 sm:h-11 rounded-md overflow-hidden border transition-all hover:scale-105 ${
                               selectedImage === img.id
-                                ? "border-purple-500 ring-2 ring-purple-300 opacity-100"
-                                : "border-gray-300 hover:border-purple-400 opacity-70 hover:opacity-100"
+                                ? "border-gray-400 opacity-100"
+                                : "border-gray-200 hover:border-gray-300 opacity-60 hover:opacity-90"
                             }`}
                             title={img.alt}
                           >
@@ -929,7 +932,7 @@ export const HeroSection = () => {
                     <div className="relative">
                       {/* Main Generate Button with Dropdown - Separated Design */}
                       <div className="flex items-center gap-1.5">
-                        {/* Primary Action Button - Redesigned */}
+                        {/* Primary Action Button - Original Design */}
                         <button
                           onClick={handleMainButton}
                           disabled={isGenerating || isGeneratingScript}
@@ -957,16 +960,16 @@ export const HeroSection = () => {
                           )}
                         </button>
 
-                        {/* Dropdown Toggle Button - Elegant Separated Design */}
+                        {/* Dropdown Toggle Button - Purple Gradient Fill */}
                         <button
                           onClick={() => setIsModeDropdownOpen(!isModeDropdownOpen)}
                           disabled={isGenerating || isGeneratingScript}
-                          className="relative bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 shadow-lg hover:shadow-xl p-2.5 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 hover:scale-[1.05] active:scale-95 group"
+                          className="relative bg-gradient-to-br from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 p-2.5 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 hover:scale-[1.05] active:scale-95 group shadow-lg hover:shadow-xl"
                           title="Select generation mode"
                         >
                           <ChevronDown className={`w-4 h-4 text-white transition-all duration-300 ${isModeDropdownOpen ? 'rotate-180' : ''} group-hover:scale-110`} />
-                          {/* Subtle indicator dot */}
-                          <span className="absolute top-1 right-1 w-1.5 h-1.5 bg-white/60 rounded-full"></span>
+                          {/* White indicator dot */}
+                          <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-white/60"></span>
                         </button>
                       </div>
 

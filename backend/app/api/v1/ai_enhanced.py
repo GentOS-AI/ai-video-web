@@ -8,18 +8,25 @@ import os
 import uuid
 import time
 import logging
+import json
+import asyncio
+import redis
 from io import BytesIO
 from PIL import Image as PILImage
 from fastapi import APIRouter, Depends, UploadFile, File, HTTPException, status, Form
+from fastapi.responses import StreamingResponse
 from typing import Optional
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_current_user, get_db
+from app.api.deps import get_current_user, get_current_user_from_header_or_query, get_db
 from app.models.user import User
 from app.models.uploaded_image import UploadedImage
+from app.models.enhancement_task import EnhancementTask, EnhancementStatus
 from app.services.openai_enhanced_service import OpenAIEnhancedService
 from app.services.dalle_image_service import dalle_image_service
 from app.schemas.ai_enhanced import EnhancedScriptRequest, EnhancedScriptResponse
+from app.schemas.enhancement import EnhancementTaskResponse, EnhancementTaskStatusResponse
+from app.tasks.enhancement_task import process_enhancement_task
 from app.core.config import settings
 
 logger = logging.getLogger(__name__)
@@ -361,3 +368,339 @@ async def enhance_and_generate_script(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="The enhanced AI service encountered an error. Please try again."
         )
+
+
+@router.post("/enhance-and-script-async", response_model=EnhancementTaskResponse, status_code=status.HTTP_201_CREATED)
+async def enhance_and_generate_script_async(
+    file: UploadFile = File(..., description="Product image (JPG/PNG, max 20MB)"),
+    user_description: Optional[str] = Form(None, description="Product description and advertising intention (optional)"),
+    duration: int = Form(4, description="Video duration in seconds"),
+    language: str = Form("en", description="Language for generated script"),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Async version of enhance-and-script endpoint with SSE real-time progress streaming.
+
+    This endpoint:
+    1. Validates user subscription
+    2. Saves uploaded image to disk
+    3. Creates EnhancementTask record
+    4. Triggers Celery background task
+    5. Returns task_id immediately
+    6. Client can connect to SSE endpoint to watch progress in real-time
+
+    Use GET /ai/enhance-and-script/{task_id}/stream for SSE progress updates
+    """
+    try:
+        logger.info("=" * 80)
+        logger.info("🚀 [ASYNC ENHANCED AI SERVICE] Request Start")
+        logger.info(f"📥 Input Data:")
+        logger.info(f"  - User ID: {current_user.id}")
+        logger.info(f"  - User Email: {current_user.email}")
+        logger.info(f"  - File: {file.filename}")
+        logger.info(f"  - User Description: {user_description[:150] if user_description else 'None'}")
+        logger.info(f"  - Duration: {duration}s")
+        logger.info(f"  - Language: {language}")
+        logger.info("=" * 80)
+
+        # ========================================
+        # STEP 1: VALIDATE USER SUBSCRIPTION
+        # ========================================
+        if current_user.subscription_plan == 'free':
+            logger.warning(f"❌ User {current_user.id} attempted enhanced generation with free plan")
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Subscription required. Please upgrade to access Enhanced AI Generator."
+            )
+
+        if current_user.subscription_status != 'active':
+            logger.warning(f"❌ User {current_user.id} has inactive subscription")
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Your subscription has expired. Please renew to continue."
+            )
+
+        # ========================================
+        # STEP 2: READ AND VALIDATE IMAGE
+        # ========================================
+        logger.info("📖 Reading uploaded file...")
+        content = await file.read()
+        file_size_mb = len(content) / (1024 * 1024)
+        logger.info(f"  ✅ File read: {file_size_mb:.2f}MB")
+
+        validate_image(file, content)
+        logger.info("  ✅ Image validation passed")
+
+        # ========================================
+        # STEP 3: SAVE ORIGINAL IMAGE
+        # ========================================
+        logger.info("💾 Saving original image...")
+
+        # Create user upload directory for originals
+        user_upload_dir = os.path.join(settings.UPLOAD_DIR, f"user_{current_user.id}", "originals")
+        os.makedirs(user_upload_dir, exist_ok=True)
+
+        # Generate unique filename
+        file_ext = os.path.splitext(file.filename or "image.jpg")[1] or ".jpg"
+        unique_filename = f"original_{uuid.uuid4()}{file_ext}"
+        file_path = os.path.join(user_upload_dir, unique_filename)
+
+        # Save original image to disk
+        with open(file_path, "wb") as f:
+            f.write(content)
+
+        # Create relative path for database
+        original_image_path = f"/uploads/user_{current_user.id}/originals/{unique_filename}"
+
+        logger.info(f"  ✅ Original image saved: {original_image_path}")
+
+        # ========================================
+        # STEP 4: CREATE ENHANCEMENT TASK
+        # ========================================
+        logger.info("📝 Creating enhancement task record...")
+
+        enhancement_task = EnhancementTask(
+            user_id=current_user.id,
+            original_image_path=original_image_path,
+            user_description=user_description,
+            status=EnhancementStatus.PENDING,
+        )
+        db.add(enhancement_task)
+        db.commit()
+        db.refresh(enhancement_task)
+
+        logger.info(f"  ✅ Task created (ID: {enhancement_task.id})")
+
+        # ========================================
+        # STEP 5: TRIGGER CELERY TASK
+        # ========================================
+        logger.info("🚀 Triggering Celery background task...")
+
+        celery_task = process_enhancement_task.apply_async(
+            args=[enhancement_task.id],
+            task_id=f"enhancement_{enhancement_task.id}_{uuid.uuid4().hex[:8]}"
+        )
+
+        logger.info(f"  ✅ Celery task triggered (ID: {celery_task.id})")
+        logger.info("=" * 80)
+        logger.info(f"📤 [ASYNC ENHANCED AI SERVICE] Task created successfully")
+        logger.info(f"  - Task ID: {enhancement_task.id}")
+        logger.info(f"  - Celery Task ID: {celery_task.id}")
+        logger.info(f"  - SSE Endpoint: /ai/enhance-and-script/{enhancement_task.id}/stream")
+        logger.info("=" * 80)
+
+        # Return task info immediately
+        return EnhancementTaskResponse(
+            id=enhancement_task.id,
+            user_id=enhancement_task.user_id,
+            original_image_path=enhancement_task.original_image_path,
+            user_description=enhancement_task.user_description or "",
+            enhanced_image_url=None,
+            script=None,
+            product_analysis=None,
+            status=enhancement_task.status,
+            error_message=None,
+            tokens_used=0,
+            processing_time=None,
+            created_at=enhancement_task.created_at,
+            updated_at=enhancement_task.updated_at,
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("=" * 80)
+        logger.error(f"❌ [ASYNC ENHANCED AI SERVICE] ERROR")
+        logger.error(f"  - User ID: {current_user.id}")
+        logger.error(f"  - Error: {str(e)}")
+        logger.error("=" * 80)
+        logger.error("Stack trace:", exc_info=True)
+
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to create enhancement task. Please try again."
+        )
+
+
+@router.get("/enhance-and-script/{task_id}/status", response_model=EnhancementTaskStatusResponse)
+async def get_enhancement_task_status(
+    task_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Get current status of an enhancement task (polling endpoint)
+
+    Use this for simple polling, or use /stream endpoint for real-time SSE updates
+    """
+    task = db.query(EnhancementTask).filter(
+        EnhancementTask.id == task_id,
+        EnhancementTask.user_id == current_user.id
+    ).first()
+
+    if not task:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Enhancement task {task_id} not found"
+        )
+
+    return EnhancementTaskStatusResponse(
+        id=task.id,
+        status=task.status,
+        enhanced_image_url=task.enhanced_image_url,
+        script=task.script,
+        product_analysis=task.product_analysis,
+        error_message=task.error_message,
+        tokens_used=task.tokens_used,
+        processing_time=task.processing_time,
+        updated_at=task.updated_at,
+    )
+
+
+@router.get("/enhance-and-script/{task_id}/stream")
+async def stream_enhancement_progress(
+    task_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user_from_header_or_query),
+):
+    """
+    SSE endpoint for streaming enhancement progress via Redis Pub/Sub
+
+    This endpoint subscribes to a Redis channel (enhancement:{task_id}) and streams
+    real-time log messages from the Celery background task to the client.
+
+    Architecture:
+        Celery Task → Redis Pub/Sub → This Endpoint → Frontend (SSE)
+
+    Message format:
+    {
+        "progress": 0-100,      # Progress percentage
+        "message": "...",       # Human-readable status message
+        "timestamp": "...",     # ISO timestamp
+        "enhanced_image_url": "...",  # Only present when completed
+        "script": "...",        # Only present when completed
+        "error": "..."          # Only present when failed
+    }
+    """
+    async def event_generator():
+        redis_client = None
+        pubsub = None
+
+        try:
+            # Step 1: Verify task exists and belongs to current user
+            task = db.query(EnhancementTask).filter(EnhancementTask.id == task_id).first()
+
+            if not task:
+                print(f"❌ [SSE] Enhancement task {task_id} not found")
+                yield f"data: {json.dumps({'error': 'Task not found', 'progress': -1})}\n\n"
+                return
+
+            if task.user_id != current_user.id:
+                print(f"❌ [SSE] Access denied for task {task_id}, user {current_user.id}")
+                yield f"data: {json.dumps({'error': 'Access denied', 'progress': -1})}\n\n"
+                return
+
+            # Step 2: Connect to Redis and subscribe to channel
+            channel = f"enhancement:{task_id}"
+
+            try:
+                redis_client = redis.from_url(settings.REDIS_URL, decode_responses=True)
+                pubsub = redis_client.pubsub()
+                pubsub.subscribe(channel)
+
+                print(f"📡 [SSE] Subscribed to Redis channel: {channel}")
+
+                # Send initial connection message
+                yield f"data: {json.dumps({'progress': 0, 'message': '🔌 Connected to enhancement stream', 'timestamp': time.time()})}\n\n"
+
+            except redis.ConnectionError as e:
+                print(f"❌ [SSE] Redis connection failed: {e}")
+                yield f"data: {json.dumps({'error': 'Redis connection failed', 'progress': -1, 'message': '❌ Failed to connect to message queue'})}\n\n"
+                return
+
+            # Step 3: Listen for messages from Redis
+            timeout_seconds = 600  # 10 minutes max for enhancement
+            start_time = time.time()
+            last_heartbeat = time.time()
+            heartbeat_interval = 15  # Send heartbeat every 15 seconds
+
+            while True:
+                # Check timeout
+                elapsed = time.time() - start_time
+                if elapsed > timeout_seconds:
+                    print(f"⏰ [SSE] Stream timeout after {timeout_seconds}s")
+                    yield f"data: {json.dumps({'progress': -1, 'error': 'Stream timeout', 'message': '⏰ Connection timeout after 10 minutes'})}\n\n"
+                    break
+
+                # Send heartbeat to keep connection alive
+                if time.time() - last_heartbeat > heartbeat_interval:
+                    yield f": heartbeat\n\n"
+                    last_heartbeat = time.time()
+
+                # Non-blocking get message (1 second timeout)
+                message = pubsub.get_message(timeout=1.0)
+
+                if message and message['type'] == 'message':
+                    # Got a real message from Redis
+                    data_str = message['data']
+
+                    print(f"📨 [SSE] Received message: {data_str[:100]}...")
+
+                    # Forward to client
+                    yield f"data: {data_str}\n\n"
+
+                    # Parse message to check if done
+                    try:
+                        parsed = json.loads(data_str)
+
+                        # Check for completion (progress 100 or status="completed")
+                        if parsed.get('status') == 'completed' or parsed.get('progress') == 100:
+                            print(f"✅ [SSE] Enhancement task {task_id} completed, closing stream")
+                            break
+
+                        # Check for error (progress -1 or status="failed")
+                        if parsed.get('progress') == -1 or parsed.get('status') == 'failed':
+                            print(f"❌ [SSE] Enhancement task {task_id} failed, closing stream")
+                            break
+
+                    except json.JSONDecodeError:
+                        print(f"⚠️  [SSE] Failed to parse message as JSON: {data_str}")
+
+                # Small sleep to prevent busy loop
+                await asyncio.sleep(0.1)
+
+            print(f"🏁 [SSE] Stream ended for enhancement task {task_id}")
+
+        except Exception as e:
+            import traceback
+            print(f"❌ [SSE] Unexpected error: {e}")
+            print(traceback.format_exc())
+            yield f"data: {json.dumps({'progress': -1, 'error': str(e), 'message': f'❌ Stream error: {str(e)}'})}\n\n"
+
+        finally:
+            # Cleanup
+            if pubsub:
+                try:
+                    pubsub.unsubscribe()
+                    pubsub.close()
+                    print(f"🔌 [SSE] Unsubscribed from channel")
+                except Exception as e:
+                    print(f"⚠️  [SSE] Error during cleanup: {e}")
+
+            if redis_client:
+                try:
+                    redis_client.close()
+                except Exception as e:
+                    print(f"⚠️  [SSE] Error closing Redis connection: {e}")
+
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",  # Disable buffering for nginx
+            "Access-Control-Allow-Origin": "*",  # CORS for SSE
+        }
+    )

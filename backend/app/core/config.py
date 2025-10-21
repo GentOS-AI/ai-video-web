@@ -48,10 +48,6 @@ class Settings(BaseSettings):
     # OpenAI Configuration
     OPENAI_API_KEY: str = ""  # From .env
 
-    # Gemini Configuration
-    GEMINI_API_KEY: str = ""  # From .env
-    GEMINI_MODEL: str = "gemini-2.5-flash"  # Gemini 2.5 Flash (faster, more permissive)
-
     # Redis & Celery
     REDIS_URL: str = "redis://localhost:6379/0"
 

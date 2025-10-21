@@ -1,6 +1,7 @@
 """
 Video service - Video generation and management
 """
+import os
 from typing import List, Optional
 from datetime import datetime
 from sqlalchemy.orm import Session
@@ -251,3 +252,161 @@ def get_available_models() -> List[dict]:
         List of model information
     """
     return AI_MODELS_INFO
+
+
+async def save_uploaded_image(
+    image_file,
+    user: User,
+    db: Session
+) -> str:
+    """
+    Save user uploaded original image
+
+    Args:
+        image_file: UploadFile object
+        user: Current user
+        db: Database session
+
+    Returns:
+        Image URL (relative path, e.g., /uploads/user_1/original/xxx.jpg)
+
+    Raises:
+        HTTPException: If image validation fails
+    """
+    import uuid
+    from io import BytesIO
+    from PIL import Image as PILImage
+    from app.models.uploaded_image import UploadedImage
+    from app.utils.image_utils import get_file_extension, validate_image_content
+
+    # Read file content
+    content = await image_file.read()
+
+    # Validate image
+    try:
+        metadata = validate_image_content(content)
+    except ValueError as e:
+        from fastapi import HTTPException, status
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+
+    # Check file size (max 20MB)
+    if metadata['size_mb'] > 20:
+        from fastapi import HTTPException, status
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail=f"File too large ({metadata['size_mb']:.2f}MB). Maximum size is 20MB."
+        )
+
+    # Create user upload directory
+    user_dir = os.path.join(settings.UPLOAD_DIR, f"user_{user.id}", "original")
+    os.makedirs(user_dir, exist_ok=True)
+
+    # Generate unique filename
+    extension = get_file_extension(image_file.filename)
+    filename = f"original_{uuid.uuid4()}.{extension}"
+    file_path = os.path.join(user_dir, filename)
+
+    # Save file
+    with open(file_path, "wb") as f:
+        f.write(content)
+
+    # Create relative URL
+    relative_url = f"/uploads/user_{user.id}/original/{filename}"
+
+    # Save to database
+    try:
+        db_image = UploadedImage(
+            user_id=user.id,
+            filename=filename,
+            file_url=relative_url,
+            file_size=len(content),
+            file_type=metadata['mime_type'],
+            width=metadata['width'],
+            height=metadata['height']
+        )
+        db.add(db_image)
+        db.commit()
+        db.refresh(db_image)
+
+        print(f"✅ Image saved: {relative_url}")
+
+    except Exception as save_error:
+        print(f"⚠️ Failed to save to database: {str(save_error)}")
+        db.rollback()
+
+    return relative_url
+
+
+async def generate_sora_prompt(
+    image_url: str,
+    user_description: str,
+    duration: int,
+    language: str = "en"
+) -> str:
+    """
+    Generate Sora video prompt using GPT-4o (simplified version)
+
+    This function:
+    - Does NOT enhance the image
+    - Only generates a concise Sora prompt
+    - Optimized for Sora 2 prompt format
+
+    Args:
+        image_url: Image URL (relative path or full URL)
+        user_description: User's product description
+        duration: Video duration in seconds
+        language: Target language
+
+    Returns:
+        Generated Sora prompt string
+
+    Raises:
+        Exception: If prompt generation fails
+    """
+    import logging
+    from app.utils.image_utils import read_image_from_url
+    from app.services.openai_script_service import openai_script_service
+
+    logger = logging.getLogger(__name__)
+
+    logger.info("-" * 60)
+    logger.info("🤖 [Generate Sora Prompt] Starting GPT-4o call")
+    logger.info(f"  Image URL: {image_url}")
+    logger.info(f"  User description: {user_description[:100]}...")
+    logger.info(f"  Duration: {duration}s")
+    logger.info(f"  Language: {language}")
+
+    try:
+        # Read image from URL (supports local paths)
+        image_bytes = read_image_from_url(image_url)
+        logger.info(f"  ✅ Image loaded: {len(image_bytes) / (1024*1024):.2f}MB")
+
+        # Call GPT-4o to generate script
+        result = openai_script_service.analyze_image_for_script(
+            image_data=image_bytes,
+            duration=duration,
+            mime_type="image/jpeg",
+            language=language
+        )
+
+        prompt = result['script']
+
+        # Enhance prompt with user description if provided
+        if user_description and user_description.strip():
+            # Append user context to make prompt more specific
+            enhanced_prompt = f"{prompt}\n\nProduct context: {user_description}"
+            logger.info(f"  ✅ Prompt enhanced with user description")
+            return enhanced_prompt
+
+        logger.info(f"  ✅ Prompt generated ({len(prompt)} chars)")
+        logger.info("-" * 60)
+
+        return prompt
+
+    except Exception as e:
+        logger.error(f"❌ Failed to generate prompt: {str(e)}")
+        logger.error("-" * 60)
+        raise Exception(f"Failed to generate Sora prompt: {str(e)}")

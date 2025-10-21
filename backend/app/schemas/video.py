@@ -14,6 +14,45 @@ class VideoGenerateRequest(BaseModel):
     reference_image_url: Optional[str] = Field(None, description="Reference image URL")
 
 
+class VideoGenerateFlexibleRequest(BaseModel):
+    """
+    Flexible video generation request - Supports two modes
+
+    Mode 1: Enhanced image + Optimized script (from enhance-and-script API)
+        - Required: image_url, prompt
+        - GPT-4o: Not called (already processed in enhance-and-script)
+
+    Mode 2: Original image + Auto-generate script
+        - Required: image_file (via Form upload), user_description
+        - GPT-4o: Called to generate Sora prompt
+    """
+
+    # ========== Mode 1: Enhanced image + Optimized script ==========
+    image_url: Optional[str] = Field(
+        None,
+        description="Enhanced image URL (Required for Mode 1, from enhance-and-script API)"
+    )
+    prompt: Optional[str] = Field(
+        None,
+        description="Optimized video script (Required for Mode 1, from enhance-and-script 'script' field)",
+        min_length=50,
+        max_length=5000
+    )
+
+    # ========== Mode 2: Original image + Auto-generate ==========
+    # image_file: UploadFile (Uploaded via Form parameter, not defined here)
+    user_description: Optional[str] = Field(
+        None,
+        description="Product description for prompt generation (Required for Mode 2)",
+        max_length=2000
+    )
+
+    # ========== Common parameters ==========
+    duration: int = Field(4, ge=4, le=12, description="Video duration in seconds")
+    model: str = Field("sora-2", description="AI model (sora-2 or sora-2-pro)")
+    language: str = Field("en", description="Language (only used in Mode 2)", pattern="^[a-z]{2}(-[A-Z]{2})?$")
+
+
 class VideoResponse(BaseModel):
     """Schema for video response"""
     id: int

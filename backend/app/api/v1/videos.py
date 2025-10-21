@@ -6,16 +6,20 @@ import asyncio
 import json
 import random
 import time
+import logging
 import redis
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, status, Query, Form, File, UploadFile
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
+
+logger = logging.getLogger(__name__)
 
 from app.database import get_db
 from app.api.deps import get_current_user, get_current_user_from_header_or_query
 from app.core.config import settings
 from app.schemas.video import (
     VideoGenerateRequest,
+    VideoGenerateFlexibleRequest,
     VideoResponse,
     VideoListResponse,
     VideoStatusResponse,
@@ -77,6 +81,177 @@ def generate_video(
         raise HTTPException(
             status_code=status.HTTP_402_PAYMENT_REQUIRED,
             detail=str(e),
+        )
+
+
+@router.post("/generate-flexible", response_model=VideoResponse, status_code=status.HTTP_201_CREATED)
+async def generate_video_flexible(
+    # Mode 1 parameters
+    image_url: Optional[str] = Form(None),
+    prompt: Optional[str] = Form(None),
+
+    # Mode 2 parameters
+    image_file: Optional[UploadFile] = File(None),
+    user_description: Optional[str] = Form(None),
+
+    # Common parameters
+    duration: int = Form(4),
+    model: str = Form("sora-2"),
+    language: str = Form("en"),
+
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Flexible video generation endpoint - Supports two modes
+
+    **Mode 1: Enhanced image + Optimized script** (from enhance-and-script API)
+        - Required: image_url, prompt
+        - GPT-4o: Not called (already processed in enhance-and-script)
+        - Use case: User has already enhanced the image and generated script
+
+    **Mode 2: Original image + Auto-generate script**
+        - Required: image_file, user_description
+        - GPT-4o: Called to generate Sora prompt
+        - Use case: Quick video generation without enhancement
+
+    Parameters:
+        - image_url: Enhanced image URL (Mode 1)
+        - prompt: Optimized script (Mode 1)
+        - image_file: Original image file (Mode 2)
+        - user_description: Product description for prompt generation (Mode 2)
+        - duration: Video duration (4-12 seconds)
+        - model: AI model (sora-2 or sora-2-pro)
+        - language: Language for script generation (Mode 2 only)
+
+    Returns:
+        Video generation task with pending status
+    """
+    # ========================================
+    # Mode detection and validation
+    # ========================================
+    mode_1 = bool(image_url and prompt)
+    mode_2 = bool(image_file and user_description)
+
+    if not mode_1 and not mode_2:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid parameters. Must use one of two modes:\n"
+                   "Mode 1: image_url + prompt (from enhance-and-script API)\n"
+                   "Mode 2: image_file + user_description (auto-generate prompt)"
+        )
+
+    if mode_1 and mode_2:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot mix Mode 1 and Mode 2 parameters. Choose one mode only."
+        )
+
+    try:
+        # ========================================
+        # MODE 1: Enhanced image + Optimized script
+        # ========================================
+        if mode_1:
+            logger.info("=" * 80)
+            logger.info("🎬 [MODE 1] Using enhanced image + optimized script")
+            logger.info(f"  User ID: {current_user.id}")
+            logger.info(f"  Image URL: {image_url}")
+            logger.info(f"  Prompt length: {len(prompt)} chars")
+            logger.info(f"  Duration: {duration}s")
+            logger.info(f"  Model: {model}")
+            logger.info("=" * 80)
+
+            # Directly use provided parameters
+            final_image_url = image_url
+            final_prompt = prompt
+
+            logger.info("✅ [MODE 1] Using pre-optimized prompt (no GPT-4o call)")
+
+        # ========================================
+        # MODE 2: Original image + Auto-generate script
+        # ========================================
+        else:  # mode_2
+            logger.info("=" * 80)
+            logger.info("🎬 [MODE 2] Using original image + auto-generate prompt")
+            logger.info(f"  User ID: {current_user.id}")
+            logger.info(f"  Image file: {image_file.filename if image_file else 'N/A'}")
+            logger.info(f"  User description: {user_description[:100]}...")
+            logger.info(f"  Duration: {duration}s")
+            logger.info(f"  Model: {model}")
+            logger.info(f"  Language: {language}")
+            logger.info("=" * 80)
+
+            # Step 1: Save uploaded original image
+            logger.info("💾 [MODE 2] Step 1: Saving uploaded image...")
+            final_image_url = await video_service.save_uploaded_image(
+                image_file,
+                current_user,
+                db
+            )
+            logger.info(f"  ✅ Image saved: {final_image_url}")
+
+            # Step 2: Generate Sora prompt using GPT-4o
+            logger.info("🤖 [MODE 2] Step 2: Generating Sora prompt with GPT-4o...")
+            final_prompt = await video_service.generate_sora_prompt(
+                image_url=final_image_url,
+                user_description=user_description,
+                duration=duration,
+                language=language
+            )
+            logger.info(f"  ✅ Prompt generated ({len(final_prompt)} chars)")
+            logger.info(f"  Prompt preview: {final_prompt[:150]}...")
+
+        # ========================================
+        # Create video generation task (unified for both modes)
+        # ========================================
+        logger.info("📹 Creating video generation task...")
+
+        video_request = VideoGenerateRequest(
+            prompt=final_prompt,
+            model=model,
+            reference_image_url=final_image_url
+        )
+
+        video = video_service.create_video_generation_task(
+            db, current_user, video_request
+        )
+
+        # Trigger Celery async task
+        from app.tasks.video_generation import generate_video_task
+        task = generate_video_task.delay(video.id)
+
+        logger.info("=" * 80)
+        logger.info(f"✅ Video generation task created successfully")
+        logger.info(f"  Video ID: {video.id}")
+        logger.info(f"  Task ID: {task.id}")
+        logger.info(f"  Mode: {'Mode 1 (Enhanced)' if mode_1 else 'Mode 2 (Auto-generate)'}")
+        logger.info(f"  Image: {final_image_url}")
+        logger.info(f"  Prompt: {final_prompt[:100]}...")
+        logger.info("=" * 80)
+
+        return video
+
+    except SubscriptionRequiredException as e:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=str(e),
+        )
+    except SubscriptionExpiredException as e:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=str(e),
+        )
+    except InsufficientCreditsException as e:
+        raise HTTPException(
+            status_code=status.HTTP_402_PAYMENT_REQUIRED,
+            detail=str(e),
+        )
+    except Exception as e:
+        logger.error(f"❌ Error in generate_video_flexible: {str(e)}")
+        logger.error("Stack trace:", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Video generation failed: {str(e)}"
         )
 
 

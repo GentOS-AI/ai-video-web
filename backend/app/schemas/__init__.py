@@ -32,6 +32,12 @@ from app.schemas.showcase import (
     HeroVideoResponse,
     HeroVideoListResponse,
 )
+from app.schemas.enhancement import (
+    EnhancementTaskCreateRequest,
+    EnhancementTaskResponse,
+    EnhancementTaskStatusResponse,
+    EnhancementProgressEvent,
+)
 
 __all__ = [
     # User schemas
@@ -61,4 +67,9 @@ __all__ = [
     "TrialImageListResponse",
     "HeroVideoResponse",
     "HeroVideoListResponse",
+    # Enhancement schemas
+    "EnhancementTaskCreateRequest",
+    "EnhancementTaskResponse",
+    "EnhancementTaskStatusResponse",
+    "EnhancementProgressEvent",
 ]

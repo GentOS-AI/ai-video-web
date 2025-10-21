@@ -239,6 +239,41 @@ export const videoService = {
     });
     return data;
   },
+
+  /**
+   * Simple video generation with pre-generated script (NEW - Optimized for All-In-One)
+   *
+   * Workflow:
+   * 1. User uploads image → Auto-calls /ai/generate-script (GPT-4o)
+   * 2. Script auto-fills in input box
+   * 3. User clicks All-In-One → This function is called
+   *
+   * Key advantages:
+   * - NO GPT-4o call (script already generated)
+   * - Faster video generation
+   * - User can review/edit script before generating
+   */
+  async generateSimple(
+    imageFile: File,
+    script: string,  // Pre-generated script
+    options?: {
+      duration?: number;
+      model?: string;
+    }
+  ): Promise<Video> {
+    const formData = new FormData();
+    formData.append('image_file', imageFile);
+    formData.append('prompt', script);  // Script as prompt
+    formData.append('duration', (options?.duration || 4).toString());
+    formData.append('model', options?.model || 'sora-2');
+
+    const { data } = await apiClient.post<Video>('/videos/generate-simple', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return data;
+  },
 };
 
 // Showcase Service

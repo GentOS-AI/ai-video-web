@@ -255,6 +255,109 @@ async def generate_video_flexible(
         )
 
 
+@router.post("/generate-simple", response_model=VideoResponse, status_code=status.HTTP_201_CREATED)
+async def generate_video_simple(
+    image_file: UploadFile = File(..., description="Product image file"),
+    prompt: str = Form(..., description="Pre-generated video script (from /ai/generate-script)"),
+    duration: int = Form(4, ge=4, le=12, description="Video duration in seconds"),
+    model: str = Form("sora-2", description="AI model (sora-2 or sora-2-pro)"),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Simple video generation (for All-In-One mode)
+
+    This endpoint is optimized for the All-In-One workflow where:
+    1. User uploads image → Auto-calls /ai/generate-script (GPT-4o generates script)
+    2. Script is pre-filled in input box
+    3. User clicks All-In-One → This endpoint is called
+
+    Key differences from /generate-flexible:
+    - Does NOT call GPT-4o (script is already provided via prompt parameter)
+    - Directly uses the provided script for video generation
+    - Simpler and faster (skips GPT-4o step)
+
+    Parameters:
+        - image_file: Uploaded product image
+        - prompt: Pre-generated script (from auto-generation or user editing)
+        - duration: Video duration (4-12 seconds)
+        - model: AI model to use
+
+    Returns:
+        Video generation task with pending status
+    """
+    try:
+        logger.info("=" * 80)
+        logger.info("🎬 [SIMPLE MODE] Video generation with pre-generated script")
+        logger.info(f"  User ID: {current_user.id}")
+        logger.info(f"  Image file: {image_file.filename}")
+        logger.info(f"  Prompt length: {len(prompt)} chars")
+        logger.info(f"  Prompt preview: {prompt[:150]}...")
+        logger.info(f"  Duration: {duration}s")
+        logger.info(f"  Model: {model}")
+        logger.info("=" * 80)
+
+        # Step 1: Save uploaded image
+        logger.info("💾 [SIMPLE MODE] Step 1: Saving uploaded image...")
+        image_url = await video_service.save_uploaded_image(
+            image_file,
+            current_user,
+            db
+        )
+        logger.info(f"  ✅ Image saved: {image_url}")
+
+        # Step 2: Create video generation task with provided script
+        logger.info("📹 [SIMPLE MODE] Step 2: Creating video generation task...")
+
+        video_request = VideoGenerateRequest(
+            prompt=prompt,  # Use provided script directly (no GPT-4o call)
+            model=model,
+            reference_image_url=image_url
+        )
+
+        video = video_service.create_video_generation_task(
+            db, current_user, video_request
+        )
+
+        # Step 3: Trigger Celery async task
+        from app.tasks.video_generation import generate_video_task
+        task = generate_video_task.delay(video.id)
+
+        logger.info("=" * 80)
+        logger.info(f"✅ [SIMPLE MODE] Video generation task created successfully")
+        logger.info(f"  Video ID: {video.id}")
+        logger.info(f"  Task ID: {task.id}")
+        logger.info(f"  Image: {image_url}")
+        logger.info(f"  Script: {prompt[:100]}...")
+        logger.info(f"  ⚡ Skipped GPT-4o (script pre-generated)")
+        logger.info("=" * 80)
+
+        return video
+
+    except SubscriptionRequiredException as e:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=str(e),
+        )
+    except SubscriptionExpiredException as e:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=str(e),
+        )
+    except InsufficientCreditsException as e:
+        raise HTTPException(
+            status_code=status.HTTP_402_PAYMENT_REQUIRED,
+            detail=str(e),
+        )
+    except Exception as e:
+        logger.error(f"❌ Error in generate_video_simple: {str(e)}")
+        logger.error("Stack trace:", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Video generation failed: {str(e)}"
+        )
+
+
 @router.get("", response_model=VideoListResponse)
 def get_videos(
     page: int = Query(1, ge=1, description="Page number"),

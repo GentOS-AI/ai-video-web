@@ -260,7 +260,12 @@ async def save_uploaded_image(
     db: Session
 ) -> str:
     """
-    Save user uploaded original image
+    Save user uploaded image with automatic Sora-compatible resizing
+
+    This function:
+    1. Validates the uploaded image
+    2. Automatically resizes to Sora-compatible dimensions (1280x720 or 720x1280)
+    3. Saves to disk and database
 
     Args:
         image_file: UploadFile object
@@ -271,13 +276,16 @@ async def save_uploaded_image(
         Image URL (relative path, e.g., /uploads/user_1/original/xxx.jpg)
 
     Raises:
-        HTTPException: If image validation fails
+        HTTPException: If image validation or resizing fails
     """
     import uuid
+    import logging
     from io import BytesIO
     from PIL import Image as PILImage
     from app.models.uploaded_image import UploadedImage
-    from app.utils.image_utils import get_file_extension, validate_image_content
+    from app.utils.image_utils import get_file_extension, validate_image_content, resize_image_for_sora
+
+    logger = logging.getLogger(__name__)
 
     # Read file content
     content = await image_file.read()
@@ -285,6 +293,7 @@ async def save_uploaded_image(
     # Validate image
     try:
         metadata = validate_image_content(content)
+        logger.info(f"📸 Original image: {metadata['width']}x{metadata['height']}, {metadata['size_mb']}MB")
     except ValueError as e:
         from fastapi import HTTPException, status
         raise HTTPException(
@@ -300,18 +309,62 @@ async def save_uploaded_image(
             detail=f"File too large ({metadata['size_mb']:.2f}MB). Maximum size is 20MB."
         )
 
+    # 🔥 Check if image already has correct Sora dimensions
+    width = metadata['width']
+    height = metadata['height']
+
+    # Sora-compatible dimensions
+    is_landscape_correct = (width == 1280 and height == 720)
+    is_portrait_correct = (width == 720 and height == 1280)
+
+    if is_landscape_correct or is_portrait_correct:
+        # Image already has correct dimensions, no need to resize
+        logger.info(f"✅ Image already has Sora-compatible dimensions: {width}x{height} - skipping resize")
+        content_to_save = content
+        final_metadata = metadata
+    else:
+        # Image needs resizing
+        try:
+            logger.info(f"🔧 Resizing image from {width}x{height} to Sora-compatible dimensions...")
+            resized_content = resize_image_for_sora(content)
+
+            # Validate resized image dimensions
+            resized_metadata = validate_image_content(resized_content)
+            logger.info(f"✅ Resized image: {resized_metadata['width']}x{resized_metadata['height']}, {resized_metadata['size_mb']}MB")
+
+            # Use resized image for saving
+            content_to_save = resized_content
+            final_metadata = resized_metadata
+
+        except ValueError as e:
+            logger.error(f"❌ Failed to resize image: {str(e)}")
+            from fastapi import HTTPException, status
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Failed to resize image for Sora: {str(e)}"
+            )
+
     # Create user upload directory
     user_dir = os.path.join(settings.UPLOAD_DIR, f"user_{user.id}", "original")
     os.makedirs(user_dir, exist_ok=True)
 
+    # Determine file extension and type based on whether image was resized
+    if is_landscape_correct or is_portrait_correct:
+        # Keep original format
+        file_extension = get_file_extension(image_file.filename) or 'jpg'
+        file_type = final_metadata['mime_type']
+    else:
+        # Resized images are always JPEG
+        file_extension = 'jpg'
+        file_type = 'image/jpeg'
+
     # Generate unique filename
-    extension = get_file_extension(image_file.filename)
-    filename = f"original_{uuid.uuid4()}.{extension}"
+    filename = f"original_{uuid.uuid4()}.{file_extension}"
     file_path = os.path.join(user_dir, filename)
 
     # Save file
     with open(file_path, "wb") as f:
-        f.write(content)
+        f.write(content_to_save)
 
     # Create relative URL
     relative_url = f"/uploads/user_{user.id}/original/{filename}"
@@ -322,19 +375,19 @@ async def save_uploaded_image(
             user_id=user.id,
             filename=filename,
             file_url=relative_url,
-            file_size=len(content),
-            file_type=metadata['mime_type'],
-            width=metadata['width'],
-            height=metadata['height']
+            file_size=len(content_to_save),
+            file_type=file_type,
+            width=final_metadata['width'],
+            height=final_metadata['height']
         )
         db.add(db_image)
         db.commit()
         db.refresh(db_image)
 
-        print(f"✅ Image saved: {relative_url}")
+        logger.info(f"✅ Image saved: {relative_url}")
 
     except Exception as save_error:
-        print(f"⚠️ Failed to save to database: {str(save_error)}")
+        logger.warning(f"⚠️ Failed to save to database: {str(save_error)}")
         db.rollback()
 
     return relative_url

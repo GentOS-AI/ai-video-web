@@ -129,7 +129,6 @@ export const HeroSection = () => {
   const {
     messages: enhancementMessages,
     isConnected: isEnhancementConnected,
-    lastMessage: _lastEnhancementMessage,
     progress: enhancementProgressPercent
   } = useEnhancementStream({
     taskId: streamingEnhancementId,
@@ -279,7 +278,45 @@ export const HeroSection = () => {
     await generateScriptFromImage();
   };
 
-  // Generate script from image (ASYNC with SSE)
+  // 🔥 NEW: Auto-generate script on image upload (API A - Fast GPT-4o only)
+  const autoGenerateScriptOnUpload = async (file: File) => {
+    try {
+      setIsGeneratingScript(true);
+      setEnhancementProgress("Analyzing image and generating script...");
+      console.log('🤖 Auto-generating script from uploaded image (GPT-4o)...');
+
+      // Use simple script generation API (no image enhancement)
+      const result = await aiService.generateScript(file, 4, locale);
+
+      console.log("✅ Script generated:", result);
+
+      // Fill the textarea with generated script
+      setPrompt(result.script);
+
+      setIsGeneratingScript(false);
+      showToast(tToast('scriptGeneratedSuccess'), "success");
+
+    } catch (error: unknown) {
+      console.error("❌ Auto script generation failed:", error);
+
+      // Extract error message from axios error or use fallback
+      let errorMessage = tToast('scriptGenerationFailed');
+
+      if (error && typeof error === 'object' && 'response' in error) {
+        const axiosError = error as { response?: { data?: { detail?: string } } };
+        if (axiosError.response?.data?.detail) {
+          errorMessage = axiosError.response.data.detail;
+        }
+      } else if (error instanceof Error && error.message) {
+        errorMessage = error.message;
+      }
+
+      showToast(errorMessage, "error");
+      setIsGeneratingScript(false);
+    }
+  };
+
+  // Generate script from image (ASYNC with SSE - for Pro Enhance mode only)
   const generateScriptFromImage = async () => {
     try {
       setIsGeneratingScript(true);
@@ -331,7 +368,7 @@ export const HeroSection = () => {
     }
   };
 
-  // All-In-One Generation: One-click video generation with auto enhancement
+  // 🔥 NEW: All-In-One Generation - Uses pre-generated script (API C - generate-simple)
   const handleAllInOneGeneration = async () => {
     // Validation
     if (!isAuthenticated) {
@@ -372,7 +409,7 @@ export const HeroSection = () => {
       return;
     }
 
-    // Check if user description is provided
+    // Check if script is provided (should be auto-generated on upload)
     if (!prompt.trim()) {
       showToast(tToast('enterVideoDescription'), "warning");
       return;
@@ -399,24 +436,23 @@ export const HeroSection = () => {
       setIsGenerating(true);
       setGenerationError(null);
       setGenerationProgress(t('startingGeneration'));
-      console.log("🎬 All-In-One Generation with:", {
-        description: prompt,
+      console.log("🎬 All-In-One Generation with PRE-GENERATED SCRIPT:", {
+        script: prompt,
         model: selectedModel?.id || 'sora-2',
         file: uploadedFile.name,
       });
 
-      // Call flexible video generation API (Mode 2)
-      const video = await videoService.generateFlexible(
+      // 🔥 NEW: Use generate-simple API (no GPT-4o, direct video generation)
+      const video = await videoService.generateSimple(
         uploadedFile,
-        prompt,
+        prompt,  // Pre-generated script from auto-generation
         {
           duration: 4,
-          model: selectedModel?.id || 'sora-2',
-          language: locale
+          model: selectedModel?.id || 'sora-2'
         }
       );
 
-      console.log("✅ All-In-One video task created:", video);
+      console.log("✅ All-In-One video task created (simple mode):", video);
       setGenerationProgress(t('connectingStream'));
 
       // Start SSE connection for real-time updates
@@ -592,7 +628,7 @@ export const HeroSection = () => {
     }
   };
 
-  const handleFileUpload = (file: File) => {
+  const handleFileUpload = async (file: File) => {
     setUploadedFile(file);
     setSelectedImage(null); // Clear thumbnail selection when file is uploaded
     setShowThumbnailPreview(false); // Hide thumbnail preview when file is uploaded
@@ -609,6 +645,11 @@ export const HeroSection = () => {
     reader.readAsDataURL(file);
 
     console.log("📁 File uploaded:", file.name, `${(file.size / (1024 * 1024)).toFixed(2)}MB`);
+
+    // 🔥 NEW: Auto-generate script after image upload (API A)
+    if (isAuthenticated && user && user.subscription_status === 'active') {
+      await autoGenerateScriptOnUpload(file);
+    }
   };
 
   const handleFileValidationError = (error: string) => {
@@ -947,8 +988,10 @@ export const HeroSection = () => {
                           alt="Selected"
                           fill
                           className="object-cover"
-                          sizes="80px"
-                          loading="lazy"
+                          sizes="(min-width: 640px) 56px, 64px"
+                          loading="eager"
+                          quality={80}
+                          priority
                         />
 
                         {/* Hover Overlay with Upload Icon - SUBTLE */}
@@ -990,7 +1033,7 @@ export const HeroSection = () => {
                           return;
                         }
 
-                        // Validate image dimensions
+                        // Validate image dimensions - only check minimum size
                         const reader = new FileReader();
                         reader.onload = (event) => {
                           const img = new window.Image();
@@ -998,24 +1041,12 @@ export const HeroSection = () => {
                             const width = img.width;
                             const height = img.height;
 
-                            // Sora 2 API supported dimensions - ONLY 1280x720 and 720x1280
-                            const SUPPORTED_DIMENSIONS = [
-                              { width: 1280, height: 720, label: "1280x720 (16:9 Landscape)" },
-                              { width: 720, height: 1280, label: "720x1280 (9:16 Portrait)" },
-                            ];
+                            // Minimum dimension requirement: both width and height must be >= 720px
+                            const MIN_DIMENSION = 720;
 
-                            const isSupported = SUPPORTED_DIMENSIONS.some(
-                              dim => dim.width === width && dim.height === height
-                            );
-
-                            if (!isSupported) {
-                              const supportedSizes = SUPPORTED_DIMENSIONS.map(d => d.label).join(", ");
+                            if (width < MIN_DIMENSION || height < MIN_DIMENSION) {
                               handleFileValidationError(
-                                tToast('unsupportedDimensions', {
-                                  width,
-                                  height,
-                                  supported: supportedSizes
-                                })
+                                `Image too small. Minimum dimension: ${MIN_DIMENSION}px. Your image: ${width}x${height}`
                               );
                               return;
                             }
@@ -1077,8 +1108,9 @@ export const HeroSection = () => {
                               alt={img.alt}
                               fill
                               className="object-cover"
-                              sizes="64px"
+                              sizes="(min-width: 640px) 44px, 48px"
                               loading="lazy"
+                              quality={75}
                             />
                           </button>
                         ))}
@@ -1241,30 +1273,25 @@ export const HeroSection = () => {
             <div className="relative aspect-video rounded-2xl overflow-hidden shadow-2xl" style={{ willChange: "transform" }}>
               {/* Priority 1: Show AI optimized image if available (script generation completed) */}
               {aiOptimizedImage ? (
-                <div className="relative w-full h-full bg-gradient-to-br from-purple-50 to-pink-50 group">
+                <div className="relative w-full h-full bg-gradient-to-br from-purple-50 to-pink-50">
                   <Image
                     src={aiOptimizedImage}
                     alt="AI Optimized Image"
                     fill
                     className="object-contain"
-                    sizes="(max-width: 768px) 100vw, 50vw"
+                    sizes="(max-width: 768px) 100vw, (max-width: 1024px) 47vw, 560px"
                     priority
+                    quality={90}
                   />
 
-                  {/* Status Badge - Not clickable */}
-                  <div className="absolute top-4 right-4 px-3 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg shadow-lg flex items-center gap-2">
+                  {/* Status Badge - Green outline style */}
+                  <div className="absolute top-4 right-4 px-3 py-2 bg-white border-2 border-green-500 text-green-600 rounded-lg shadow-md flex items-center gap-2">
                     <span className="text-xs font-semibold">AI Optimized</span>
-                  </div>
-
-                  {/* Image Info Overlay - Show on hover */}
-                  <div className="absolute bottom-4 left-4 right-4 bg-black/60 backdrop-blur-sm rounded-lg px-4 py-3 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    <p className="text-sm font-medium mb-1">✨ Image optimized for video generation</p>
-                    <p className="text-xs text-gray-300">Ready to generate your AI video</p>
                   </div>
                 </div>
               ) : showUploadedPreview && uploadedFilePreview ? (
                 /* Priority 2: Show uploaded file preview */
-                <div className="relative w-full h-full bg-gradient-to-br from-purple-50 to-pink-50 group">
+                <div className="relative w-full h-full bg-gradient-to-br from-purple-50 to-pink-50">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={uploadedFilePreview}
@@ -1272,38 +1299,27 @@ export const HeroSection = () => {
                     className="w-full h-full object-contain"
                   />
 
-                  {/* Status Badge - Not clickable */}
-                  <div className="absolute top-4 right-4 px-3 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg shadow-lg flex items-center gap-2">
+                  {/* Status Badge - Green outline style */}
+                  <div className="absolute top-4 right-4 px-3 py-2 bg-white border-2 border-green-500 text-green-600 rounded-lg shadow-md flex items-center gap-2">
                     <span className="text-xs font-semibold">Uploaded</span>
-                  </div>
-
-                  {/* Image Info Overlay - Show on hover */}
-                  <div className="absolute bottom-4 left-4 right-4 bg-black/60 backdrop-blur-sm rounded-lg px-4 py-3 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    <p className="text-sm font-medium mb-1">📤 Your uploaded image</p>
-                    <p className="text-xs text-gray-300">Click &ldquo;Enhance &amp; Scripting&rdquo; to generate professional script, or click &ldquo;Upload&rdquo; to change image</p>
                   </div>
                 </div>
               ) : showThumbnailPreview && selectedImage !== null ? (
                 /* Priority 3: Show selected thumbnail preview */
-                <div className="relative w-full h-full bg-gradient-to-br from-purple-50 to-pink-50 group">
+                <div className="relative w-full h-full bg-gradient-to-br from-purple-50 to-pink-50">
                   <Image
                     src={trialImages.find(img => img.id === selectedImage)?.highResSrc || ""}
                     alt={trialImages.find(img => img.id === selectedImage)?.alt || "Selected Image"}
                     fill
                     className="object-contain"
-                    sizes="(max-width: 768px) 100vw, 50vw"
+                    sizes="(max-width: 768px) 100vw, (max-width: 1024px) 47vw, 560px"
                     priority
+                    quality={85}
                   />
 
-                  {/* Status Badge - Not clickable */}
-                  <div className="absolute top-4 right-4 px-3 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg shadow-lg flex items-center gap-2">
+                  {/* Status Badge - Green outline style */}
+                  <div className="absolute top-4 right-4 px-3 py-2 bg-white border-2 border-green-500 text-green-600 rounded-lg shadow-md flex items-center gap-2">
                     <span className="text-xs font-semibold">Selected</span>
-                  </div>
-
-                  {/* Image Info Overlay - Show on hover */}
-                  <div className="absolute bottom-4 left-4 right-4 bg-black/60 backdrop-blur-sm rounded-lg px-4 py-3 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    <p className="text-sm font-medium mb-1">🖼️ {trialImages.find(img => img.id === selectedImage)?.alt}</p>
-                    <p className="text-xs text-gray-300">Click &ldquo;Enhance &amp; Scripting&rdquo; to generate professional script</p>
                   </div>
                 </div>
               ) : generatedVideo && generatedVideo.video_url ? (

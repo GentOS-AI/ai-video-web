@@ -367,6 +367,13 @@ export const uploadService = {
     });
     return data;
   },
+
+  /**
+   * Delete an uploaded image
+   */
+  async deleteImage(imageId: number): Promise<void> {
+    await apiClient.delete(`/upload/images/${imageId}`);
+  },
 };
 
 // User Service

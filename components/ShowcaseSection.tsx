@@ -81,10 +81,10 @@ export const ShowcaseSection = () => {
       <div className="max-w-7xl mx-auto">
         {/* Section Header */}
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
+          initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
+          transition={{ duration: 0.4 }}
           className="text-center mb-8 sm:mb-16 space-y-2 sm:space-y-4"
         >
           <h2 className="text-2xl sm:text-4xl lg:text-5xl font-bold text-text-primary">
@@ -102,7 +102,7 @@ export const ShowcaseSection = () => {
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.5, delay: 0.2 }}
+          transition={{ duration: 0.3, delay: 0.1 }}
           className="flex flex-wrap justify-center gap-2 sm:gap-3 mb-8 sm:mb-12 px-4"
         >
           {categories.map((category) => {
@@ -155,7 +155,7 @@ export const ShowcaseSection = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.2, ease: "easeOut" }}
+            transition={{ duration: 0.15, ease: "easeOut" }}
             className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-8"
           >
             {currentVideos.map((video, index) => {
@@ -165,15 +165,14 @@ export const ShowcaseSection = () => {
               return (
                 <motion.div
                   key={video.id}
-                  initial={{ opacity: 0, y: 20 }}
+                  initial={{ opacity: 0, y: 15 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3, delay: index * 0.02, ease: "easeOut" }}
+                  transition={{ duration: 0.25, delay: index * 0.015, ease: "easeOut" }}
                   className="group"
                   onMouseEnter={() => setHoveredId(video.id)}
                   onMouseLeave={() => setHoveredId(null)}
-                  style={{ willChange: "transform, opacity" }}
                 >
-                  <div className="relative rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-shadow duration-200 hover:-translate-y-1" style={{ willChange: "transform" }}>
+                  <div className="relative rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-shadow duration-200 hover:-translate-y-1">
                     {/* Video Container with aspect ratio */}
                     <div className="relative aspect-video bg-gradient-to-br from-purple-100 to-purple-200">
                       <VideoPlayer
@@ -191,7 +190,6 @@ export const ShowcaseSection = () => {
                           className={`absolute inset-0 bg-gradient-to-t from-primary/80 via-primary/40 to-transparent transition-opacity duration-200 pointer-events-none z-10 ${
                             isHovered ? "opacity-100" : "opacity-0"
                           }`}
-                          style={{ willChange: "opacity" }}
                         />
 
                         {/* Title and Description Overlay - Hidden when playing */}
@@ -259,10 +257,10 @@ export const ShowcaseSection = () => {
 
         {/* CTA Section */}
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
+          initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.6, delay: 0.3 }}
+          transition={{ duration: 0.4, delay: 0.15 }}
           className="mt-12 sm:mt-16 text-center"
         >
           <p className="text-sm sm:text-base text-text-secondary mb-4 sm:mb-6 px-4">

@@ -58,7 +58,7 @@ class Settings(BaseSettings):
     SORA_RESOLUTION: str = "1280x720"  # Landscape format
 
     # Mock Mode for Testing
-    USE_MOCK_SORA: bool = True  # Set to False to use real OpenAI API
+    USE_MOCK_SORA: bool = False  # Set to False to use real OpenAI API
 
     # Credits
     DEFAULT_USER_CREDITS: float = 100.0

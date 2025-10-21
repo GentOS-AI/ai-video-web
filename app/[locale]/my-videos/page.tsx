@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
@@ -8,10 +9,15 @@ import { ArrowLeft, Video as VideoIcon, Loader2, Film, RefreshCw, Image as Image
 import { useAuth } from "@/contexts/AuthContext";
 import { useNotification } from "@/contexts/NotificationContext";
 import { VideoCard } from "@/components/VideoCard";
-import { VideoModal } from "@/components/VideoModal";
 import { VideoStatusFilter, type VideoStatusType } from "@/components/VideoStatusFilter";
 import { getUserVideos, deleteVideo, retryVideo, type Video } from "@/lib/services/videoService";
 import { uploadService, type UploadedImage } from "@/lib/api/services";
+
+// Lazy load VideoModal - only loaded when user clicks play
+const VideoModal = dynamic(
+  () => import("@/components/VideoModal").then((mod) => ({ default: mod.VideoModal })),
+  { ssr: false }
+);
 
 type TabType = 'videos' | 'images';
 
@@ -178,8 +184,7 @@ export default function MediaCenterPage() {
       confirmVariant: 'danger',
       onConfirm: async () => {
         try {
-          // TODO: Add delete image API endpoint
-          // await uploadService.deleteImage(imageId);
+          await uploadService.deleteImage(imageId);
           setImages(prev => prev.filter(img => img.id !== imageId));
           showToast('Image deleted successfully', 'success');
         } catch (err) {
@@ -222,6 +227,7 @@ export default function MediaCenterPage() {
                     fill
                     className="object-cover"
                     sizes="48px"
+                    quality={75}
                   />
                 </div>
               ) : (
@@ -430,6 +436,8 @@ export default function MediaCenterPage() {
                               fill
                               className="object-contain group-hover:scale-105 transition-transform duration-300"
                               sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
+                              loading="lazy"
+                              quality={80}
                             />
 
                             {/* Hover Overlay */}
@@ -443,7 +451,10 @@ export default function MediaCenterPage() {
                             </div>
 
                             {/* Three-dot menu button (top-right) */}
-                            <div className="absolute top-3 right-3">
+                            <div
+                              className="absolute top-3 right-3 z-30"
+                              onClick={(e) => e.stopPropagation()}
+                            >
                               <div className="relative">
                                 <button
                                   onClick={(e) => {
@@ -461,7 +472,10 @@ export default function MediaCenterPage() {
                                     {/* Backdrop to close menu */}
                                     <div
                                       className="fixed inset-0 z-10"
-                                      onClick={() => setImageMenuOpen(null)}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setImageMenuOpen(null);
+                                      }}
                                     />
 
                                     {/* Menu items */}

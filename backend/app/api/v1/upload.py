@@ -259,3 +259,67 @@ async def validate_file(
 
     except HTTPException:
         raise
+
+
+@router.delete("/images/{image_id}")
+async def delete_uploaded_image(
+    image_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Delete an uploaded image
+
+    Requires authentication
+    Only the owner can delete their own images
+    """
+    try:
+        # Find the image
+        image = db.query(UploadedImage).filter(
+            UploadedImage.id == image_id,
+            UploadedImage.user_id == current_user.id
+        ).first()
+
+        if not image:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Image not found or you don't have permission to delete it"
+            )
+
+        # Delete the file from disk
+        try:
+            # Extract file path from URL
+            file_path = image.file_url.replace(settings.BASE_URL or "http://localhost:8000", "")
+            full_path = os.path.join(settings.UPLOAD_DIR, file_path.lstrip("/uploads/"))
+
+            if os.path.exists(full_path):
+                os.remove(full_path)
+                logger.info(f"  🗑️  Deleted file from disk: {full_path}")
+            else:
+                logger.warning(f"  ⚠️  File not found on disk: {full_path}")
+        except Exception as file_error:
+            logger.error(f"  ❌ Failed to delete file from disk: {file_error}")
+            # Continue with database deletion even if file deletion fails
+
+        # Delete the database record
+        db.delete(image)
+        db.commit()
+        logger.info(f"  ✅ Deleted image from database (ID: {image_id})")
+
+        return JSONResponse(
+            status_code=status.HTTP_200_OK,
+            content={
+                "message": "Image deleted successfully",
+                "image_id": image_id
+            }
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        logger.error(f"  ❌ Failed to delete image: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to delete image: {str(e)}"
+        )

@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
 import type { Video } from "@/lib/services/videoService";
-import { VideoPlayer } from "./VideoPlayer";
 
 interface VideoModalProps {
   video: Video | null;
@@ -13,6 +12,42 @@ interface VideoModalProps {
 }
 
 export const VideoModal = ({ video, isOpen, onClose }: VideoModalProps) => {
+  const [aspectRatio, setAspectRatio] = useState<'video' | 'portrait' | 'square'>('video');
+
+  // Detect video aspect ratio
+  useEffect(() => {
+    if (!isOpen || !video?.video_url) return;
+
+    const videoElement = document.createElement('video');
+    const videoUrl = `${process.env.NEXT_PUBLIC_API_URL?.replace('/api/v1', '')}${video.video_url}`;
+    videoElement.src = videoUrl;
+
+    const handleLoadedMetadata = () => {
+      const width = videoElement.videoWidth;
+      const height = videoElement.videoHeight;
+      const ratio = width / height;
+
+      console.log('Video dimensions:', { width, height, ratio });
+
+      if (ratio > 1.5) {
+        // Wide video (landscape)
+        setAspectRatio('video');
+      } else if (ratio < 0.75) {
+        // Tall video (portrait)
+        setAspectRatio('portrait');
+      } else {
+        // Square-ish video
+        setAspectRatio('square');
+      }
+    };
+
+    videoElement.addEventListener('loadedmetadata', handleLoadedMetadata);
+
+    return () => {
+      videoElement.removeEventListener('loadedmetadata', handleLoadedMetadata);
+    };
+  }, [isOpen, video]);
+
   // Close on ESC key
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
@@ -57,7 +92,13 @@ export const VideoModal = ({ video, isOpen, onClose }: VideoModalProps) => {
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
             transition={{ duration: 0.2, ease: "easeOut" }}
-            className="relative w-full max-w-6xl"
+            className={`relative w-full ${
+              aspectRatio === 'portrait'
+                ? 'max-w-lg'
+                : aspectRatio === 'square'
+                ? 'max-w-2xl'
+                : 'max-w-6xl'
+            }`}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Close Button - Floating top-right */}
@@ -69,14 +110,16 @@ export const VideoModal = ({ video, isOpen, onClose }: VideoModalProps) => {
               <X className="w-5 h-5 sm:w-6 sm:h-6 text-white group-hover:rotate-90 transition-transform duration-200" />
             </button>
 
-            {/* Video Player - Clean, borderless design */}
+            {/* Video Player - Clean, borderless design with dynamic aspect ratio */}
             {videoUrl && (
-              <div className="aspect-video bg-black rounded-lg sm:rounded-xl overflow-hidden shadow-2xl">
-                <VideoPlayer
+              <div className="bg-black rounded-lg sm:rounded-xl overflow-hidden shadow-2xl max-h-[90vh] flex items-center justify-center">
+                <video
                   src={videoUrl}
                   poster={video.poster_url || undefined}
-                  autoPlay={true}
-                  muted={false}
+                  controls
+                  autoPlay
+                  className="max-h-[90vh] max-w-full w-auto h-auto"
+                  style={{ objectFit: 'contain' }}
                 />
               </div>
             )}

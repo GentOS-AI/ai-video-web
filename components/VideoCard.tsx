@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import dynamic from "next/dynamic";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import {
@@ -18,7 +19,14 @@ import {
 import type { Video } from "@/lib/services/videoService";
 import { getRelativeTime } from "@/lib/services/videoService";
 import { ShareDropdown } from "./ShareDropdown";
-import { YouTubeUploadModal, type YouTubeVideoMetadata } from "./YouTubeUploadModal";
+
+// Lazy load YouTubeUploadModal - only loaded when user clicks share
+const YouTubeUploadModal = dynamic(
+  () => import("./YouTubeUploadModal").then((mod) => ({ default: mod.YouTubeUploadModal })),
+  { ssr: false }
+);
+
+import type { YouTubeVideoMetadata } from "./YouTubeUploadModal";
 
 // Helper function to convert relative URLs to absolute URLs
 const getAbsoluteUrl = (url: string | null | undefined): string | null => {
@@ -150,7 +158,7 @@ export const VideoCard = ({ video, onPlay, onDelete, onRetry }: VideoCardProps) 
                 src={posterUrl}
                 alt={video.prompt}
                 fill
-                className="object-cover"
+                className="object-contain bg-gray-50"
                 onError={() => setImageError(true)}
                 sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
               />
@@ -160,7 +168,7 @@ export const VideoCard = ({ video, onPlay, onDelete, onRetry }: VideoCardProps) 
                 src={referenceImageUrl}
                 alt={video.prompt}
                 fill
-                className="object-cover opacity-60"
+                className="object-contain bg-gray-50 opacity-60"
                 onError={() => setImageError(true)}
                 sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
               />
@@ -168,7 +176,7 @@ export const VideoCard = ({ video, onPlay, onDelete, onRetry }: VideoCardProps) 
               // Priority 3: Use video first frame as thumbnail
               <video
                 src={videoUrl}
-                className="w-full h-full object-cover"
+                className="w-full h-full object-contain bg-gray-50"
                 muted
                 playsInline
                 preload="metadata"
@@ -204,7 +212,10 @@ export const VideoCard = ({ video, onPlay, onDelete, onRetry }: VideoCardProps) 
         )}
 
         {/* Three-dot menu button (top-right) */}
-        <div className="absolute top-3 right-3">
+        <div
+          className="absolute top-3 right-3 z-30"
+          onClick={(e) => e.stopPropagation()}
+        >
           <div className="relative">
             <button
               onClick={(e) => {
@@ -222,7 +233,10 @@ export const VideoCard = ({ video, onPlay, onDelete, onRetry }: VideoCardProps) 
                 {/* Backdrop to close menu */}
                 <div
                   className="fixed inset-0 z-10"
-                  onClick={() => setShowMenu(false)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowMenu(false);
+                  }}
                 />
 
                 {/* Menu items */}
@@ -336,6 +350,10 @@ export const VideoCard = ({ video, onPlay, onDelete, onRetry }: VideoCardProps) 
               videoUrl={videoUrl}
               videoTitle={video.prompt}
               onShareToYouTube={() => setShowYouTubeModal(true)}
+              onShareToTikTok={() => {
+                console.log("TikTok share clicked - coming soon");
+                // TikTok sharing coming soon - currently shows "Coming soon" in dropdown
+              }}
             />
           )}
         </div>

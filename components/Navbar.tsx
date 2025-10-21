@@ -288,6 +288,7 @@ export const Navbar = () => {
                       className="w-8 h-8 rounded-full"
                       loading="lazy"
                       sizes="32px"
+                      quality={75}
                     />
                   ) : (
                     <div className="w-8 h-8 rounded-full bg-gradient-purple flex items-center justify-center text-white font-semibold text-sm">
@@ -487,6 +488,7 @@ export const Navbar = () => {
                         className="w-10 h-10 rounded-full"
                         loading="lazy"
                         sizes="40px"
+                        quality={75}
                       />
                     ) : (
                       <div className="w-10 h-10 rounded-full bg-gradient-purple flex items-center justify-center text-white font-semibold">

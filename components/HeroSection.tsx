@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import dynamic from "next/dynamic";
 import { VideoPlayer } from "./VideoPlayer";
+import { ShareDropdown } from "./ShareDropdown";
 import { Sparkles, Loader2, AlertCircle, Upload, X, ChevronDown, Check, Wand2 } from "lucide-react";
 import { motion } from "framer-motion";
 import Image from "next/image";
@@ -20,6 +21,14 @@ const PricingModal = dynamic(
   () => import("./PricingModal").then((mod) => ({ default: mod.PricingModal })),
   { ssr: false }
 );
+
+// Lazy load YouTubeUploadModal - only loaded when user clicks share
+const YouTubeUploadModal = dynamic(
+  () => import("./YouTubeUploadModal").then((mod) => ({ default: mod.YouTubeUploadModal })),
+  { ssr: false }
+);
+
+import type { YouTubeVideoMetadata } from "./YouTubeUploadModal";
 
 // Use ShowcaseSection's 3rd video (index 2) as default Hero video
 const defaultHeroVideo = showcaseVideos[2]!; // "Food & Beverage Ad" - Non-null assertion since we know it exists
@@ -64,6 +73,7 @@ export const HeroSection = () => {
   const [selectedModel, setSelectedModel] = useState(aiModels[0]);
   const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false);
   const [isPricingOpen, setIsPricingOpen] = useState(false);
+  const [showYouTubeModal, setShowYouTubeModal] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const maxChars = 5000;
 
@@ -718,6 +728,31 @@ export const HeroSection = () => {
     console.log("❌ Replace cancelled");
   };
 
+  // Handle YouTube upload
+  const handleYouTubeUpload = async (metadata: YouTubeVideoMetadata) => {
+    // TODO: Implement actual YouTube upload API call
+    console.log('YouTube upload metadata:', metadata);
+    console.log('Video URL:', generatedVideo?.video_url);
+
+    return new Promise<void>((resolve, reject) => {
+      setTimeout(() => {
+        // Simulate success (90%) or failure (10%)
+        if (Math.random() > 0.1) {
+          console.log('YouTube upload successful!');
+          resolve();
+        } else {
+          reject(new Error('Upload failed. Please check your YouTube connection.'));
+        }
+      }, 2000);
+    });
+  };
+
+  // Handle TikTok share (coming soon)
+  const handleTikTokShare = () => {
+    showToast("TikTok sharing coming soon!", "info");
+    console.log("TikTok share clicked - feature coming soon");
+  };
+
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -746,7 +781,7 @@ export const HeroSection = () => {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, ease: "easeOut" }}
+            transition={{ duration: 0.4, ease: "easeOut" }}
             className="space-y-4 sm:space-y-6 pt-6 md:pt-0"
           >
             {/* Heading */}
@@ -1259,9 +1294,8 @@ export const HeroSection = () => {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.1, ease: "easeOut" }}
+            transition={{ duration: 0.4, delay: 0.05, ease: "easeOut" }}
             className="relative pt-8 lg:pt-0"
-            style={{ willChange: "transform, opacity" }}
           >
             {/* Simplified Background - Lightweight gradient */}
             <div className="absolute inset-0 -z-10 hidden lg:block">
@@ -1270,9 +1304,52 @@ export const HeroSection = () => {
             </div>
 
             {/* Main Video/Image Container */}
-            <div className="relative aspect-video rounded-2xl overflow-hidden shadow-2xl" style={{ willChange: "transform" }}>
-              {/* Priority 1: Show AI optimized image if available (script generation completed) */}
-              {aiOptimizedImage ? (
+            <div className="relative aspect-video rounded-2xl overflow-hidden shadow-2xl">
+              {/* Priority 1: Show video area when generating or completed */}
+              {(isGenerating || (generatedVideo && generatedVideo.video_url)) ? (
+                <div className="relative w-full h-full">
+                  {generatedVideo && generatedVideo.video_url ? (
+                    /* Video completed - show video player */
+                    <>
+                      <VideoPlayer
+                        src={`${process.env.NEXT_PUBLIC_API_URL?.replace('/api/v1', '')}${generatedVideo.video_url}`}
+                        poster={generatedVideo.poster_url || undefined}
+                        autoPlay={true}
+                      />
+
+                      {/* Share Dropdown - Top Right Corner */}
+                      <div className="absolute top-4 right-4 z-50">
+                        <ShareDropdown
+                          videoUrl={generatedVideo.video_url}
+                          videoTitle={generatedVideo.prompt || "Generated Video"}
+                          onShareToYouTube={() => setShowYouTubeModal(true)}
+                          onShareToTikTok={handleTikTokShare}
+                        />
+                      </div>
+                    </>
+                  ) : (
+                    /* Video generating - show loading with status badge */
+                    <>
+                      <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-purple-100 to-pink-100">
+                        <Loader2 className="w-16 h-16 text-purple-600 animate-spin mb-4" />
+                        <p className="text-purple-600 font-semibold text-lg mb-2">
+                          {t('videoArea.generating')}
+                        </p>
+                        <p className="text-purple-500 text-sm text-center px-4">
+                          {generationProgress}
+                        </p>
+                      </div>
+
+                      {/* Generating Status Badge - Top Right Corner */}
+                      <div className="absolute top-4 right-4 z-50 px-3 py-2 bg-purple-50/90 backdrop-blur-sm border border-purple-200 text-purple-600 rounded-lg shadow-sm flex items-center gap-2">
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <span className="text-xs font-semibold">Generating...</span>
+                      </div>
+                    </>
+                  )}
+                </div>
+              ) : aiOptimizedImage ? (
+                /* Priority 2: Show AI optimized image if available (script generation completed) */
                 <div className="relative w-full h-full bg-gradient-to-br from-purple-50 to-pink-50">
                   <Image
                     src={aiOptimizedImage}
@@ -1284,8 +1361,8 @@ export const HeroSection = () => {
                     quality={90}
                   />
 
-                  {/* Status Badge - Green outline style */}
-                  <div className="absolute top-4 right-4 px-3 py-2 bg-white border-2 border-green-500 text-green-600 rounded-lg shadow-md flex items-center gap-2">
+                  {/* Status Badge - Light style */}
+                  <div className="absolute top-4 right-4 px-3 py-2 bg-green-50/90 backdrop-blur-sm border border-green-200 text-green-600 rounded-lg shadow-sm flex items-center gap-2">
                     <span className="text-xs font-semibold">AI Optimized</span>
                   </div>
                 </div>
@@ -1299,9 +1376,20 @@ export const HeroSection = () => {
                     className="w-full h-full object-contain"
                   />
 
-                  {/* Status Badge - Green outline style */}
-                  <div className="absolute top-4 right-4 px-3 py-2 bg-white border-2 border-green-500 text-green-600 rounded-lg shadow-md flex items-center gap-2">
-                    <span className="text-xs font-semibold">Uploaded</span>
+                  {/* Status Badge - Show "Scripting..." when generating script, otherwise "Ready" */}
+                  <div className={`absolute top-4 right-4 px-3 py-2 rounded-lg shadow-sm flex items-center gap-2 ${
+                    isGeneratingScript
+                      ? 'bg-purple-50/90 backdrop-blur-sm border border-purple-200 text-purple-600'
+                      : 'bg-green-50/90 backdrop-blur-sm border border-green-200 text-green-600'
+                  }`}>
+                    {isGeneratingScript ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <span className="text-xs font-semibold">Scripting...</span>
+                      </>
+                    ) : (
+                      <span className="text-xs font-semibold">Ready</span>
+                    )}
                   </div>
                 </div>
               ) : showThumbnailPreview && selectedImage !== null ? (
@@ -1317,28 +1405,10 @@ export const HeroSection = () => {
                     quality={85}
                   />
 
-                  {/* Status Badge - Green outline style */}
-                  <div className="absolute top-4 right-4 px-3 py-2 bg-white border-2 border-green-500 text-green-600 rounded-lg shadow-md flex items-center gap-2">
+                  {/* Status Badge - Light style */}
+                  <div className="absolute top-4 right-4 px-3 py-2 bg-blue-50/90 backdrop-blur-sm border border-blue-200 text-blue-600 rounded-lg shadow-sm flex items-center gap-2">
                     <span className="text-xs font-semibold">Selected</span>
                   </div>
-                </div>
-              ) : generatedVideo && generatedVideo.video_url ? (
-                /* Priority 4: Show generated video if available */
-                <VideoPlayer
-                  src={`${process.env.NEXT_PUBLIC_API_URL?.replace('/api/v1', '')}${generatedVideo.video_url}`}
-                  poster={generatedVideo.poster_url || undefined}
-                  autoPlay={true}
-                />
-              ) : isGenerating ? (
-                /* Priority 5: Loading state */
-                <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-purple-100 to-pink-100">
-                  <Loader2 className="w-16 h-16 text-purple-600 animate-spin mb-4" />
-                  <p className="text-purple-600 font-semibold text-lg mb-2">
-                    {t('videoArea.generating')}
-                  </p>
-                  <p className="text-purple-500 text-sm text-center px-4">
-                    {generationProgress}
-                  </p>
                 </div>
               ) : (
                 /* Priority 6: Default sample video - ShowcaseSection 3rd video */
@@ -1389,7 +1459,7 @@ export const HeroSection = () => {
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.3 }}
+              transition={{ duration: 0.4, delay: 0.15 }}
               className="mt-5 sm:mt-8 flex items-center justify-center gap-3 sm:gap-4 px-4 py-3 rounded-lg"
             >
               {/* User Avatars */}
@@ -1408,6 +1478,8 @@ export const HeroSection = () => {
                           width={36}
                           height={36}
                           className="w-full h-full object-cover"
+                          loading="lazy"
+                          quality={70}
                         />
                       ) : (
                         <div className="w-full h-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white text-xs font-bold">
@@ -1514,6 +1586,16 @@ export const HeroSection = () => {
             </div>
           </motion.div>
         </div>
+      )}
+
+      {/* YouTube Upload Modal */}
+      {generatedVideo && (
+        <YouTubeUploadModal
+          isOpen={showYouTubeModal}
+          onClose={() => setShowYouTubeModal(false)}
+          videoTitle={generatedVideo.prompt || "Generated Video"}
+          onUpload={handleYouTubeUpload}
+        />
       )}
 
     </section>

@@ -308,6 +308,36 @@ class SoraVideoGenerator:
             image_bytes = base64.b64decode(encoded_image)
             resolution = self.detect_resolution_from_image(image_bytes)
 
+            # 🔥 CRITICAL: Verify image dimensions match target resolution
+            from PIL import Image
+            from io import BytesIO
+            img = Image.open(BytesIO(image_bytes))
+            actual_width, actual_height = img.size
+            target_resolution = resolution  # e.g., "1280x720" or "720x1280"
+            target_width, target_height = map(int, target_resolution.split('x'))
+
+            print(f"🔍 DIMENSION VERIFICATION:")
+            print(f"   Actual image size: {actual_width}x{actual_height}")
+            print(f"   Target Sora size: {target_width}x{target_height}")
+
+            if actual_width != target_width or actual_height != target_height:
+                error_msg = (
+                    f"❌ IMAGE DIMENSION MISMATCH!\n"
+                    f"   Actual: {actual_width}x{actual_height}\n"
+                    f"   Expected: {target_width}x{target_height}\n"
+                    f"   This will cause Sora API 400 error!"
+                )
+                print(error_msg)
+                if logger:
+                    logger.publish_error(error_msg)
+                raise ValueError(
+                    f"Image dimensions ({actual_width}x{actual_height}) don't match "
+                    f"target resolution ({target_width}x{target_height}). "
+                    f"Please ensure images are resized correctly before saving."
+                )
+
+            print(f"   ✅ Dimensions match! Safe to proceed.")
+
             if logger:
                 logger.publish(2, f"✅ Image processed ({resolution})")
 
@@ -324,7 +354,6 @@ class SoraVideoGenerator:
             # Call OpenAI Sora 2 API
             # Create a tuple with (filename, file_content, mime_type)
             # OpenAI expects this format for file uploads
-            from io import BytesIO
             image_file = ("reference_image.jpg", BytesIO(image_bytes), "image/jpeg")
 
             response = self.client.videos.create(

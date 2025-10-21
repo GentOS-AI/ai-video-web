@@ -39,8 +39,12 @@ export const Navbar = () => {
   const [isCreditsModalOpen, setIsCreditsModalOpen] = useState(false);
   const [isLangMenuOpen, setIsLangMenuOpen] = useState(false);
   const [isMobileLangMenuOpen, setIsMobileLangMenuOpen] = useState(false);
+  const lastScrollY = useRef(0);
+  const logoRef = useRef<HTMLDivElement>(null);
+  const animationFrameId = useRef<number>();
   const userMenuRef = useRef<HTMLDivElement>(null);
   const langMenuRef = useRef<HTMLDivElement>(null);
+  const currentRotation = useRef(0);
 
   const handleGoogleLogin = () => {
     const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
@@ -116,6 +120,52 @@ export const Navbar = () => {
     return currentPath.startsWith(targetPath);
   };
 
+  // Handle scroll to trigger logo rotation based on direction - Performance optimized
+  useEffect(() => {
+    let ticking = false;
+
+    const handleScroll = () => {
+      if (!ticking) {
+        ticking = true;
+
+        if (animationFrameId.current) {
+          cancelAnimationFrame(animationFrameId.current);
+        }
+
+        animationFrameId.current = requestAnimationFrame(() => {
+          const currentScrollY = window.scrollY;
+          const scrollDiff = currentScrollY - lastScrollY.current;
+
+          // Only trigger if scrolled more than 100px from last position
+          if (Math.abs(scrollDiff) > 100) {
+            const logo = logoRef.current;
+            if (logo) {
+              // Scrolling down: clockwise (+360), up: counter-clockwise (-360)
+              const rotationDelta = scrollDiff > 0 ? 360 : -360;
+              currentRotation.current += rotationDelta;
+
+              // Apply rotation directly via CSS for best performance
+              logo.style.transform = `rotate(${currentRotation.current}deg)`;
+              logo.style.transition = 'transform 0.8s cubic-bezier(0.4, 0, 0.2, 1)';
+
+              lastScrollY.current = currentScrollY;
+            }
+          }
+
+          ticking = false;
+        });
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      if (animationFrameId.current) {
+        cancelAnimationFrame(animationFrameId.current);
+      }
+    };
+  }, []);
+
   // Handle click outside to close user menu
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -144,9 +194,15 @@ export const Navbar = () => {
       <div className="w-full md:max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo Section */}
-          <Link href={`/${locale}`} className="flex items-center space-x-2 cursor-pointer hover:opacity-80 transition-opacity">
-            <AnimatedLogo size={32} />
-            <span className="text-xl font-bold flex items-center gap-0">
+          <Link href={`/${locale}`} className="flex items-center space-x-2 cursor-pointer group">
+            <div
+              ref={logoRef}
+              className="transition-transform duration-200 ease-out group-hover:scale-105"
+              style={{ display: 'inline-block' }}
+            >
+              <AnimatedLogo size={32} />
+            </div>
+            <span className="text-xl font-bold flex items-center gap-0 transition-opacity duration-200 group-hover:opacity-80">
               <span className="bg-gradient-to-r from-purple-600 via-pink-500 to-purple-600 bg-clip-text text-transparent">
                 Moky
               </span>

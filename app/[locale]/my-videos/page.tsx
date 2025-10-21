@@ -39,9 +39,6 @@ export default function MediaCenterPage() {
   const [page, setPage] = useState(1);
   const [totalVideos, setTotalVideos] = useState(0);
 
-  // Refresh countdown state
-  const [refreshCountdown, setRefreshCountdown] = useState(10);
-
   // Image states
   const [images, setImages] = useState<UploadedImage[]>([]);
   const [imagesLoading, setImagesLoading] = useState(false);
@@ -118,41 +115,7 @@ export default function MediaCenterPage() {
     }
   }, [activeTab, isAuthenticated, fetchVideos, fetchImages]);
 
-  // Auto-refresh for processing videos with countdown
-  useEffect(() => {
-    if (activeTab !== 'videos') return;
-
-    const hasProcessingVideos = videos.some(
-      v => v.status === 'pending' || v.status === 'processing'
-    );
-
-    if (!hasProcessingVideos) {
-      setRefreshCountdown(10);
-      return;
-    }
-
-    // Countdown timer (every second)
-    const countdownInterval = setInterval(() => {
-      setRefreshCountdown((prev) => {
-        if (prev <= 1) {
-          return 10; // Reset to 10 seconds
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    // Refresh data (every 10 seconds)
-    const refreshInterval = setInterval(() => {
-      console.log('🔄 Refreshing videos with processing status...');
-      fetchVideos();
-      setRefreshCountdown(10); // Reset countdown
-    }, 10000);
-
-    return () => {
-      clearInterval(countdownInterval);
-      clearInterval(refreshInterval);
-    };
-  }, [videos, fetchVideos, activeTab]);
+  // Auto-refresh removed - users can manually refresh using the button
 
   // Filter videos by active status
   const filteredVideos = activeStatus === 'all'
@@ -202,7 +165,6 @@ export default function MediaCenterPage() {
   };
 
   const handleManualRefresh = async () => {
-    setRefreshCountdown(10); // Reset countdown
     await fetchVideos();
     showToast('Video list refreshed', 'success');
   };
@@ -322,7 +284,7 @@ export default function MediaCenterPage() {
                   counts={statusCounts}
                 />
 
-                {/* Refresh Button with Countdown */}
+                {/* Refresh Button */}
                 {videos.some(v => v.status === 'pending' || v.status === 'processing') && (
                   <motion.button
                     initial={{ opacity: 0, x: 20 }}
@@ -332,10 +294,10 @@ export default function MediaCenterPage() {
                     className="flex items-center gap-2 px-4 py-2 bg-purple-50 border border-purple-200 rounded-lg hover:bg-purple-100 hover:border-purple-300 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <RefreshCw
-                      className={`w-4 h-4 text-purple-600 ${loading || refreshCountdown <= 3 ? 'animate-spin' : ''}`}
+                      className={`w-4 h-4 text-purple-600 ${loading ? 'animate-spin' : ''}`}
                     />
                     <span className="text-sm font-medium text-purple-700">
-                      {loading ? 'Refreshing...' : `Refresh in ${refreshCountdown}s`}
+                      {loading ? 'Refreshing...' : 'Refresh'}
                     </span>
                   </motion.button>
                 )}

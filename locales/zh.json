@@ -80,7 +80,7 @@
     "ctaButtonMobile": "开始免费试用"
   },
   "pricing": {
-    "title": "加入我们的PRO会员",
+    "title": "订阅",
     "subtitle": "释放AI视频生成的强大力量",
     "subscribeNow": "立即订阅",
     "popular": "热门",
@@ -93,8 +93,8 @@
       "price": "$29.99",
       "period": "/月",
       "description": "适合个人和小型项目",
-      "feature1": "500积分/月 (~5个视频)",
-      "feature2": "高清分辨率（1080p）",
+      "feature1": "1000积分/月 (~最多40个视频)",
+      "feature2": "高清分辨率（720p）",
       "feature3": "Sora 2 AI模型",
       "feature4": "标准处理速度",
       "feature5": "邮件支持",
@@ -105,7 +105,7 @@
       "price": "$129.99",
       "period": "/年",
       "description": "最适合专业人士和企业",
-      "feature1": "3000积分/年 (~30个视频)",
+      "feature1": "12000积分/年 (~最多480个视频)",
       "feature2": "支持4K分辨率",
       "feature3": "Sora 2 Pro AI模型",
       "feature4": "优先处理（快3倍）",

@@ -80,7 +80,7 @@
     "ctaButtonMobile": "Start Free"
   },
   "pricing": {
-    "title": "Join Our PRO Membership",
+    "title": "Subscription",
     "subtitle": "Unlock the power of AI video generation",
     "subscribeNow": "Subscribe Now",
     "popular": "POPULAR",
@@ -93,8 +93,8 @@
       "price": "$29.99",
       "period": "/month",
       "description": "Perfect for individuals and small projects",
-      "feature1": "500 credits/month (~5 videos)",
-      "feature2": "HD resolution (1080p)",
+      "feature1": "1000 credits/month (~UP to 40 videos)",
+      "feature2": "HD resolution (720p)",
       "feature3": "Sora 2 AI model",
       "feature4": "Standard processing speed",
       "feature5": "Email support",
@@ -105,7 +105,7 @@
       "price": "$129.99",
       "period": "/year",
       "description": "Best for professionals and businesses",
-      "feature1": "3000 credits/year (~30 videos)",
+      "feature1": "12000 credits/year (~UP to 480 videos)",
       "feature2": "4K resolution support",
       "feature3": "Sora 2 Pro AI model",
       "feature4": "Priority processing (3x faster)",

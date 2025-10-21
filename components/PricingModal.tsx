@@ -34,7 +34,7 @@ export const PricingModal = ({ isOpen, onClose }: PricingModalProps) => {
         period: "/mo.",
         billingNote: t('billedAnnually'),
         description: t('pro.description'),
-        credits: t('yearlyCredits', { count: 3000 }),
+        credits: t('yearlyCredits', { count: 12000 }),
         features: [
           t('pro.feature1'),
           t('pro.feature2'),
@@ -59,7 +59,7 @@ export const PricingModal = ({ isOpen, onClose }: PricingModalProps) => {
         billingNote: t('billedMonthly'),
         billingNoteColor: 'gray',
         description: t('basic.description'),
-        credits: t('monthlyCredits', { count: 500 }),
+        credits: t('monthlyCredits', { count: 1000 }),
         features: [
           t('basic.feature1'),
           t('basic.feature2'),

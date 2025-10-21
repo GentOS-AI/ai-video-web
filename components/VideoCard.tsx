@@ -14,10 +14,11 @@ import {
   Film,
   Download,
   MoreVertical,
-  Share2
 } from "lucide-react";
 import type { Video } from "@/lib/services/videoService";
 import { getRelativeTime } from "@/lib/services/videoService";
+import { ShareDropdown } from "./ShareDropdown";
+import { YouTubeUploadModal, type YouTubeVideoMetadata } from "./YouTubeUploadModal";
 
 // Helper function to convert relative URLs to absolute URLs
 const getAbsoluteUrl = (url: string | null | undefined): string | null => {
@@ -80,6 +81,7 @@ const statusConfig = {
 export const VideoCard = ({ video, onPlay, onDelete, onRetry }: VideoCardProps) => {
   const [imageError, setImageError] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const [showYouTubeModal, setShowYouTubeModal] = useState(false);
 
   const statusInfo = statusConfig[video.status];
   const StatusIcon = statusInfo.icon;
@@ -102,49 +104,31 @@ export const VideoCard = ({ video, onPlay, onDelete, onRetry }: VideoCardProps) 
     }
   };
 
-  const handleDownload = async () => {
+  const handleDownload = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent triggering video modal
     if (!videoUrl) return;
 
-    try {
-      // Create a temporary anchor element to trigger download
-      const link = document.createElement('a');
-      link.href = videoUrl;
-      link.download = `video_${video.id}_${Date.now()}.mp4`;
-      link.target = '_blank';
-
-      // Append to body, click, and remove
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    } catch (error) {
-      console.error('Download failed:', error);
-    }
+    // Open video in new tab
+    window.open(videoUrl, '_blank');
   };
 
-  const handleShare = async () => {
-    if (!videoUrl) return;
+  const handleYouTubeUpload = async (metadata: YouTubeVideoMetadata) => {
+    // TODO: Implement actual YouTube upload API call
+    // For now, simulate upload with a delay
+    console.log('YouTube upload metadata:', metadata);
+    console.log('Video URL:', videoUrl);
 
-    // Check if Web Share API is available
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: 'AI Generated Video',
-          text: video.prompt,
-          url: videoUrl,
-        });
-      } catch (error) {
-        // User cancelled or error occurred
-        console.log('Share cancelled or failed:', error);
-      }
-    } else {
-      // Fallback: Copy video URL to clipboard
-      try {
-        await navigator.clipboard.writeText(videoUrl);
-        alert('Video link copied to clipboard!');
-      } catch (error) {
-        console.error('Failed to copy link:', error);
-      }
-    }
+    return new Promise<void>((resolve, reject) => {
+      setTimeout(() => {
+        // Simulate success (90%) or failure (10%)
+        if (Math.random() > 0.1) {
+          console.log('YouTube upload successful!');
+          resolve();
+        } else {
+          reject(new Error('Upload failed. Please check your YouTube connection.'));
+        }
+      }, 2000);
+    });
   };
 
   return (
@@ -348,16 +332,22 @@ export const VideoCard = ({ video, onPlay, onDelete, onRetry }: VideoCardProps) 
 
           {/* Share Button - Only for completed videos */}
           {video.status === 'completed' && videoUrl && (
-            <button
-              onClick={handleShare}
-              className="flex items-center justify-center p-2.5 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors"
-              title="Share video"
-            >
-              <Share2 className="w-4 h-4" />
-            </button>
+            <ShareDropdown
+              videoUrl={videoUrl}
+              videoTitle={video.prompt}
+              onShareToYouTube={() => setShowYouTubeModal(true)}
+            />
           )}
         </div>
       </div>
+
+      {/* YouTube Upload Modal */}
+      <YouTubeUploadModal
+        isOpen={showYouTubeModal}
+        onClose={() => setShowYouTubeModal(false)}
+        videoTitle={video.prompt}
+        onUpload={handleYouTubeUpload}
+      />
     </motion.div>
   );
 };

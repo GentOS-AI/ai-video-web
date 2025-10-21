@@ -270,7 +270,7 @@ export const ShowcaseSection = () => {
           </p>
           <a
             href="#hero"
-            className="inline-flex items-center justify-center px-6 py-3 sm:px-8 sm:py-4 text-base sm:text-lg font-medium text-white bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 rounded-lg transition-all hover:scale-105 shadow-lg shadow-purple-500/25"
+            className="inline-flex items-center justify-center px-6 py-3 sm:px-8 sm:py-4 text-base sm:text-lg font-medium text-white bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 rounded-full transition-all hover:scale-105 shadow-lg shadow-purple-500/25"
           >
             <span className="sm:hidden">{t('ctaButtonMobile')}</span>
             <span className="hidden sm:inline">{t('ctaButton')}</span>

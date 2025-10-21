@@ -219,12 +219,18 @@ export const HeroSection = () => {
     }
   };
 
-  // Main button handler - routes to script or video generation based on stage
+  // Main button handler - routes based on selected mode
   const handleMainButton = async () => {
-    if (workflowStage === 'script') {
-      await handleScriptGenerationFlow();
-    } else {
-      await handleVideoGeneration();
+    if (selectedMode === 'all-in-one') {
+      // All-In-One: Direct video generation with auto enhancement
+      await handleAllInOneGeneration();
+    } else if (selectedMode === 'enhance-script') {
+      // Pro Enhance: Two-step workflow
+      if (workflowStage === 'script') {
+        await handleScriptGenerationFlow();
+      } else {
+        await handleVideoGeneration();
+      }
     }
   };
 
@@ -322,6 +328,111 @@ export const HeroSection = () => {
 
       showToast(errorMessage, "error");
       setIsGeneratingScript(false);
+    }
+  };
+
+  // All-In-One Generation: One-click video generation with auto enhancement
+  const handleAllInOneGeneration = async () => {
+    // Validation
+    if (!isAuthenticated) {
+      showToast(tToast('loginToUseScriptGenerator'), "warning");
+      const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+      const redirectUri = `${window.location.origin}/auth/callback`;
+      const scope = 'openid email profile';
+
+      const googleAuthUrl =
+        `https://accounts.google.com/o/oauth2/v2/auth?` +
+        `client_id=${clientId}&` +
+        `redirect_uri=${encodeURIComponent(redirectUri)}&` +
+        `response_type=code&` +
+        `scope=${encodeURIComponent(scope)}&` +
+        `access_type=offline&` +
+        `prompt=consent`;
+
+      window.location.href = googleAuthUrl;
+      return;
+    }
+
+    // Check subscription
+    if (!user || user.subscription_plan === 'free') {
+      showToast(tToast('subscriptionRequired'), "warning");
+      setIsPricingOpen(true);
+      return;
+    }
+
+    if (user.subscription_status !== 'active') {
+      showToast(tToast('subscriptionExpired'), "warning");
+      setIsPricingOpen(true);
+      return;
+    }
+
+    // Check if image is uploaded (All-In-One requires uploaded file, not thumbnail)
+    if (!uploadedFile) {
+      showToast(tToast('uploadImageForScript'), "warning");
+      return;
+    }
+
+    // Check if user description is provided
+    if (!prompt.trim()) {
+      showToast(tToast('enterVideoDescription'), "warning");
+      return;
+    }
+
+    if (prompt.trim().length < 10) {
+      showToast(tToast('descriptionTooShort'), "warning");
+      return;
+    }
+
+    // Check credits
+    const requiredCredits = selectedModel?.credits || 100;
+    if (user.credits < requiredCredits) {
+      showToast(tToast('insufficientCredits', {
+        current: user.credits.toFixed(0),
+        required: requiredCredits,
+        model: selectedModel?.name || 'this model'
+      }), "error");
+      setIsPricingOpen(true);
+      return;
+    }
+
+    try {
+      setIsGenerating(true);
+      setGenerationError(null);
+      setGenerationProgress(t('startingGeneration'));
+      console.log("🎬 All-In-One Generation with:", {
+        description: prompt,
+        model: selectedModel?.id || 'sora-2',
+        file: uploadedFile.name,
+      });
+
+      // Call flexible video generation API (Mode 2)
+      const video = await videoService.generateFlexible(
+        uploadedFile,
+        prompt,
+        {
+          duration: 4,
+          model: selectedModel?.id || 'sora-2',
+          language: locale
+        }
+      );
+
+      console.log("✅ All-In-One video task created:", video);
+      setGenerationProgress(t('connectingStream'));
+
+      // Start SSE connection for real-time updates
+      setStreamingVideoId(video.id);
+
+      // Refresh user credits
+      await refreshUser();
+
+    } catch (error: unknown) {
+      console.error("❌ All-In-One generation failed:", error);
+      if (error instanceof Error) {
+        setGenerationError(error.message || "Failed to generate video");
+      } else {
+        setGenerationError("Failed to generate video");
+      }
+      setIsGenerating(false);
     }
   };
 
@@ -692,14 +803,10 @@ export const HeroSection = () => {
                                   </span>
                                 </div>
                               ) : (
-                                <div className="flex items-center gap-1 px-2 py-1 bg-purple-100 rounded-full">
-                                  <span className="text-[10px] font-semibold text-purple-600">
-                                    {model.credits}
+                                <div className="flex items-center gap-1 px-2 py-1 bg-green-100 rounded-full">
+                                  <span className="text-[10px] font-semibold text-green-600">
+                                    Free
                                   </span>
-                                  <svg className="w-3 h-3 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
-                                    <path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z"/>
-                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V5z" clipRule="evenodd"/>
-                                  </svg>
                                 </div>
                               )}
                             </div>
@@ -1007,7 +1114,12 @@ export const HeroSection = () => {
                                 const CurrentIcon = generationModes.find(m => m.id === selectedMode)?.icon || Sparkles;
                                 return <CurrentIcon className="w-4 h-4 sm:w-4.5 sm:h-4.5" />;
                               })()}
-                              <span className="hidden sm:inline">{generationModes.find(m => m.id === selectedMode)?.buttonLabel || 'Generate'}</span>
+                              <span className="hidden sm:inline">
+                                {selectedMode === 'enhance-script' && workflowStage === 'video'
+                                  ? 'Generate Video'
+                                  : generationModes.find(m => m.id === selectedMode)?.buttonLabel || 'Generate'
+                                }
+                              </span>
                               <span className="sm:hidden">Generate</span>
                             </>
                           )}

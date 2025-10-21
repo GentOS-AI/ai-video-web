@@ -201,7 +201,42 @@ export const videoService = {
    * Get available AI models
    */
   async getModels() {
-    const { data } = await apiClient.get('/videos/models/list');
+    const { data} = await apiClient.get('/videos/models/list');
+    return data;
+  },
+
+  /**
+   * Generate video with flexible mode (Mode 2: Original image + Auto-generate)
+   *
+   * This is for All-In-One generation:
+   * 1. Upload original image
+   * 2. Backend auto-enhances image with gpt-image-1
+   * 3. Backend generates script with GPT-4o
+   * 4. Backend generates video with Sora
+   *
+   * Use this for one-click video generation from original image
+   */
+  async generateFlexible(
+    imageFile: File,
+    userDescription: string,
+    options?: {
+      duration?: number;
+      model?: string;
+      language?: string;
+    }
+  ): Promise<Video> {
+    const formData = new FormData();
+    formData.append('image_file', imageFile);
+    formData.append('user_description', userDescription);
+    formData.append('duration', (options?.duration || 4).toString());
+    formData.append('model', options?.model || 'sora-2');
+    formData.append('language', options?.language || 'en');
+
+    const { data } = await apiClient.post<Video>('/videos/generate-flexible', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
     return data;
   },
 };

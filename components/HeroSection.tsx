@@ -12,6 +12,7 @@ import type { Video, RecentUsersResponse } from "@/lib/api/services";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNotification } from "@/contexts/NotificationContext";
 import { useVideoStream } from "@/lib/hooks/useVideoStream";
+import { useEnhancementStream } from "@/lib/hooks/useEnhancementStream";
 import { useTranslations, useLocale } from "next-intl";
 
 // Lazy load PricingModal since it's only shown on user interaction
@@ -25,8 +26,8 @@ const defaultHeroVideo = showcaseVideos[2]!; // "Food & Beverage Ad" - Non-null 
 
 // AI Models for dropdown with credit costs
 const aiModels = [
-  { id: "sora-2", name: "Sora2", version: "Standard", credits: 100 },
-  { id: "sora-2-pro", name: "Sora2 Pro", version: "Premium", credits: 300 },
+  { id: "sora-2", name: "Sora2", version: "Standard - 8s", credits: 100 },
+  { id: "sora-2-pro", name: "Sora2 Pro", version: "Premium - 12s", credits: 300 },
 ];
 
 // Generation modes for dropdown
@@ -43,8 +44,8 @@ const generationModes = [
   },
   {
     id: 'enhance-script' as GenerationMode,
-    name: 'Ads Pro Enhance',
-    buttonLabel: 'Ads Pro Enhance',
+    name: 'Pro Enhance',
+    buttonLabel: 'Pro Enhance',
     description: 'Professional image and scripting',
     icon: Crown,
     requiresPro: true,
@@ -82,6 +83,8 @@ export const HeroSection = () => {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [uploadedFilePreview, setUploadedFilePreview] = useState<string | null>(null);
   const [isGeneratingScript, setIsGeneratingScript] = useState(false);
+  const [streamingEnhancementId, setStreamingEnhancementId] = useState<number | null>(null);
+  const [enhancementProgress, setEnhancementProgress] = useState<string>("Starting...");
 
   // AI optimized image state
   const [aiOptimizedImage, setAiOptimizedImage] = useState<string | null>(null);
@@ -99,7 +102,7 @@ export const HeroSection = () => {
   const [showReplaceConfirmDialog, setShowReplaceConfirmDialog] = useState(false);
   const [pendingThumbnailId, setPendingThumbnailId] = useState<number | null>(null);
 
-  // Use SSE Hook for real-time progress updates
+  // Use SSE Hook for real-time video progress updates
   const { messages, isConnected, lastMessage } = useVideoStream({
     videoId: streamingVideoId,
     onComplete: (videoUrl) => {
@@ -119,6 +122,46 @@ export const HeroSection = () => {
       setGenerationError(error);
       setIsGenerating(false);
       setStreamingVideoId(null);
+    }
+  });
+
+  // Use SSE Hook for real-time enhancement progress updates
+  const {
+    messages: enhancementMessages,
+    isConnected: isEnhancementConnected,
+    lastMessage: lastEnhancementMessage,
+    progress: enhancementProgressPercent
+  } = useEnhancementStream({
+    taskId: streamingEnhancementId,
+    onComplete: (result) => {
+      console.log('🎉 Enhancement completed via SSE:', result);
+
+      // Set enhanced image URL
+      if (result.enhanced_image_url) {
+        setAiOptimizedImage(result.enhanced_image_url);
+        console.log("🖼️ Enhanced image received:", result.enhanced_image_url);
+      }
+
+      // Fill the textarea with generated script
+      setPrompt(result.script);
+
+      // Switch to video generation stage
+      setWorkflowStage('video');
+
+      setIsGeneratingScript(false);
+      setStreamingEnhancementId(null);
+      showToast(tToast('scriptGeneratedSuccess'), "success");
+      refreshUser();
+    },
+    onError: (error) => {
+      console.error('❌ Enhancement SSE error:', error);
+      showToast(error, "error");
+      setIsGeneratingScript(false);
+      setStreamingEnhancementId(null);
+    },
+    onProgress: (progress, message) => {
+      console.log(`📊 Enhancement progress: ${progress}% - ${message}`);
+      setEnhancementProgress(message);
     }
   });
 
@@ -230,18 +273,19 @@ export const HeroSection = () => {
     await generateScriptFromImage();
   };
 
-  // Generate script from image
+  // Generate script from image (ASYNC with SSE)
   const generateScriptFromImage = async () => {
     try {
       setIsGeneratingScript(true);
-      console.log('🤖 Generating enhanced script from image...');
+      setEnhancementProgress("Starting enhancement...");
+      console.log('🤖 Generating enhanced script from image with SSE...');
 
-      // Always use enhanced API (gpt-image-1 + GPT-4o)
-      console.log("📝 Using ENHANCED API (gpt-image-1 + GPT-4o)");
+      // Always use enhanced API (gpt-image-1 + GPT-4o) - ASYNC VERSION
+      console.log("📝 Using ENHANCED API ASYNC (gpt-image-1 + GPT-4o)");
       console.log("  User Description:", prompt || "Empty (AI will auto-analyze)");
       console.log("  Auto-detect orientation from uploaded image");
 
-      const result = await aiService.enhanceAndGenerateScript(
+      const task = await aiService.enhanceAndGenerateScriptAsync(
         uploadedFile!,
         prompt,  // Pass user input directly (empty string if no input)
         {
@@ -250,42 +294,16 @@ export const HeroSection = () => {
         }
       );
 
-      // Set enhanced image URL
-      if (result.enhanced_image_url) {
-        setAiOptimizedImage(result.enhanced_image_url);
-        console.log("🖼️ Enhanced image received:", result.enhanced_image_url);
-      }
+      console.log("✅ Enhancement task created:", task);
+      console.log("  Task ID:", task.id);
+      console.log("  Status:", task.status);
+      setEnhancementProgress("Connecting to enhancement stream...");
 
-      // Log product analysis
-      if (result.product_analysis) {
-        console.log("📊 Product Analysis:", result.product_analysis);
-      }
+      // Start SSE connection for real-time updates
+      setStreamingEnhancementId(task.id);
 
-      // Log enhancement details
-      if (result.enhancement_details) {
-        console.log("🎨 Enhancement Details:", result.enhancement_details);
-      }
-
-      console.log("✅ Script generated:", result);
-
-      // Fill the textarea with generated script
-      setPrompt(result.script);
-
-      // Switch to video generation stage
-      setWorkflowStage('video');
-
-      showToast(tToast('scriptGeneratedSuccess'), "success");
-
-      // Log additional info
-      if (result.style || result.camera || result.lighting) {
-        console.log("Script details:", {
-          style: result.style,
-          camera: result.camera,
-          lighting: result.lighting,
-          tokens: result.tokens_used || 0,
-          processing_time: 'processing_time' in result ? (result as { processing_time: number }).processing_time : 0
-        });
-      }
+      // Note: The SSE hook will handle the completion and errors
+      // No need to set isGeneratingScript to false here - the hook will do it
 
     } catch (error: unknown) {
       console.error("❌ Script generation failed:", error);
@@ -303,7 +321,6 @@ export const HeroSection = () => {
       }
 
       showToast(errorMessage, "error");
-    } finally {
       setIsGeneratingScript(false);
     }
   };
@@ -602,7 +619,7 @@ export const HeroSection = () => {
                   </span>
                 </span>
                 <span className="block text-gray-900 mt-1.5">
-                  by One Click
+                  One Click Away
                 </span>
               </h1>
               <p className="text-base sm:text-lg md:text-xl text-gray-600 leading-relaxed max-w-2xl">
@@ -670,9 +687,8 @@ export const HeroSection = () => {
                               </div>
                               {isPro ? (
                                 <div className="flex items-center gap-1 px-2 py-1 bg-gradient-to-r from-amber-400 to-orange-500 rounded-full">
-                                  <Crown className="w-3 h-3 text-white" />
                                   <span className="text-[10px] font-semibold text-white">
-                                    PRO
+                                    Subscribe
                                   </span>
                                 </div>
                               ) : (
@@ -706,8 +722,45 @@ export const HeroSection = () => {
               </div>
 
               {/* Generation Status/Error Messages */}
-              {(isGenerating || generationError) && (
+              {(isGenerating || isGeneratingScript || generationError) && (
                 <div className="px-4 py-3 sm:px-6 sm:py-4 bg-gray-50 border-t border-gray-100">
+                  {isGeneratingScript && (
+                    <div className="space-y-2">
+                      {/* Enhancement Progress with Connection Status */}
+                      <div className="flex items-center gap-2 text-sm text-purple-600">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span className="flex-1">{enhancementProgress}</span>
+                        {isEnhancementConnected && (
+                          <span className="flex items-center gap-1 text-xs text-green-600">
+                            <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                            Connected
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Progress Bar */}
+                      {enhancementProgressPercent > 0 && (
+                        <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                          <div
+                            className="bg-gradient-to-r from-purple-500 to-pink-500 h-full transition-all duration-300 ease-out"
+                            style={{ width: `${enhancementProgressPercent}%` }}
+                          />
+                        </div>
+                      )}
+
+                      {/* Historical Log Messages (Optional - Shows last 5 steps) */}
+                      {enhancementMessages.length > 0 && (
+                        <div className="mt-2 space-y-1 max-h-32 overflow-y-auto text-xs text-gray-600 bg-white rounded-lg p-2 border border-gray-200">
+                          {enhancementMessages.slice(-5).map((msg, index) => (
+                            <div key={index} className="flex items-start gap-2 py-0.5">
+                              <span className="text-purple-500 font-mono text-[10px] mt-0.5">[{msg.progress}%]</span>
+                              <span className="flex-1">{msg.message}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
                   {isGenerating && (
                     <div className="space-y-2">
                       {/* Current Step with Connection Status */}
@@ -1034,8 +1087,7 @@ export const HeroSection = () => {
                                     </span>
                                     {isPro && (
                                       <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-gradient-to-r from-amber-400 to-orange-500 text-white text-[10px] font-bold shadow-sm">
-                                        <Crown className="w-3 h-3" />
-                                        PRO
+                                        Subscribe
                                       </span>
                                     )}
                                   </div>

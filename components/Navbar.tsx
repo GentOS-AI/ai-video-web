@@ -41,7 +41,7 @@ export const Navbar = () => {
   const [isMobileLangMenuOpen, setIsMobileLangMenuOpen] = useState(false);
   const lastScrollY = useRef(0);
   const logoRef = useRef<HTMLDivElement>(null);
-  const animationFrameId = useRef<number>();
+  const animationFrameId = useRef<number | undefined>(undefined);
   const userMenuRef = useRef<HTMLDivElement>(null);
   const langMenuRef = useRef<HTMLDivElement>(null);
   const currentRotation = useRef(0);

@@ -12,7 +12,7 @@ interface ShareDropdownProps {
 
 export const ShareDropdown = ({
   videoUrl,
-  videoTitle,
+  videoTitle: _videoTitle,
   onShareToYouTube,
   className = "",
 }: ShareDropdownProps) => {

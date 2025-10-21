@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import dynamic from "next/dynamic";
 import { VideoPlayer } from "./VideoPlayer";
-import { Sparkles, Loader2, AlertCircle, Upload, X, ChevronDown, Check, Crown, Wand2 } from "lucide-react";
+import { Sparkles, Loader2, AlertCircle, Upload, X, ChevronDown, Check, Wand2 } from "lucide-react";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import { showcaseVideos, trialImages } from "@/lib/assets";
@@ -39,7 +39,7 @@ const generationModes = [
     name: 'All-In-One Generation',
     buttonLabel: 'All-In-One Generate',
     description: 'Full workflow: enhance, script & video',
-    icon: Wand2,
+    icon: Sparkles,
     requiresPro: false,
   },
   {
@@ -47,7 +47,7 @@ const generationModes = [
     name: 'Pro Enhance',
     buttonLabel: 'Pro Enhance',
     description: 'Professional image and scripting',
-    icon: Crown,
+    icon: Wand2,
     requiresPro: true,
   },
 ];
@@ -129,7 +129,7 @@ export const HeroSection = () => {
   const {
     messages: enhancementMessages,
     isConnected: isEnhancementConnected,
-    lastMessage: lastEnhancementMessage,
+    lastMessage: _lastEnhancementMessage,
     progress: enhancementProgressPercent
   } = useEnhancementStream({
     taskId: streamingEnhancementId,
@@ -803,8 +803,8 @@ export const HeroSection = () => {
                                   </span>
                                 </div>
                               ) : (
-                                <div className="flex items-center gap-1 px-2 py-1 bg-green-100 rounded-full">
-                                  <span className="text-[10px] font-semibold text-green-600">
+                                <div className="flex items-center gap-1 px-2 py-1 bg-purple-100 rounded-full">
+                                  <span className="text-[10px] font-semibold text-purple-600">
                                     Free
                                   </span>
                                 </div>

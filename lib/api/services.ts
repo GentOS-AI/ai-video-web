@@ -387,7 +387,7 @@ export const aiService = {
   },
 
   /**
-   * Enhanced script generation with gpt-image-1 and GPT-4o
+   * Enhanced script generation with gpt-image-1 and GPT-4o (SYNCHRONOUS)
    * Process:
    * 1. Auto-detect image orientation from uploaded image
    * 2. GPT-4o analyzes image and generates gpt-image-1 prompt
@@ -449,6 +449,77 @@ export const aiService = {
       },
       timeout: 120000, // 120 seconds (gpt-image-1 edit takes ~90s + script generation ~30s)
     });
+    return data;
+  },
+
+  /**
+   * Enhanced script generation with gpt-image-1 and GPT-4o (ASYNC with SSE)
+   * Returns immediately with task_id, use useEnhancementStream hook to watch progress
+   *
+   * Process (same as sync version, but async):
+   * 1. Auto-detect image orientation from uploaded image
+   * 2. Edit and enhance image using gpt-image-1
+   * 3. Resize for video requirements
+   * 4. Generate advertising script with GPT-4o
+   * 5. Stream real-time progress via SSE
+   */
+  async enhanceAndGenerateScriptAsync(
+    file: File,
+    userDescription?: string,
+    options?: {
+      duration?: number;
+      language?: string;
+    }
+  ): Promise<{
+    id: number;
+    user_id: number;
+    original_image_path: string;
+    user_description: string;
+    enhanced_image_url: string | null;
+    script: string | null;
+    product_analysis: string | null;
+    status: 'pending' | 'processing' | 'completed' | 'failed';
+    error_message: string | null;
+    tokens_used: number;
+    processing_time: number | null;
+    created_at: string;
+    updated_at: string;
+  }> {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    // Add optional user description
+    if (userDescription) {
+      formData.append('user_description', userDescription);
+    }
+
+    // Add options with defaults
+    formData.append('duration', (options?.duration || 4).toString());
+    formData.append('language', options?.language || 'en');
+
+    const { data } = await apiClient.post('/ai/enhance-and-script-async', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return data;
+  },
+
+  /**
+   * Get enhancement task status (for polling)
+   */
+  async getEnhancementStatus(taskId: number): Promise<{
+    id: number;
+    status: 'pending' | 'processing' | 'completed' | 'failed';
+    enhanced_image_url: string | null;
+    script: string | null;
+    product_analysis: string | null;
+    error_message: string | null;
+    tokens_used: number;
+    processing_time: number | null;
+    updated_at: string;
+  }> {
+    const { data } = await apiClient.get(`/ai/enhance-and-script/${taskId}/status`);
     return data;
   },
 };

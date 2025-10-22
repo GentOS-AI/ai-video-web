@@ -163,7 +163,7 @@
     "imageNotFound": "未找到所選圖片",
     "loginToUseScriptGenerator": "請登入以使用AI腳本產生器",
     "scriptGeneratorRequiresSubscription": "AI腳本產生器需要訂閱。請升級！",
-    "uploadImageForScript": "請先上傳圖片。縮圖選擇不支援腳本生成。",
+    "uploadImageForScript": "先描述產品廣告idea，然後上傳圖片，就可以一鍵生成專業的廣告影片。",
     "scriptGeneratedSuccess": "腳本生成成功！✨",
     "scriptGenerationFailed": "腳本生成失敗",
     "planSelected": "您選擇了 {plan} 方案！支付整合即將推出。",

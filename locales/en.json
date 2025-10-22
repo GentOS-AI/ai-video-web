@@ -163,7 +163,7 @@
     "imageNotFound": "Selected image not found",
     "loginToUseScriptGenerator": "Please login to use AI Script Generator",
     "scriptGeneratorRequiresSubscription": "AI Script Generator requires a subscription. Please upgrade!",
-    "uploadImageForScript": "Please upload an image first. Thumbnail selection is not supported for script generation.",
+    "uploadImageForScript": "First describe your product ad idea, then upload an image to generate a professional ad video with one click.",
     "scriptGeneratedSuccess": "Script generated successfully! ✨",
     "scriptGenerationFailed": "Failed to generate script",
     "planSelected": "You selected the {plan} plan! Payment integration coming soon.",

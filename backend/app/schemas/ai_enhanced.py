@@ -1,7 +1,7 @@
 """
 Pydantic schemas for enhanced AI API endpoints
 """
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from typing import Optional, Dict, Any, List
 
 
@@ -18,10 +18,8 @@ class EnhancedScriptRequest(BaseModel):
         max_length=1000
     )
     duration: int = Field(
-        4,
+        8,
         description="Target video duration in seconds",
-        ge=1,
-        le=60
     )
     language: str = Field(
         "en",
@@ -33,6 +31,13 @@ class EnhancedScriptRequest(BaseModel):
         description="Image enhancement mode",
         pattern="^(standard|professional|creative)$"
     )
+
+    @field_validator("duration")
+    @classmethod
+    def validate_duration(cls, value: int) -> int:
+        if value not in (4, 8, 12):
+            raise ValueError("Duration must be one of 4, 8, or 12 seconds")
+        return value
 
 
 class ProductAnalysis(BaseModel):

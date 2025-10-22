@@ -196,7 +196,7 @@ def process_enhancement_task(self, task_id: int):
         script_result = openai_service.analyze_and_generate_enhanced(
             image_data=resized_image_bytes,
             user_context=user_context,
-            duration=4,  # Default duration
+            duration=8,  # Default duration
             language="en",  # Default language - can be added to task model later
             mime_type="image/png"
         )

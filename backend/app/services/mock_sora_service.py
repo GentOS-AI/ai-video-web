@@ -20,7 +20,7 @@ class MockSoraVideoGenerator:
     def __init__(self):
         """Initialize Mock Sora service"""
         self.model = "sora-2-image-to-video"
-        self.duration = 6  # 6 seconds
+        self.duration = 8  # 8 seconds
         self.resolution = "1280x720"  # Landscape format
         print("⚠️  MOCK SORA SERVICE INITIALIZED - FOR TESTING ONLY")
 
@@ -30,6 +30,7 @@ class MockSoraVideoGenerator:
         image_url: str,
         output_filename: str,
         video_id: Optional[int] = None,  # For SSE logging
+        duration: int = 8,
         max_wait_seconds: int = 1200,
     ) -> Dict:
         """
@@ -67,6 +68,11 @@ class MockSoraVideoGenerator:
         if video_id:
             from app.utils.sse_logger import SSELogger
             logger = SSELogger(video_id)
+
+        # Align mock duration with requested duration (supported values: 4, 8, 12)
+        if duration not in (4, 8, 12):
+            duration = 8
+        self.duration = duration
 
         print("\n" + "="*60)
         print("🎬 [MOCK] Starting MOCK Video Generation")

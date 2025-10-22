@@ -78,7 +78,7 @@ def validate_image(file: UploadFile, content: bytes) -> None:
 async def enhance_and_generate_script(
     file: UploadFile = File(..., description="Product image (JPG/PNG, max 20MB)"),
     user_description: Optional[str] = Form(None, description="Product description and advertising intention (optional)"),
-    duration: int = Form(4, description="Video duration in seconds"),
+    duration: int = Form(8, description="Video duration in seconds"),
     language: str = Form("en", description="Language for generated script"),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
@@ -374,7 +374,7 @@ async def enhance_and_generate_script(
 async def enhance_and_generate_script_async(
     file: UploadFile = File(..., description="Product image (JPG/PNG, max 20MB)"),
     user_description: Optional[str] = Form(None, description="Product description and advertising intention (optional)"),
-    duration: int = Form(4, description="Video duration in seconds"),
+    duration: int = Form(8, description="Video duration in seconds"),
     language: str = Form("en", description="Language for generated script"),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),

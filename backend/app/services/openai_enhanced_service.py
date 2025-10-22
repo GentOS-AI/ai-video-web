@@ -33,7 +33,7 @@ class OpenAIEnhancedService:
         self,
         image_data: bytes,
         user_context: Dict[str, Any],
-        duration: int = 4,
+        duration: int = 8,
         language: str = "en",
         mime_type: str = "image/jpeg"
     ) -> Dict[str, Any]:

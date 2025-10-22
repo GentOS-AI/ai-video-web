@@ -77,6 +77,7 @@ def create_video_generation_task(
         prompt=video_request.prompt,
         model=video_request.model,
         reference_image_url=video_request.reference_image_url,
+        duration=video_request.duration,  # Add duration field
         status=VideoStatus.PENDING,
     )
 

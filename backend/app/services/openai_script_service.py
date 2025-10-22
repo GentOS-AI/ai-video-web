@@ -27,7 +27,7 @@ class OpenAIScriptService:
     def analyze_image_for_script(
         self,
         image_data: bytes,
-        duration: int = 4,
+        duration: int = 8,
         mime_type: str = "image/jpeg",
         language: str = "en",
         user_description: str = None  # 🆕 User's product description and advertising ideas

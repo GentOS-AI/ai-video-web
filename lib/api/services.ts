@@ -150,12 +150,15 @@ export const videoService = {
   async generate(
     prompt: string,
     model: string = 'sora-2',
-    referenceImageUrl?: string
+    referenceImageUrl?: string,
+    duration: number = 8
   ): Promise<Video> {
+    const normalizedDuration = [4, 8, 12].includes(duration) ? duration : 8;
     const { data } = await apiClient.post<Video>('/videos/generate', {
       prompt,
       model,
       reference_image_url: referenceImageUrl,
+      duration: normalizedDuration,
     });
     return data;
   },
@@ -228,7 +231,8 @@ export const videoService = {
     const formData = new FormData();
     formData.append('image_file', imageFile);
     formData.append('user_description', userDescription);
-    formData.append('duration', (options?.duration || 4).toString());
+    const normalizedDuration = [4, 8, 12].includes(options?.duration || 8) ? (options?.duration || 8) : 8;
+    formData.append('duration', normalizedDuration.toString());
     formData.append('model', options?.model || 'sora-2');
     formData.append('language', options?.language || 'en');
 
@@ -264,7 +268,8 @@ export const videoService = {
     const formData = new FormData();
     formData.append('image_file', imageFile);
     formData.append('prompt', script);  // Script as prompt
-    formData.append('duration', (options?.duration || 4).toString());
+    const normalizedDuration = [4, 8, 12].includes(options?.duration || 8) ? (options?.duration || 8) : 8;
+    formData.append('duration', normalizedDuration.toString());
     formData.append('model', options?.model || 'sora-2');
 
     const { data } = await apiClient.post<Video>('/videos/generate-simple', formData, {
@@ -440,7 +445,7 @@ export const aiService = {
    */
   async generateScript(
     file: File,
-    duration: number = 4,
+    duration: number = 8,
     language: string = 'en',
     userDescription?: string  // 🆕 User's product description and advertising ideas
   ): Promise<{
@@ -453,7 +458,8 @@ export const aiService = {
   }> {
     const formData = new FormData();
     formData.append('file', file);
-    formData.append('duration', duration.toString());
+    const normalizedDuration = [4, 8, 12].includes(duration) ? duration : 8;
+    formData.append('duration', normalizedDuration.toString());
     formData.append('language', language);
 
     // 🆕 Add user description if provided

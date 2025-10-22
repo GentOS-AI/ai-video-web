@@ -85,7 +85,7 @@ def validate_image_for_script(file: UploadFile, content: bytes) -> None:
 @router.post("/generate-script", response_model=ScriptGenerationResponse)
 async def generate_script(
     file: UploadFile = File(..., description="Product image (JPG/PNG, max 20MB)"),
-    duration: int = Form(4, description="Video duration in seconds"),
+    duration: int = Form(8, description="Video duration in seconds"),
     language: str = Form("en", description="Language for generated script (en, zh, ja, etc.)"),
     user_description: Optional[str] = Form(None, description="User's product description and advertising ideas"),
     current_user: User = Depends(get_current_user),

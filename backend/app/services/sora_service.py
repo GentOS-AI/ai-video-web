@@ -23,7 +23,7 @@ class SoraVideoGenerator:
         """Initialize Sora service with OpenAI API key"""
         self.client = OpenAI(api_key=settings.OPENAI_API_KEY)
         self.model = "sora-2"  # Valid models: 'sora-2' or 'sora-2-pro'
-        self.duration = 4  # Valid durations: 4, 8, or 12 seconds
+        self.duration = 8  # Valid durations: 4, 8, or 12 seconds
         # Resolution will be determined from input image dimensions
 
     async def download_image_as_base64(self, image_url: str) -> str:
@@ -151,11 +151,12 @@ class SoraVideoGenerator:
             from io import BytesIO
             image_file = ("reference_image.jpg", BytesIO(image_bytes), "image/jpeg")
 
+            duration_value = str(self.duration)
             response = self.client.videos.create(
                 prompt=prompt,
                 input_reference=image_file,
                 model=self.model,
-                seconds=self.duration,
+                seconds=duration_value,
                 size=resolution,
             )
 
@@ -254,6 +255,7 @@ class SoraVideoGenerator:
         image_url: str,
         output_filename: str,
         video_id: Optional[int] = None,  # For SSE logging
+        duration: int = 8,  # Duration in seconds (4, 8, or 12)
         max_wait_seconds: int = 1200,  # 20 minutes max
     ) -> Dict:
         """
@@ -281,6 +283,14 @@ class SoraVideoGenerator:
                 "error_message": "..." (if failed)
             }
         """
+        # Normalize duration to supported values (4, 8, 12)
+        if duration not in (4, 8, 12):
+            print(f"⚠️  Unsupported duration {duration}s requested, defaulting to 8s")
+            duration = 8
+
+        # Update instance duration so any downstream helpers stay in sync
+        self.duration = duration
+
         # Initialize SSE logger if video_id provided
         logger = None
         if video_id:
@@ -347,7 +357,7 @@ class SoraVideoGenerator:
 
             print(f"🎬 Initiating Sora 2 video generation...")
             print(f"   Model: {self.model}")
-            print(f"   Duration: {self.duration}s")
+            print(f"   Duration: {duration}s")
             print(f"   Resolution: {resolution}")
             print(f"   Prompt: {prompt[:100]}...")
 
@@ -356,11 +366,12 @@ class SoraVideoGenerator:
             # OpenAI expects this format for file uploads
             image_file = ("reference_image.jpg", BytesIO(image_bytes), "image/jpeg")
 
+            duration_value = str(duration)
             response = self.client.videos.create(
                 prompt=prompt,
                 input_reference=image_file,
                 model=self.model,
-                seconds=self.duration,
+                seconds=duration_value,  # Use validated duration
                 size=resolution,
             )
 

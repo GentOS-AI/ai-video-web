@@ -80,12 +80,22 @@ def generate_video_task(self, video_id: int):
         output_filename = f"user_{video.user_id}_video_{video.id}.mp4"
 
         # Call Sora service - 传递 video_id 以启用 SSE 日志
+        # Get duration from video record (default to 8 if not set)
+        requested_duration = video.duration if video.duration else 8
+        # Ensure duration is supported by Sora (4, 8, 12 seconds)
+        if requested_duration not in (4, 8, 12):
+            print(f"⚠️  Unsupported duration {requested_duration}s detected, defaulting to 8s")
+            requested_duration = 8
+
+        print(f"   Duration: {requested_duration}s")
+
         result = asyncio.run(
             sora_service.generate_and_wait(
                 prompt=video.prompt,
                 image_url=video.reference_image_url,
                 output_filename=output_filename,
                 video_id=video_id,  # 🔥 关键：传递 video_id 启用 SSE 日志
+                duration=requested_duration,  # Pass duration from database
                 max_wait_seconds=1200,  # 20 minutes
             )
         )
@@ -111,9 +121,9 @@ def generate_video_task(self, video_id: int):
                 poster_url=None,  # TODO: Generate poster from first frame
             )
 
-            # Update resolution and duration
-            video.resolution = "1280x720"
-            video.duration = 6
+            # Update resolution and ensure duration persisted
+            video.resolution = "1280x720"  # TODO: Get from actual video metadata
+            video.duration = requested_duration
             db.commit()
 
             print(f"\n🎉 [Task {task_id}] Task completed successfully!")

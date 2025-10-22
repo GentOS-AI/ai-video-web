@@ -47,9 +47,9 @@ const defaultHeroVideo = {
 
 // AI Models for dropdown with credit costs
 const aiModels = [
-  { id: "sora-2", name: "Sora 2", version: "Lite - 4s", credits: 25, enabled: true, type: 'normal' },
-  { id: "sora-2-standard", name: "Sora 2", version: "Standard - 8s", credits: 100, enabled: true, type: 'normal' },
-  { id: "sora-2-pro", name: "Sora 2 Pro", version: "Premium - 12s", credits: 300, enabled: true, type: 'business' },
+  { id: "sora-2", name: "Sora2-4s", version: "Lite", model: "sora-2", duration: 4, credits: 25, enabled: true, type: 'normal' },
+  { id: "sora-2-standard", name: "Sora2-8s", version: "Standard", model: "sora-2", duration: 8, credits: 100, enabled: true, type: 'normal' },
+  { id: "sora-2-pro", name: "Sora2 Pro-12s", version: "Premium", model: "sora-2-pro", duration: 12, credits: 300, enabled: true, type: 'business' },
 ];
 
 // Generation modes for dropdown
@@ -136,11 +136,11 @@ export const HeroSection = () => {
     videoId: streamingVideoId,
     onComplete: (videoUrl) => {
       console.log('🎉 Video completed via SSE:', videoUrl);
-      setGeneratedVideo({
-        ...generatedVideo,
+      setGeneratedVideo(prev => ({
+        ...prev,
         video_url: videoUrl,
         status: 'completed'
-      } as Video);
+      } as Video));
       setIsGenerating(false);
       setStreamingVideoId(null);
       showToast(tToast('videoGeneratedSuccess'), "success");
@@ -320,7 +320,7 @@ export const HeroSection = () => {
 
       // Use simple script generation API (no image enhancement)
       // Pass user input as reference for professional script generation
-      const result = await aiService.generateScript(file, 4, locale, userInput);
+      const result = await aiService.generateScript(file, selectedModel?.duration || 8, locale, userInput);
 
       console.log("✅ Script generated:", result);
 
@@ -366,7 +366,7 @@ export const HeroSection = () => {
         uploadedFile!,
         prompt,  // Pass user input directly (empty string if no input)
         {
-          duration: 4,
+          duration: selectedModel?.duration || 8,
           language: locale
         }
       );
@@ -481,13 +481,16 @@ export const HeroSection = () => {
         uploadedFile,
         prompt,  // Pre-generated script from auto-generation
         {
-          duration: 4,
-          model: selectedModel?.id || 'sora-2'
+          duration: selectedModel?.duration || 8,
+          model: selectedModel?.model || 'sora-2'
         }
       );
 
       console.log("✅ All-In-One video task created (simple mode):", video);
       setGenerationProgress(t('connectingStream'));
+
+      // Set the generated video object with initial data
+      setGeneratedVideo(video);
 
       // Start SSE connection for real-time updates
       setStreamingVideoId(video.id);
@@ -638,12 +641,16 @@ export const HeroSection = () => {
       // Call video generation API with image URL
       const video = await videoService.generate(
         prompt,
-        selectedModel?.id || 'sora-2',
-        imageUrl  // Use uploaded file URL or thumbnail high-res URL
+        selectedModel?.model || 'sora-2',
+        imageUrl,  // Use uploaded file URL or thumbnail high-res URL
+        selectedModel?.duration || 8
       );
 
       console.log("✅ Video generation task created:", video);
       setGenerationProgress(t('connectingStream'));
+
+      // Set the generated video object with initial data
+      setGeneratedVideo(video);
 
       // Start SSE connection for real-time updates (replaces polling)
       setStreamingVideoId(video.id);
@@ -1415,6 +1422,7 @@ export const HeroSection = () => {
                         poster={generatedVideo.poster_url || undefined}
                         autoPlay={true}
                         objectFit="contain"
+                        className="h-full w-full"
                       />
 
                       {/* Share Dropdown - Top Right Corner */}

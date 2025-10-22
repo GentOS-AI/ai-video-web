@@ -163,7 +163,7 @@
     "imageNotFound": "未找到所选图片",
     "loginToUseScriptGenerator": "请登录以使用AI脚本生成器",
     "scriptGeneratorRequiresSubscription": "AI脚本生成器需要订阅。请升级！",
-    "uploadImageForScript": "请先上传图片。缩略图选择不支持脚本生成。",
+    "uploadImageForScript": "先描述产品广告idea，然后上传图片，就可以一键生成专业的广告视频。",
     "scriptGeneratedSuccess": "脚本生成成功！✨",
     "scriptGenerationFailed": "脚本生成失败",
     "planSelected": "您选择了 {plan} 套餐！支付集成即将推出。",

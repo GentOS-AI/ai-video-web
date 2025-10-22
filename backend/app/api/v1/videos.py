@@ -95,8 +95,8 @@ async def generate_video_flexible(
     user_description: Optional[str] = Form(None),
 
     # Common parameters
-    duration: int = Form(4),
-    model: str = Form("sora-2"),
+    duration: int = Form(8),
+    model: str = Form("sora-2"),  # Hard-coded to sora-2 only
     language: str = Form("en"),
 
     db: Session = Depends(get_db),
@@ -208,8 +208,9 @@ async def generate_video_flexible(
 
         video_request = VideoGenerateRequest(
             prompt=final_prompt,
-            model=model,
-            reference_image_url=final_image_url
+            model="sora-2",  # Hard-coded to sora-2
+            reference_image_url=final_image_url,
+            duration=duration  # Pass duration parameter
         )
 
         video = video_service.create_video_generation_task(
@@ -259,8 +260,8 @@ async def generate_video_flexible(
 async def generate_video_simple(
     image_file: UploadFile = File(..., description="Product image file"),
     prompt: str = Form(..., description="Pre-generated video script (from /ai/generate-script)"),
-    duration: int = Form(4, ge=4, le=12, description="Video duration in seconds"),
-    model: str = Form("sora-2", description="AI model (sora-2 or sora-2-pro)"),
+    duration: int = Form(8, ge=4, le=12, description="Video duration in seconds"),
+    model: str = Form("sora-2"),  # Hard-coded to sora-2 only
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -311,8 +312,9 @@ async def generate_video_simple(
 
         video_request = VideoGenerateRequest(
             prompt=prompt,  # Use provided script directly (no GPT-4o call)
-            model=model,
-            reference_image_url=image_url
+            model="sora-2",  # Hard-coded to sora-2
+            reference_image_url=image_url,
+            duration=duration  # Pass duration parameter
         )
 
         video = video_service.create_video_generation_task(

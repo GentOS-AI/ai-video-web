@@ -3,7 +3,7 @@ Video schemas for API requests and responses
 """
 from datetime import datetime
 from typing import Optional, List
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from app.models.video import VideoStatus, AIModel
 
 
@@ -12,7 +12,14 @@ class VideoGenerateRequest(BaseModel):
     prompt: str = Field(..., min_length=10, max_length=5000, description="Video generation prompt")
     model: str = Field(default="sora-2", description="AI model to use")
     reference_image_url: Optional[str] = Field(None, description="Reference image URL")
+    duration: int = Field(8, ge=4, le=12, description="Video duration in seconds (default 8s)")
 
+    @field_validator("duration")
+    @classmethod
+    def validate_duration(cls, value: int) -> int:
+        if value not in (4, 8, 12):
+            raise ValueError("Duration must be one of 4, 8, or 12 seconds")
+        return value
 
 class VideoGenerateFlexibleRequest(BaseModel):
     """
@@ -48,9 +55,16 @@ class VideoGenerateFlexibleRequest(BaseModel):
     )
 
     # ========== Common parameters ==========
-    duration: int = Field(4, ge=4, le=12, description="Video duration in seconds")
-    model: str = Field("sora-2", description="AI model (sora-2 or sora-2-pro)")
+    duration: int = Field(8, ge=4, le=12, description="Video duration in seconds")
+    model: str = Field("sora-2", description="AI model (hard-coded to sora-2)")
     language: str = Field("en", description="Language (only used in Mode 2)", pattern="^[a-z]{2}(-[A-Z]{2})?$")
+
+    @field_validator("duration")
+    @classmethod
+    def validate_duration(cls, value: int) -> int:
+        if value not in (4, 8, 12):
+            raise ValueError("Duration must be one of 4, 8, or 12 seconds")
+        return value
 
 
 class VideoResponse(BaseModel):

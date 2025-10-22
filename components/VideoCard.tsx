@@ -18,7 +18,6 @@ import {
 } from "lucide-react";
 import type { Video } from "@/lib/services/videoService";
 import { getRelativeTime } from "@/lib/services/videoService";
-import { ShareDropdown } from "./ShareDropdown";
 
 // Lazy load YouTubeUploadModal - only loaded when user clicks share
 const YouTubeUploadModal = dynamic(

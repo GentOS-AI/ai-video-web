@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from "react";
 import dynamic from "next/dynamic";
 import { VideoPlayer } from "./VideoPlayer";
 import { ShareDropdown } from "./ShareDropdown";
-import { Sparkles, Loader2, AlertCircle, Upload, X, ChevronDown, Check, Wand2 } from "lucide-react";
+import { Sparkles, Loader2, AlertCircle, Upload, X, Check, Wand2 } from "lucide-react";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import { showcaseVideos, trialImages } from "@/lib/assets";
@@ -36,13 +36,20 @@ const YouTubeUploadModal = dynamic(
 
 import type { YouTubeVideoMetadata } from "./YouTubeUploadModal";
 
-// Use ShowcaseSection's 3rd video (index 2) as default Hero video
-const defaultHeroVideo = showcaseVideos[2]!; // "Food & Beverage Ad" - Non-null assertion since we know it exists
+// Use custom default video
+const thirdShowcaseVideo = showcaseVideos[2] || showcaseVideos[0];
+
+const defaultHeroVideo = {
+  src: thirdShowcaseVideo?.src ?? "",
+  poster: thirdShowcaseVideo?.poster ?? "",
+  title: thirdShowcaseVideo?.title ?? "AI Generated Video Demo",
+};
 
 // AI Models for dropdown with credit costs
 const aiModels = [
-  { id: "sora-2", name: "Sora2", version: "Standard - 8s", credits: 100 },
-  { id: "sora-2-pro", name: "Sora2 Pro", version: "Premium - 12s", credits: 300 },
+  { id: "sora-2", name: "Sora 2", version: "Lite - 4s", credits: 25, enabled: true, type: 'normal' },
+  { id: "sora-2-standard", name: "Sora 2", version: "Standard - 8s", credits: 100, enabled: true, type: 'normal' },
+  { id: "sora-2-pro", name: "Sora 2 Pro", version: "Premium - 12s", credits: 300, enabled: true, type: 'business' },
 ];
 
 // Generation modes for dropdown
@@ -661,7 +668,8 @@ export const HeroSection = () => {
     setShowThumbnailPreview(false); // Hide thumbnail preview when file is uploaded
     setShowUploadedPreview(true); // Show uploaded file preview in right panel
     setWorkflowStage('script'); // Reset to script generation stage
-    setPrompt(''); // Clear previous script
+    // ⚠️ DON'T clear prompt here - keep user input during script generation
+    // setPrompt(''); // ❌ Removed - preserve user input
     setAiOptimizedImage(null); // Clear AI optimized image when new file is uploaded
 
     // Create preview URL for uploaded file
@@ -879,7 +887,8 @@ export const HeroSection = () => {
                 >
                   <button
                     onClick={() => setIsModelDropdownOpen(!isModelDropdownOpen)}
-                    className="px-2.5 py-1.5 rounded-lg bg-purple-50 border border-purple-200 hover:border-purple-400 hover:bg-purple-100 transition-all flex items-center justify-center group"
+                    disabled={isGeneratingScript || isGenerating}
+                    className="px-2.5 py-1.5 rounded-lg bg-purple-50 border border-purple-200 hover:border-purple-400 hover:bg-purple-100 transition-all flex items-center justify-center group disabled:opacity-50 disabled:cursor-not-allowed"
                     title={selectedModel?.name}
                   >
                     <span className="text-xs font-medium text-purple-600 group-hover:text-purple-700">{selectedModel?.name}</span>
@@ -890,16 +899,25 @@ export const HeroSection = () => {
                     <div className="absolute right-0 top-full mt-2 w-52 bg-white border border-gray-200 rounded-lg shadow-lg z-20">
                       {aiModels.map((model) => {
                         const isPro = model.id === 'sora-2-pro';
+                        const isLite = model.id === 'sora-2';
+                        const isStandard = model.id === 'sora-2-standard';
+                        const isBusiness = model.type === 'business';
 
                         return (
                           <button
                             key={model.id}
                             onClick={() => {
-                              setSelectedModel(model);
-                              setIsModelDropdownOpen(false);
+                              if (isBusiness) {
+                                // Open email for business account application
+                                window.location.href = 'mailto:support@aivideo.diy?subject=Apply to Business Account';
+                                setIsModelDropdownOpen(false);
+                              } else {
+                                setSelectedModel(model);
+                                setIsModelDropdownOpen(false);
+                              }
                             }}
-                            className={`w-full px-3 py-2.5 text-left hover:bg-purple-50 transition-colors first:rounded-t-lg last:rounded-b-lg ${
-                              selectedModel?.id === model.id ? "bg-purple-50" : ""
+                            className={`w-full px-3 py-2.5 text-left transition-colors first:rounded-t-lg last:rounded-b-lg hover:bg-purple-50 ${
+                              selectedModel?.id === model.id && !isBusiness ? "bg-purple-50" : ""
                             }`}
                           >
                             <div className="flex items-center justify-between gap-2">
@@ -912,18 +930,24 @@ export const HeroSection = () => {
                                 </div>
                               </div>
                               {isPro ? (
-                                <div className="flex items-center gap-1 px-2 py-1 bg-gradient-to-r from-amber-400 to-orange-500 rounded-full">
-                                  <span className="text-[10px] font-semibold text-white">
+                                <div className="flex items-center gap-1 px-2 py-1 bg-gray-100 border border-gray-300 rounded-lg">
+                                  <span className="text-[10px] font-semibold text-gray-600">
+                                    Business
+                                  </span>
+                                </div>
+                              ) : isStandard ? (
+                                <div className="flex items-center gap-1 px-2 py-0.5 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-md">
+                                  <span className="text-[10px] font-bold text-white">
                                     Subscribe
                                   </span>
                                 </div>
-                              ) : (
+                              ) : isLite ? (
                                 <div className="flex items-center gap-1 px-2 py-1 bg-purple-100 rounded-full">
                                   <span className="text-[10px] font-semibold text-purple-600">
                                     Free Trial
                                   </span>
                                 </div>
-                              )}
+                              ) : null}
                             </div>
                           </button>
                         );
@@ -1046,14 +1070,22 @@ export const HeroSection = () => {
                         return;
                       }
 
-                      // 2. Check if user has enough credits (100 credits minimum)
+                      // 2. Check if prompt is provided
+                      if (!prompt.trim()) {
+                        showToast("Please describe your product or any advertising ideas", "warning");
+                        // Focus on textarea
+                        document.getElementById("prompt")?.focus();
+                        return;
+                      }
+
+                      // 3. Check if user has enough credits (100 credits minimum)
                       const REQUIRED_CREDITS = 100;
                       if (!user || user.credits < REQUIRED_CREDITS) {
                         setIsCreditsOpen(true);
                         return;
                       }
 
-                      // 3. Trigger file upload dialog
+                      // 4. Trigger file upload dialog
                       document.getElementById("file-upload")?.click();
                     }}
                     className={`relative flex-shrink-0 rounded-xl transition-all ${
@@ -1236,7 +1268,7 @@ export const HeroSection = () => {
                           {isGeneratingScript ? (
                             <>
                               <Loader2 className="w-4 h-4 sm:w-4.5 sm:h-4.5 animate-spin" />
-                              <span>Generating...</span>
+                              <span>Scripting...</span>
                             </>
                           ) : isGenerating ? (
                             <>
@@ -1370,18 +1402,19 @@ export const HeroSection = () => {
               <div className="absolute inset-0 bg-gradient-to-br from-purple-50 via-transparent to-pink-50 opacity-40" />
             </div>
 
-            {/* Main Video/Image Container */}
-            <div className="relative aspect-video rounded-2xl overflow-hidden shadow-2xl">
+            {/* Main Video/Image Container - Fixed 16:9 aspect ratio with black letterbox background */}
+            <div className="relative aspect-video rounded-2xl overflow-hidden shadow-2xl bg-black">
               {/* Priority 1: Show video area when generating or completed */}
               {(isGenerating || (generatedVideo && generatedVideo.video_url)) ? (
                 <div className="relative w-full h-full">
                   {generatedVideo && generatedVideo.video_url ? (
-                    /* Video completed - show video player */
+                    /* Video completed - show video player with contain mode */
                     <>
                       <VideoPlayer
                         src={`${process.env.NEXT_PUBLIC_API_URL?.replace('/api/v1', '')}${generatedVideo.video_url}`}
                         poster={generatedVideo.poster_url || undefined}
                         autoPlay={true}
+                        objectFit="contain"
                       />
 
                       {/* Share Dropdown - Top Right Corner */}
@@ -1483,6 +1516,8 @@ export const HeroSection = () => {
                   src={defaultHeroVideo.src}
                   poster={defaultHeroVideo.poster}
                   autoPlay={true}
+                  objectFit="contain"
+                  className="h-full w-full"
                 />
               )}
 

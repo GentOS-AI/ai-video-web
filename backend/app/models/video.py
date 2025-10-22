@@ -28,7 +28,7 @@ class Video(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
     prompt = Column(Text, nullable=False)
-    model = Column(SQLEnum(AIModel), default=AIModel.SORA_2, nullable=False)
+    model = Column(SQLEnum(AIModel, values_callable=lambda obj: [e.value for e in obj]), default=AIModel.SORA_2, nullable=False)
     reference_image_url = Column(String(500), nullable=True)
     video_url = Column(String(500), nullable=True)
     poster_url = Column(String(500), nullable=True)

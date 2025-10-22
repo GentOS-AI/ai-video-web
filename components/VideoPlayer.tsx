@@ -12,9 +12,11 @@ interface VideoPlayerProps {
   muted?: boolean;
   preload?: "none" | "metadata" | "auto";
   onPlayStateChange?: (isPlaying: boolean) => void;
+  onOrientationChange?: (width: number, height: number) => void; // Callback for video dimension changes
   children?: React.ReactNode;
   playDelay?: number; // Delay in ms before playing (for staggered playback)
   enableViewportDetection?: boolean; // Enable Intersection Observer
+  objectFit?: "cover" | "contain"; // Control how video fills the container
 }
 
 export const VideoPlayer: React.FC<VideoPlayerProps> = ({
@@ -25,12 +27,15 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   muted = true,
   preload = "metadata",
   onPlayStateChange,
+  onOrientationChange,
   children,
   playDelay = 0,
   enableViewportDetection = false,
+  objectFit = "cover", // Default to cover for backward compatibility
 }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [userInteracted, setUserInteracted] = useState(false); // Track if user manually paused
+  const [isPortrait, setIsPortrait] = useState(false); // Track if video is portrait
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const playTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -39,6 +44,33 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   const isInViewport = useIntersectionObserver(containerRef, {
     threshold: 0.5, // 50% visible
   });
+
+  // Detect if video is portrait (height > width)
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const handleLoadedMetadata = () => {
+      const isVideoPortrait = video.videoHeight > video.videoWidth;
+      setIsPortrait(isVideoPortrait);
+
+      // Notify parent component of video dimensions
+      if (onOrientationChange) {
+        onOrientationChange(video.videoWidth, video.videoHeight);
+      }
+    };
+
+    video.addEventListener('loadedmetadata', handleLoadedMetadata);
+
+    // Check immediately if metadata is already loaded
+    if (video.readyState >= 1) {
+      handleLoadedMetadata();
+    }
+
+    return () => {
+      video.removeEventListener('loadedmetadata', handleLoadedMetadata);
+    };
+  }, [src, onOrientationChange]);
 
   // Handle autoplay with delay and viewport detection
   useEffect(() => {
@@ -104,7 +136,22 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
         ref={videoRef}
         src={src}
         poster={poster}
-        className="w-full h-full object-cover"
+        className={objectFit === "contain" ? "" : "w-full h-full object-cover"}
+        style={
+          objectFit === "contain"
+            ? {
+                position: 'absolute',
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+                maxWidth: '100%',
+                maxHeight: '100%',
+                width: isPortrait ? 'auto' : '100%',
+                height: isPortrait ? '100%' : 'auto',
+                objectFit: 'contain'
+              }
+            : undefined
+        }
         loop
         muted={muted}
         playsInline

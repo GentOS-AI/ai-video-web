@@ -22,6 +22,12 @@ const PricingModal = dynamic(
   { ssr: false }
 );
 
+// Lazy load CreditsModal for credit purchases
+const CreditsModal = dynamic(
+  () => import("./CreditsModal").then((mod) => ({ default: mod.CreditsModal })),
+  { ssr: false }
+);
+
 // Lazy load YouTubeUploadModal - only loaded when user clicks share
 const YouTubeUploadModal = dynamic(
   () => import("./YouTubeUploadModal").then((mod) => ({ default: mod.YouTubeUploadModal })),
@@ -73,9 +79,15 @@ export const HeroSection = () => {
   const [selectedModel, setSelectedModel] = useState(aiModels[0]);
   const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false);
   const [isPricingOpen, setIsPricingOpen] = useState(false);
+  const [isCreditsOpen, setIsCreditsOpen] = useState(false);
   const [showYouTubeModal, setShowYouTubeModal] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const maxChars = 5000;
+
+  // Typing animation for placeholder
+  const [placeholderText, setPlaceholderText] = useState("");
+  const [placeholderIndex, setPlaceholderIndex] = useState(0);
+  const fullPlaceholder = t('input.placeholder');
 
   // Generation mode dropdown state
   const [selectedMode, setSelectedMode] = useState<GenerationMode>('all-in-one');
@@ -295,8 +307,13 @@ export const HeroSection = () => {
       setEnhancementProgress("Analyzing image and generating script...");
       console.log('🤖 Auto-generating script from uploaded image (GPT-4o)...');
 
+      // 🆕 Read user input from textarea (if any)
+      const userInput = prompt.trim();
+      console.log('📝 User input detected:', userInput ? `"${userInput.substring(0, 50)}..."` : 'None');
+
       // Use simple script generation API (no image enhancement)
-      const result = await aiService.generateScript(file, 4, locale);
+      // Pass user input as reference for professional script generation
+      const result = await aiService.generateScript(file, 4, locale, userInput);
 
       console.log("✅ Script generated:", result);
 
@@ -753,6 +770,28 @@ export const HeroSection = () => {
     console.log("TikTok share clicked - feature coming soon");
   };
 
+  // Typing animation effect for placeholder
+  useEffect(() => {
+    if (prompt) return; // Don't show placeholder animation if user is typing
+
+    if (placeholderIndex < fullPlaceholder.length) {
+      const timeout = setTimeout(() => {
+        setPlaceholderText(fullPlaceholder.slice(0, placeholderIndex + 1));
+        setPlaceholderIndex(placeholderIndex + 1);
+      }, 50); // 50ms per character for smooth typing
+
+      return () => clearTimeout(timeout);
+    } else {
+      // When finished, pause for 2 seconds then restart
+      const timeout = setTimeout(() => {
+        setPlaceholderText("");
+        setPlaceholderIndex(0);
+      }, 2000);
+
+      return () => clearTimeout(timeout);
+    }
+  }, [placeholderIndex, fullPlaceholder, prompt]);
+
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -881,7 +920,7 @@ export const HeroSection = () => {
                               ) : (
                                 <div className="flex items-center gap-1 px-2 py-1 bg-purple-100 rounded-full">
                                   <span className="text-[10px] font-semibold text-purple-600">
-                                    Free
+                                    Free Trial
                                   </span>
                                 </div>
                               )}
@@ -898,7 +937,7 @@ export const HeroSection = () => {
                   value={prompt}
                   onChange={handlePromptChange}
                   onPaste={handlePaste}
-                  placeholder={t('input.placeholder')}
+                  placeholder={placeholderText}
                   className="w-full px-0 py-0 pr-20 border-0 focus:outline-none focus:ring-0 resize-none text-sm sm:text-base text-text-primary placeholder:text-text-muted"
                   rows={6}
                 />
@@ -987,7 +1026,36 @@ export const HeroSection = () => {
                   <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
                     {/* Upload Button with Uploaded File or Selected Image Preview - PURPLE HIGHLIGHT WHEN ACTIVE */}
                     <button
-                    onClick={() => document.getElementById("file-upload")?.click()}
+                    onClick={() => {
+                      // 1. Check if user is logged in - redirect without toast
+                      if (!isAuthenticated) {
+                        const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+                        const redirectUri = `${window.location.origin}/auth/callback`;
+                        const scope = 'openid email profile';
+
+                        const googleAuthUrl =
+                          `https://accounts.google.com/o/oauth2/v2/auth?` +
+                          `client_id=${clientId}&` +
+                          `redirect_uri=${encodeURIComponent(redirectUri)}&` +
+                          `response_type=code&` +
+                          `scope=${encodeURIComponent(scope)}&` +
+                          `access_type=offline&` +
+                          `prompt=consent`;
+
+                        window.location.href = googleAuthUrl;
+                        return;
+                      }
+
+                      // 2. Check if user has enough credits (100 credits minimum)
+                      const REQUIRED_CREDITS = 100;
+                      if (!user || user.credits < REQUIRED_CREDITS) {
+                        setIsCreditsOpen(true);
+                        return;
+                      }
+
+                      // 3. Trigger file upload dialog
+                      document.getElementById("file-upload")?.click();
+                    }}
                     className={`relative flex-shrink-0 rounded-xl transition-all ${
                       uploadedFilePreview || selectedImage !== null
                         ? "w-16 h-16 sm:w-14 sm:h-14 border-3 border-purple-500 shadow-lg shadow-purple-500/30 ring-2 ring-purple-200"
@@ -1163,7 +1231,7 @@ export const HeroSection = () => {
                         <button
                           onClick={handleMainButton}
                           disabled={isGenerating || isGeneratingScript}
-                          className="relative bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 shadow-lg hover:shadow-xl px-4 sm:px-5 py-2.5 rounded-xl flex items-center gap-2 text-xs sm:text-sm font-semibold text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+                          className="relative bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 shadow-lg hover:shadow-xl px-3 sm:px-4 py-2 rounded-xl flex items-center gap-2 text-xs sm:text-sm font-semibold text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
                         >
                           {isGeneratingScript ? (
                             <>
@@ -1192,17 +1260,16 @@ export const HeroSection = () => {
                           )}
                         </button>
 
-                        {/* Dropdown Toggle Button - Purple Gradient Fill */}
-                        <button
+                        {/* Dropdown Toggle Button - TEMPORARILY HIDDEN */}
+                        {/* <button
                           onClick={() => setIsModeDropdownOpen(!isModeDropdownOpen)}
                           disabled={isGenerating || isGeneratingScript}
                           className="relative p-2.5 w-9 h-9 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 transition-all flex items-center justify-center group disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg"
                           title="Select generation mode"
                         >
                           <ChevronDown className={`w-4 h-4 text-white transition-all duration-300 ${isModeDropdownOpen ? 'rotate-180' : ''}`} />
-                          {/* White dot indicator */}
                           <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-white/60"></span>
-                        </button>
+                        </button> */}
                       </div>
 
                       {/* Dropdown Menu */}
@@ -1542,6 +1609,12 @@ export const HeroSection = () => {
         isOpen={isPricingOpen}
         onClose={() => setIsPricingOpen(false)}
         onSubscribe={handleSubscribe}
+      />
+
+      {/* Credits Modal */}
+      <CreditsModal
+        isOpen={isCreditsOpen}
+        onClose={() => setIsCreditsOpen(false)}
       />
 
       {/* Replace Image Confirmation Dialog */}

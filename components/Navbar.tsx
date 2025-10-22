@@ -10,8 +10,10 @@ import { useAuth } from "@/contexts/AuthContext";
 import { AnimatedLogo } from "./AnimatedLogo";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
-import { useParams, usePathname, useRouter } from "next/navigation";
-import { localeNames, localeFlags, type Locale } from "@/lib/i18n/config";
+import { useParams, usePathname } from "next/navigation";
+// useRouter commented out - only needed when multi-language support is enabled
+// import { useRouter } from "next/navigation";
+import { localeFlags, localeNames, type Locale } from "@/lib/i18n/config";
 
 // Lazy load PricingModal since it's only shown on user interaction
 const PricingModal = dynamic(
@@ -29,7 +31,8 @@ export const Navbar = () => {
   const t = useTranslations('navbar');
   const params = useParams();
   const pathname = usePathname();
-  const router = useRouter();
+  // router commented out - only needed when multi-language support is enabled
+  // const router = useRouter();
   const locale = (params.locale as Locale) || 'en';
 
   const { user, isAuthenticated, logout, loading } = useAuth();
@@ -38,7 +41,6 @@ export const Navbar = () => {
   const [isPricingOpen, setIsPricingOpen] = useState(false);
   const [isCreditsModalOpen, setIsCreditsModalOpen] = useState(false);
   const [isLangMenuOpen, setIsLangMenuOpen] = useState(false);
-  const [isMobileLangMenuOpen, setIsMobileLangMenuOpen] = useState(false);
   const lastScrollY = useRef(0);
   const logoRef = useRef<HTMLDivElement>(null);
   const animationFrameId = useRef<number | undefined>(undefined);
@@ -88,21 +90,12 @@ export const Navbar = () => {
     setShowUserMenu(false);
   };
 
-  const switchLanguage = (newLocale: Locale) => {
-    // Save language preference to cookie
-    document.cookie = `NEXT_LOCALE=${newLocale}; path=/; max-age=31536000`; // 1 year
-
-    // Replace locale in pathname
-    const newPath = pathname.replace(`/${locale}`, `/${newLocale}`);
-    router.push(newPath);
-    setIsLangMenuOpen(false);
-    setIsMobileMenuOpen(false);
-  };
-
+  // Language list - Currently only English is active
+  // Other languages commented out - uncomment when ready to enable
   const languages: Array<{ code: Locale; name: string; flag: string }> = [
     { code: 'en', name: localeNames['en'], flag: localeFlags['en'] },
-    { code: 'zh', name: localeNames['zh'], flag: localeFlags['zh'] },
-    { code: 'zh-TW', name: localeNames['zh-TW'], flag: localeFlags['zh-TW'] },
+    // { code: 'zh', name: localeNames['zh'], flag: localeFlags['zh'] },
+    // { code: 'zh-TW', name: localeNames['zh-TW'], flag: localeFlags['zh-TW'] },
   ];
 
   // Helper function to check if a path is active
@@ -166,7 +159,7 @@ export const Navbar = () => {
     };
   }, []);
 
-  // Handle click outside to close user menu
+  // Handle click outside to close user menu and language menu
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
@@ -225,6 +218,32 @@ export const Navbar = () => {
                 <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-primary rounded-full" />
               )}
             </Link>
+            <Link
+              href={`/${locale}/about`}
+              className={`px-4 py-2 text-sm font-medium transition-colors relative ${
+                isActivePath(`/${locale}/about`)
+                  ? 'text-primary font-semibold'
+                  : 'text-text-secondary hover:text-primary'
+              }`}
+            >
+              {t('about')}
+              {isActivePath(`/${locale}/about`) && (
+                <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-primary rounded-full" />
+              )}
+            </Link>
+            <Link
+              href={`/${locale}/blog`}
+              className={`px-4 py-2 text-sm font-medium transition-colors relative ${
+                pathname.includes('/blog')
+                  ? 'text-primary font-semibold'
+                  : 'text-text-secondary hover:text-primary'
+              }`}
+            >
+              Blog
+              {pathname.includes('/blog') && (
+                <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-primary rounded-full" />
+              )}
+            </Link>
             <button
               onClick={handlePricingClick}
               className="px-4 py-2 text-sm font-medium text-text-secondary hover:text-primary transition-colors"
@@ -232,7 +251,7 @@ export const Navbar = () => {
               {t('pricing')}
             </button>
 
-            {/* Language Switcher - Desktop */}
+            {/* Language Switcher - Desktop (Currently only English) */}
             <div className="relative" ref={langMenuRef}>
               <button
                 onClick={() => setIsLangMenuOpen(!isLangMenuOpen)}
@@ -255,16 +274,15 @@ export const Navbar = () => {
                     style={{ transformOrigin: 'top right', willChange: 'transform, opacity' }}
                   >
                     {languages.map((lang) => (
-                      <button
+                      <div
                         key={lang.code}
-                        onClick={() => switchLanguage(lang.code)}
-                        className={`w-full px-3 py-1.5 text-left hover:bg-gray-50 transition-colors flex items-center gap-2 ${
+                        className={`w-full px-3 py-1.5 flex items-center gap-2 ${
                           locale === lang.code ? 'bg-gray-50 text-gray-900 font-medium' : 'text-gray-700'
                         }`}
                       >
                         <span className="text-base">{lang.flag}</span>
                         <span className="text-xs">{lang.name}</span>
-                      </button>
+                      </div>
                     ))}
                   </motion.div>
                 )}
@@ -337,7 +355,7 @@ export const Navbar = () => {
                           </p>
                           <button
                             onClick={handleAddCredits}
-                            className="px-2 py-0.5 text-[10px] font-bold bg-purple-500 text-white rounded-full hover:bg-purple-600 transition-all shadow-sm hover:shadow-md"
+                            className="px-2 py-0.5 text-[10px] font-bold bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-full hover:from-purple-600 hover:to-pink-600 transition-all shadow-sm hover:shadow-md"
                           >
                             Add
                           </button>
@@ -379,9 +397,10 @@ export const Navbar = () => {
             className="md:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
             onClick={() => {
               setIsMobileMenuOpen(!isMobileMenuOpen);
-              if (isMobileMenuOpen) {
-                setIsMobileLangMenuOpen(false);
-              }
+              // Commented out - only needed when multi-language support is enabled
+              // if (isMobileMenuOpen) {
+              //   setIsMobileLangMenuOpen(false);
+              // }
             }}
             aria-label="Toggle menu"
           >
@@ -417,6 +436,28 @@ export const Navbar = () => {
               >
                 {t('home')}
               </Link>
+              <Link
+                href={`/${locale}/about`}
+                onClick={() => setIsMobileMenuOpen(false)}
+                className={`block w-full text-left px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                  isActivePath(`/${locale}/about`)
+                    ? 'bg-purple-bg text-primary font-semibold'
+                    : 'text-text-secondary hover:text-primary hover:bg-purple-bg'
+                }`}
+              >
+                {t('about')}
+              </Link>
+              <Link
+                href={`/${locale}/blog`}
+                onClick={() => setIsMobileMenuOpen(false)}
+                className={`block w-full text-left px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                  pathname.includes('/blog')
+                    ? 'bg-purple-bg text-primary font-semibold'
+                    : 'text-text-secondary hover:text-primary hover:bg-purple-bg'
+                }`}
+              >
+                Blog
+              </Link>
               <button
                 onClick={handlePricingClick}
                 className="w-full text-left px-4 py-2 text-sm font-medium text-text-secondary hover:text-primary hover:bg-purple-bg rounded-lg transition-colors"
@@ -424,54 +465,14 @@ export const Navbar = () => {
                 {t('pricing')}
               </button>
 
-              {/* Language Switcher - Mobile (Collapsible) */}
+              {/* Language Menu - Mobile (Currently only English) */}
               <div className="border-t border-gray-200 pt-3 mt-3">
-                <button
-                  onClick={() => setIsMobileLangMenuOpen(!isMobileLangMenuOpen)}
-                  className="w-full px-4 py-2 text-left flex items-center justify-between hover:bg-purple-bg rounded-lg transition-colors"
-                >
-                  <div className="flex items-center gap-3">
+                <div className="w-full px-4 py-2 bg-gray-50 rounded-lg">
+                  <div className="flex items-center gap-3 text-text-secondary">
                     <span className="text-2xl">{localeFlags[locale]}</span>
-                    <span className="text-sm font-medium text-text-secondary">
-                      {localeNames[locale]}
-                    </span>
+                    <span className="text-sm font-medium">{localeNames[locale]}</span>
                   </div>
-                  <svg
-                    className={`w-4 h-4 text-text-muted transition-transform ${isMobileLangMenuOpen ? 'rotate-180' : ''}`}
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </button>
-                <AnimatePresence>
-                  {isMobileLangMenuOpen && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: "auto", opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.2 }}
-                      className="overflow-hidden"
-                    >
-                      <div className="mt-1 space-y-1">
-                        {languages.filter(lang => lang.code !== locale).map((lang) => (
-                          <button
-                            key={lang.code}
-                            onClick={() => {
-                              switchLanguage(lang.code);
-                              setIsMobileLangMenuOpen(false);
-                            }}
-                            className="w-full px-4 py-2 text-sm hover:bg-purple-bg rounded-lg transition-colors flex items-center gap-3 text-text-secondary"
-                          >
-                            <span className="text-2xl">{lang.flag}</span>
-                            <span>{lang.name}</span>
-                          </button>
-                        ))}
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                </div>
               </div>
 
               {loading ? (

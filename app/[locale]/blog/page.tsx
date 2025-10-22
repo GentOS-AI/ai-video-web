@@ -1,253 +1,106 @@
-"use client";
+import { Metadata } from "next";
+import { BlogCard } from "@/components/BlogCard";
+import { Navbar } from "@/components/Navbar";
+import { Footer } from "@/components/Footer";
+import { getAllPosts, getAllCategories } from "@/lib/data/blog-posts";
+import { Sparkles, Lightbulb } from "lucide-react";
 
-import { useState } from "react";
-import { BookOpen, Calendar, Clock } from "lucide-react";
-import { SimpleHeader } from "@/components/SimpleHeader";
-import { useAuth } from "@/contexts/AuthContext";
-import { useNotification } from "@/contexts/NotificationContext";
+export const metadata: Metadata = {
+  title: "AI Video Generation Blog | Tips, Guides & Best Practices | AIVideo.DIY",
+  description: "Learn everything about AI video generation with Sora 2. Expert tips, comprehensive guides, and best practices for creating stunning videos with artificial intelligence.",
+  keywords: [
+    "AI video blog",
+    "Sora 2 tutorials",
+    "video generation tips",
+    "AI video marketing",
+    "video content strategy",
+    "prompt engineering",
+    "AI video best practices",
+  ],
+  openGraph: {
+    title: "AI Video Generation Blog | Expert Tips & Guides",
+    description: "Master AI video generation with expert insights, tutorials, and best practices from the AIVideo.DIY team.",
+    type: "website",
+  },
+  alternates: {
+    canonical: "/blog",
+  },
+};
 
-interface BlogPost {
-  id: number;
-  title: string;
-  excerpt: string;
-  date: string;
-  category: string;
-  readTime: string;
-  author: string;
+interface BlogPageProps {
+  params: Promise<{
+    locale: string;
+  }>;
 }
 
-const blogPosts: BlogPost[] = [
-  {
-    id: 1,
-    title: "10 Tips for Creating Viral Marketing Videos with AI",
-    excerpt:
-      "Learn the secrets to crafting engaging video content that captures attention and drives conversions. Discover proven strategies from successful campaigns.",
-    date: "2025-01-15",
-    category: "Marketing",
-    readTime: "5 min",
-    author: "Sarah Chen",
-  },
-  {
-    id: 2,
-    title: "Sora 2 vs Sora 1: Which AI Model Should You Choose?",
-    excerpt:
-      "A comprehensive comparison of Sora's latest AI models. Understand the key differences, performance metrics, and when to use each model for optimal results.",
-    date: "2025-01-12",
-    category: "Technology",
-    readTime: "7 min",
-    author: "Michael Torres",
-  },
-  {
-    id: 3,
-    title: "The Ultimate Guide to AI Video Generation for Small Businesses",
-    excerpt:
-      "Everything small business owners need to know about leveraging AI for video marketing. From strategy to execution, we cover it all.",
-    date: "2025-01-10",
-    category: "Business",
-    readTime: "10 min",
-    author: "Emma Rodriguez",
-  },
-  {
-    id: 4,
-    title: "5 Common Mistakes When Creating AI-Generated Videos",
-    excerpt:
-      "Avoid these pitfalls that can sabotage your video campaigns. Learn from others' mistakes and create better content from day one.",
-    date: "2025-01-08",
-    category: "Tips & Tricks",
-    readTime: "6 min",
-    author: "David Kim",
-  },
-  {
-    id: 5,
-    title: "How to Write the Perfect Video Generation Prompt",
-    excerpt:
-      "Master the art of prompt engineering for AI video generation. Detailed examples and best practices to get exactly what you envision.",
-    date: "2025-01-05",
-    category: "Tutorial",
-    readTime: "8 min",
-    author: "Lisa Anderson",
-  },
-  {
-    id: 6,
-    title: "AI Video Marketing ROI: What to Expect in 2025",
-    excerpt:
-      "Data-driven insights on the return on investment from AI video marketing. Real case studies and performance metrics from successful campaigns.",
-    date: "2025-01-03",
-    category: "Business",
-    readTime: "9 min",
-    author: "James Wilson",
-  },
-  {
-    id: 7,
-    title: "Creating Brand-Consistent Videos with AI Technology",
-    excerpt:
-      "Maintain your brand identity while leveraging AI. Tips for ensuring consistency in style, tone, and messaging across all your video content.",
-    date: "2024-12-28",
-    category: "Branding",
-    readTime: "6 min",
-    author: "Sofia Martinez",
-  },
-  {
-    id: 8,
-    title: "The Future of Video Marketing: AI Trends for 2025",
-    excerpt:
-      "Expert predictions and emerging trends in AI video generation. Stay ahead of the curve with insights into what's coming next in the industry.",
-    date: "2024-12-25",
-    category: "Industry News",
-    readTime: "7 min",
-    author: "Alex Thompson",
-  },
-];
-
-const categories = [
-  "All Posts",
-  "Marketing",
-  "Technology",
-  "Business",
-  "Tips & Tricks",
-  "Tutorial",
-];
-
-export default function BlogPage() {
-  const { isAuthenticated } = useAuth();
-  const { showToast } = useNotification();
-  const [isSubscribed, setIsSubscribed] = useState(false);
-
-  const handleSubscribe = () => {
-    if (!isAuthenticated) {
-      showToast("Please log in to subscribe to our newsletter", "error");
-      return;
-    }
-
-    setIsSubscribed(true);
-    showToast("Successfully subscribed to newsletter!", "success");
-  };
+export default async function BlogPage({ params }: BlogPageProps) {
+  const { locale } = await params;
+  const allPosts = getAllPosts();
+  const categories = getAllCategories();
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white to-purple-50/30">
-      <SimpleHeader
-        title="Blog"
-        subtitle="Tips, insights, and updates on AI video generation"
-        icon={<BookOpen className="w-6 h-6 text-white" />}
-      />
+    <>
+      <Navbar />
+      <div className="min-h-screen bg-gradient-to-b from-white via-purple-50/30 to-white">
+        {/* Hero Section */}
+      <section className="pt-32 pb-0 sm:pb-0 px-4">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-12">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-purple-100 text-purple-600 rounded-full text-sm font-semibold mb-6">
+              <Sparkles className="w-4 h-4" />
+              <span>AI Video Generation Blog</span>
+            </div>
 
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        {/* Category Filter */}
-        <div className="mb-8 flex flex-wrap gap-2 justify-center">
-          {categories.map((category) => (
-            <button
-              key={category}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                category === "All Posts"
-                  ? "bg-purple-500 text-white shadow-md"
-                  : "bg-white text-gray-700 border border-gray-200 hover:border-purple-300 hover:text-purple-600"
-              }`}
-            >
-              {category}
-            </button>
-          ))}
-        </div>
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-gray-900 mb-6">
+              Learn & Master{" "}
+              <span className="bg-gradient-to-r from-purple-600 via-pink-500 to-purple-600 bg-clip-text text-transparent">
+                AI Video Creation
+              </span>
+            </h1>
 
-        {/* Blog Posts Grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
-          {blogPosts.map((post) => (
-            <article
-              key={post.id}
-              className="bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-200 cursor-pointer group"
-            >
-              {/* Category Badge */}
-              <div className="bg-gradient-to-br from-purple-100 to-purple-50 p-6 group-hover:from-purple-200 group-hover:to-purple-100 transition-colors">
-                <span className="inline-block px-3 py-1 bg-white text-purple-700 text-xs font-semibold rounded-full shadow-sm">
-                  {post.category}
-                </span>
-              </div>
-
-              {/* Content */}
-              <div className="p-6">
-                <h2 className="text-xl font-bold text-gray-900 mb-3 line-clamp-2 group-hover:text-purple-600 transition-colors">
-                  {post.title}
-                </h2>
-                <p className="text-gray-600 text-sm leading-relaxed mb-4 line-clamp-3">
-                  {post.excerpt}
-                </p>
-
-                {/* Meta Info */}
-                <div className="flex items-center gap-4 text-xs text-gray-500 pt-4 border-t border-gray-100">
-                  <div className="flex items-center gap-1">
-                    <Calendar className="w-3.5 h-3.5" />
-                    <time>
-                      {new Date(post.date).toLocaleDateString("en-US", {
-                        month: "short",
-                        day: "numeric",
-                        year: "numeric",
-                      })}
-                    </time>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Clock className="w-3.5 h-3.5" />
-                    <span>{post.readTime}</span>
-                  </div>
-                </div>
-
-                {/* Author */}
-                <div className="mt-3 text-xs text-gray-500">
-                  By {post.author}
-                </div>
-              </div>
-            </article>
-          ))}
-        </div>
-
-        {/* Newsletter CTA */}
-        <div className="bg-white rounded-2xl shadow-md p-8 border border-gray-200 text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">
-            Stay Updated with Our Newsletter
-          </h2>
-          <p className="text-gray-600 mb-6 max-w-2xl mx-auto">
-            Get the latest tips, insights, and updates on AI video generation
-            delivered straight to your inbox. No spam, unsubscribe anytime.
-          </p>
-          <div className="flex justify-center">
-            <button
-              onClick={handleSubscribe}
-              disabled={isSubscribed}
-              className={`px-8 py-3 rounded-lg font-semibold transition-all ${
-                isSubscribed
-                  ? "bg-pink-100 text-pink-400 cursor-not-allowed"
-                  : "bg-purple-500 text-white hover:bg-purple-600 hover:shadow-lg"
-              }`}
-            >
-              {isSubscribed ? "Subscribed" : "Subscribe"}
-            </button>
-          </div>
-          {!isSubscribed && (
-            <p className="text-xs text-gray-500 mt-4">
-              By subscribing, you agree to our Privacy Policy.
-            </p>
-          )}
-        </div>
-
-        {/* SEO Content Section */}
-        <div className="mt-16 bg-white/50 rounded-2xl p-8 border border-gray-200">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">
-            Why Choose AdsVideo for AI Video Generation?
-          </h2>
-          <div className="prose prose-gray max-w-none">
-            <p className="text-gray-600 leading-relaxed mb-4">
-              AdsVideo is your trusted partner for professional AI-powered video
-              generation. Our platform leverages cutting-edge AI models including
-              Sora 2 and Runway Gen-3 to transform your ideas into stunning
-              advertising videos in minutes.
-            </p>
-            <p className="text-gray-600 leading-relaxed">
-              Whether you&apos;re a small business owner, marketing professional, or
-              content creator, our blog provides valuable insights, tutorials, and
-              strategies to help you maximize the potential of AI video
-              marketing. Stay ahead of the curve with our expert content.
+            <p className="text-lg sm:text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
+              Expert insights, comprehensive guides, and proven strategies to create stunning videos with AI.
+              Stay ahead with the latest tips and best practices.
             </p>
           </div>
+
+          {/* Category Pills */}
+          <div className="flex flex-wrap justify-center gap-3 mb-12">
+            <button className="px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-full text-sm font-semibold shadow-md hover:shadow-lg transition-all">
+              All Posts
+            </button>
+            {categories.map((category) => (
+              <button
+                key={category}
+                className="px-4 py-2 bg-white text-gray-700 border border-gray-200 rounded-full text-sm font-medium hover:border-purple-300 hover:text-purple-600 transition-all"
+              >
+                {category}
+              </button>
+            ))}
+          </div>
         </div>
-      </main>
-    </div>
+      </section>
+
+      {/* All Posts Section */}
+      <section className="pb-12 pt-4 px-4">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex items-center gap-2 mb-8">
+            <Lightbulb className="w-6 h-6 text-purple-600" />
+            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">
+              All Articles
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+            {allPosts.map((post, index) => (
+              <BlogCard key={post.slug} post={post} index={index} locale={locale} />
+            ))}
+          </div>
+        </div>
+      </section>
+
+      </div>
+      <Footer />
+    </>
   );
 }

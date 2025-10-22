@@ -441,7 +441,8 @@ export const aiService = {
   async generateScript(
     file: File,
     duration: number = 4,
-    language: string = 'en'
+    language: string = 'en',
+    userDescription?: string  // 🆕 User's product description and advertising ideas
   ): Promise<{
     script: string;
     style?: string;
@@ -454,6 +455,11 @@ export const aiService = {
     formData.append('file', file);
     formData.append('duration', duration.toString());
     formData.append('language', language);
+
+    // 🆕 Add user description if provided
+    if (userDescription) {
+      formData.append('user_description', userDescription);
+    }
 
     const { data } = await apiClient.post('/ai/generate-script', formData, {
       headers: {

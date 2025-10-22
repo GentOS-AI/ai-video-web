@@ -146,10 +146,15 @@ export const VideoCard = ({ video, onPlay, onDelete, onRetry }: VideoCardProps) 
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.9 }}
       transition={{ duration: 0.3 }}
-      className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200 hover:shadow-xl transition-all duration-300"
+      className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200 hover:shadow-xl transition-shadow duration-200"
+      style={{ willChange: 'box-shadow' }}
     >
       {/* Thumbnail / Preview */}
-      <div className="relative aspect-video bg-gray-100 group cursor-pointer" onClick={() => video.status === 'completed' && onPlay(video)}>
+      <div
+        className="relative aspect-video bg-gray-100 group cursor-pointer"
+        onClick={() => video.status === 'completed' && onPlay(video)}
+        style={{ willChange: 'transform' }}
+      >
         {video.status === 'completed' && videoUrl ? (
           <>
             {posterUrl && !imageError ? (
@@ -161,6 +166,9 @@ export const VideoCard = ({ video, onPlay, onDelete, onRetry }: VideoCardProps) 
                 className="object-contain bg-gray-50"
                 onError={() => setImageError(true)}
                 sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                loading="lazy"
+                quality={85}
+                style={{ transform: 'translateZ(0)' }}
               />
             ) : referenceImageUrl && !imageError ? (
               // Priority 2: Use reference image as fallback
@@ -171,6 +179,9 @@ export const VideoCard = ({ video, onPlay, onDelete, onRetry }: VideoCardProps) 
                 className="object-contain bg-gray-50 opacity-60"
                 onError={() => setImageError(true)}
                 sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                loading="lazy"
+                quality={85}
+                style={{ transform: 'translateZ(0)' }}
               />
             ) : (
               // Priority 3: Use video first frame as thumbnail
@@ -180,6 +191,7 @@ export const VideoCard = ({ video, onPlay, onDelete, onRetry }: VideoCardProps) 
                 muted
                 playsInline
                 preload="metadata"
+                style={{ transform: 'translateZ(0)' }}
                 onError={() => {
                   // If video also fails, show placeholder
                   setImageError(true);
@@ -196,9 +208,15 @@ export const VideoCard = ({ video, onPlay, onDelete, onRetry }: VideoCardProps) 
               </div>
             )}
 
-            {/* Play Overlay */}
-            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all duration-300 flex items-center justify-center">
-              <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 transform scale-75 group-hover:scale-100">
+            {/* Play Overlay - Show on hover - Optimized for performance */}
+            <div
+              className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-opacity duration-200 flex items-center justify-center"
+              style={{ willChange: 'opacity' }}
+            >
+              <div
+                className="opacity-0 group-hover:opacity-100 transition-all duration-200 transform scale-90 group-hover:scale-100"
+                style={{ willChange: 'opacity, transform' }}
+              >
                 <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center shadow-lg">
                   <Play className="w-8 h-8 text-purple-600 ml-1" />
                 </div>
@@ -240,7 +258,40 @@ export const VideoCard = ({ video, onPlay, onDelete, onRetry }: VideoCardProps) 
                 />
 
                 {/* Menu items */}
-                <div className="absolute right-0 mt-2 w-40 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20">
+                <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20">
+                  {/* Download - Only for completed videos */}
+                  {video.status === 'completed' && videoUrl && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowMenu(false);
+                        handleDownload(e);
+                      }}
+                      className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2"
+                    >
+                      <Download className="w-4 h-4" />
+                      Download
+                    </button>
+                  )}
+
+                  {/* Share - Only for completed videos */}
+                  {video.status === 'completed' && videoUrl && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowMenu(false);
+                        setShowYouTubeModal(true);
+                      }}
+                      className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2"
+                    >
+                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z"/>
+                      </svg>
+                      Share
+                    </button>
+                  )}
+
+                  {/* Delete */}
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
@@ -268,20 +319,47 @@ export const VideoCard = ({ video, onPlay, onDelete, onRetry }: VideoCardProps) 
           </p>
         </div>
 
-        {/* Metadata */}
-        <div className="flex flex-wrap gap-2">
-          <span className="px-2.5 py-1 bg-purple-100 text-purple-700 rounded-md text-xs font-medium">
-            {video.model}
-          </span>
-          {video.duration && (
-            <span className="px-2.5 py-1 bg-gray-100 text-gray-700 rounded-md text-xs font-medium">
-              {video.duration}s
-            </span>
-          )}
-          {video.resolution && (
-            <span className="px-2.5 py-1 bg-gray-100 text-gray-700 rounded-md text-xs font-medium">
-              {video.resolution}
-            </span>
+        {/* Metadata and Play Button - Side by side layout */}
+        <div className="flex items-start justify-between gap-4">
+          {/* Left side - Metadata and Status */}
+          <div className="flex-1 space-y-2">
+            {/* Metadata Tags */}
+            <div className="flex flex-wrap gap-2">
+              <span className="px-2.5 py-1 bg-purple-100 text-purple-700 rounded-md text-xs font-medium">
+                {video.model}
+              </span>
+              {video.duration && (
+                <span className="px-2.5 py-1 bg-gray-100 text-gray-700 rounded-md text-xs font-medium">
+                  {video.duration}s
+                </span>
+              )}
+              {video.resolution && (
+                <span className="px-2.5 py-1 bg-gray-100 text-gray-700 rounded-md text-xs font-medium">
+                  {video.resolution}
+                </span>
+              )}
+            </div>
+
+            {/* Timestamp with Status */}
+            <div className="flex items-center gap-2 text-xs">
+              <span className="text-gray-500">{getRelativeTime(video.created_at)}</span>
+              <span className="text-gray-300">•</span>
+              <span className={`flex items-center gap-1 ${statusInfo.iconColor}`}>
+                <StatusIcon className={`w-3 h-3 ${statusInfo.animation}`} />
+                {statusInfo.label}
+              </span>
+            </div>
+          </div>
+
+          {/* Right side - Circular purple play button for completed videos */}
+          {video.status === 'completed' && (
+            <button
+              onClick={() => onPlay(video)}
+              className="w-12 h-12 flex-shrink-0 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 flex items-center justify-center shadow-lg hover:shadow-xl transition-all hover:scale-105"
+              title="Play video"
+            >
+              <Play className="w-5 h-5 text-white ml-0.5" />
+            </button>
           )}
         </div>
 
@@ -292,71 +370,18 @@ export const VideoCard = ({ video, onPlay, onDelete, onRetry }: VideoCardProps) 
           </div>
         )}
 
-        {/* Timestamp with Status */}
-        <div className="flex items-center gap-2 text-xs">
-          <span className="text-gray-500">{getRelativeTime(video.created_at)}</span>
-          <span className="text-gray-300">•</span>
-          <span className={`flex items-center gap-1 ${statusInfo.iconColor}`}>
-            <StatusIcon className={`w-3 h-3 ${statusInfo.animation}`} />
-            {statusInfo.label}
-          </span>
-        </div>
-
-        {/* Actions */}
-        <div className="flex items-center gap-2 pt-2 border-t border-gray-100">
-          {/* Play Button - Always visible, disabled for non-completed status */}
-          <button
-            onClick={() => video.status === 'completed' && onPlay(video)}
-            disabled={video.status !== 'completed'}
-            className={`
-              flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-lg text-sm font-medium
-              transition-colors
-              ${video.status === 'completed'
-                ? 'bg-purple-600 text-white hover:bg-purple-700 cursor-pointer'
-                : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-              }
-            `}
-          >
-            <Play className="w-4 h-4" />
-            Play
-          </button>
-
-          {/* Download Button - Only for completed videos */}
-          {video.status === 'completed' && videoUrl && (
-            <button
-              onClick={handleDownload}
-              className="flex items-center justify-center gap-1.5 px-4 py-2.5 bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition-colors text-sm font-medium"
-              title="Download video"
-            >
-              <Download className="w-4 h-4" />
-              Download
-            </button>
-          )}
-
-          {/* Retry Button - Only for failed videos */}
-          {video.status === 'failed' && (
+        {/* Retry Button - Only for failed videos */}
+        {video.status === 'failed' && (
+          <div className="pt-2 border-t border-gray-100">
             <button
               onClick={handleRetry}
-              className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium"
+              className="w-full flex items-center justify-center gap-1.5 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium"
             >
               <RotateCcw className="w-4 h-4" />
               Retry
             </button>
-          )}
-
-          {/* Share Button - Only for completed videos */}
-          {video.status === 'completed' && videoUrl && (
-            <ShareDropdown
-              videoUrl={videoUrl}
-              videoTitle={video.prompt}
-              onShareToYouTube={() => setShowYouTubeModal(true)}
-              onShareToTikTok={() => {
-                console.log("TikTok share clicked - coming soon");
-                // TikTok sharing coming soon - currently shows "Coming soon" in dropdown
-              }}
-            />
-          )}
-        </div>
+          </div>
+        )}
       </div>
 
       {/* YouTube Upload Modal */}

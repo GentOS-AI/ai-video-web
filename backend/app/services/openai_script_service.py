@@ -29,7 +29,8 @@ class OpenAIScriptService:
         image_data: bytes,
         duration: int = 4,
         mime_type: str = "image/jpeg",
-        language: str = "en"
+        language: str = "en",
+        user_description: str = None  # 🆕 User's product description and advertising ideas
     ) -> Dict[str, Any]:
         """
         Analyze product image and generate professional advertising video script using GPT-4o
@@ -115,8 +116,9 @@ class OpenAIScriptService:
             logger.info("-" * 50)
             logger.info("📝 [OpenAI Service] Step 4: Preparing OpenAI request")
 
-            prompt = self._create_script_prompt(duration, language)
+            prompt = self._create_script_prompt(duration, language, user_description)
             logger.info(f"  ✅ Prompt created ({len(prompt)} characters)")
+            logger.info(f"  📝 User input included: {'Yes' if user_description else 'No'}")
 
             # === Step 5: Call OpenAI API ===
             current_step = "openai_api_call"
@@ -201,31 +203,78 @@ class OpenAIScriptService:
             logger.error("Full stack trace:", exc_info=True)
             raise Exception(f"Failed to generate script: {str(e)}")
 
-    def _create_script_prompt(self, duration: int, language: str = "en") -> str:
+    def _create_script_prompt(self, duration: int, language: str = "en", user_description: str = None) -> str:
         """Create optimized prompt for professional video script generation"""
 
         # Language-specific prompts
         if language == "zh":
-            return f"""你是一位专业的商业视频导演,正在为这个产品创作一个{duration}秒的广告视频脚本。
+            # 构建用户输入部分，并根据是否有用户输入调整指令
+            if user_description:
+                user_context = f"\n\n**用户提供的产品描述与广告创意：**\n{user_description}\n\n重要提示：请将用户描述作为首要参考。结合用户提供的信息与图像分析，创作有针对性的专业广告脚本。"
+                analysis_instruction = "仔细观察产品图片，并结合上述用户描述来："
+                highlight_instruction = "- 强调：[基于用户输入 + 图像细节的核心卖点]"
+            else:
+                user_context = ""
+                analysis_instruction = "仔细观察提供的产品图片，独立分析并识别："
+                highlight_instruction = "- 强调：[从图像分析中识别的核心卖点]"
 
-请仔细观察图片中的产品,并撰写一份详细的视频制作脚本(100-150字),包括:
+            return f"""你是拥有10年以上经验的专业广告视频导演，为顶级品牌创作过无数成功的产品广告片。
 
-**视觉元素:**
-- 开场镜头和镜头运动(推拉摇移、特写)
-- 产品位置和拍摄角度
-- 背景和环境布置
-- 灯光风格(影棚光、自然光、戏剧性光效)
+**任务：** 为这个产品创作一个{duration}秒的专业广告视频分镜脚本。
+{user_context}
 
-**制作风格:**
-- 视觉美学(电影感、现代感、极简主义、动感)
-- 调色和氛围
-- 转场和特效
-- 节奏感
+**图像分析：** {analysis_instruction}
+- 产品类别和核心功能
+- 高端品质和独特卖点
+- 目标受众和情感诉求点
+- 最佳拍摄角度和视觉叙事机会
 
-**脚本格式:**
-以连续的镜头描述方式撰写,供视频制作团队使用。重点突出产品的关键特性和吸引力。
+**脚本要求：**
 
-请用中文撰写完整的视频脚本。"""
+📹 **分镜头结构（必须遵循格式）：**
+
+【镜头1】(0-{duration//4}秒) 开场 - 环境建立
+- 环境：[背景设置：影棚/生活场景]
+- 产品：[位置、角度、突出程度]
+- 运镜：[推进/拉远/摇移/固定]
+- 灯光：[风格：影棚光/自然光/戏剧光，重点突出]
+- 情绪：[情感基调：现代/奢华/动感/平静]
+
+【镜头2】({duration//4}-{duration//2}秒) 特写 - 核心特性
+- 焦点：[具体产品细节、纹理、材质]
+{highlight_instruction}
+- 运镜：[180度环绕/倾斜/跟踪]
+- 灯光：[强调质感的重点照明]
+- USP：[突出的独特功能]
+
+【镜头3】({duration//2}-{duration*3//4}秒) 动态展示
+- 动作：[产品交互/旋转/功能演示]
+- 特效：[光迹、粒子、光晕、现代图形]
+- 字幕：[关键利益点关键词]
+- 情感：[欲望触发、向往、信任]
+
+【镜头4】({duration*3//4}-{duration}秒) 收尾 - 品牌呈现
+- 构图：[产品正面，logo清晰]
+- 灯光：[温暖、吸引人、高端感]
+- 运镜：[缓慢拉远，优雅呈现]
+- 品牌：[Logo淡入，如有标语]
+- CTA：[购买欲望时刻："拥有它"、"探索"、"体验"]
+
+**广告原则：**
+✅ 强调产品利益，而非仅功能
+✅ 与目标受众建立情感连接
+✅ 使用高端视觉语言（电影感、高端）
+✅ 保持品牌一致性
+✅ 以强烈购买欲望结尾
+
+**技术规格：**
+- 总时长：{duration}秒
+- 风格：电影广告美学
+- 调色：高端、符合品牌调性
+- 节奏：动态但信息清晰
+- 音效设计备注：[背景音乐情绪]
+
+请用中文撰写完整的分镜头广告视频脚本，严格遵循上述格式。确保每个镜头推进产品故事，朝向购买意图构建。"""
 
         elif language == "zh-TW":
             return f"""你是一位專業的商業視頻導演,正在為這個產品創作一個{duration}秒的廣告視頻腳本。
@@ -272,29 +321,73 @@ class OpenAIScriptService:
 日本語で完全なビデオスクリプトを書いてください。"""
 
         else:  # English (default)
-            return f"""You are a professional commercial video director. Look at the product image provided and create a detailed {duration}-second advertising video production script.
+            # Build user context section and adjust instructions based on whether user input exists
+            if user_description:
+                user_context = f"\n\n**User's Product Description & Advertising Ideas:**\n{user_description}\n\nIMPORTANT: Use this as your PRIMARY reference. Combine the user's insights with what you see in the image to create a targeted, effective advertising script."
+                analysis_instruction = "Carefully observe the product image and COMBINE it with the user's description above to:"
+                highlight_instruction = "- Highlight: [Core selling point based on USER INPUT + image details]"
+            else:
+                user_context = ""
+                analysis_instruction = "Carefully observe the product image provided and INDEPENDENTLY identify:"
+                highlight_instruction = "- Highlight: [Core selling point identified from image analysis]"
 
-Based on what you see in the image, write a shot-by-shot script (100-150 words) that includes:
+            return f"""You are a professional advertising video director with 10+ years of experience creating compelling product commercials for top brands.
 
-**Visual Elements:**
-- Opening shot and camera movements (pan, zoom, tracking, close-up)
-- Product positioning and angles
-- Background and environment setup
-- Lighting style (studio, natural, dramatic)
+**Task:** Create a detailed {duration}-second advertising video script with shot-by-shot breakdown.
+{user_context}
 
-**Production Style:**
-- Visual aesthetic (cinematic, modern, minimalist, dynamic)
-- Color grading and mood
-- Transitions and effects
-- Pacing and rhythm
+**Image Analysis:** {analysis_instruction}
+- Product category and key features
+- Premium qualities and unique selling points
+- Target audience and emotional appeal
+- Best angles and visual storytelling opportunities
 
-**Script Format:**
-Write as a continuous shot-by-shot description for a video production team. Focus on visual storytelling that highlights the product's key features and appeal based on what you observe in the image.
+**Script Requirements:**
 
-Example format:
-"Opening with a dramatic wide shot, camera slowly zooms into the [product] against a minimalist white backdrop. Soft studio lighting creates subtle shadows, emphasizing the product's sleek design. Camera executes a smooth 360° rotation, showcasing premium materials and craftsmanship. Close-up reveals intricate details as vibrant colors pop against the clean background. Final shot pulls back with a subtle glow effect, logo fades in. Modern, cinematic aesthetic throughout."
+📹 **SHOT-BY-SHOT STRUCTURE (Mandatory Format):**
 
-Write the complete video script in English based on the product image."""
+【Shot 1】(0-{duration//4}s) Opening - Establishing Shot
+- Environment: [Background setting, studio/lifestyle]
+- Product: [Positioning, angle, prominence]
+- Camera: [Movement: push in/pull out/pan/static]
+- Lighting: [Style: studio/natural/dramatic, key highlights]
+- Mood: [Emotional tone: modern/luxury/energetic/calm]
+
+【Shot 2】({duration//4}-{duration//2}s) Close-up - Key Features
+- Focus: [Specific product details, textures, materials]
+{highlight_instruction}
+- Camera: [Movement: 180° rotation/tilt/tracking]
+- Lighting: [Accent lighting to emphasize quality]
+- USP: [Unique feature that stands out]
+
+【Shot 3】({duration//2}-{duration*3//4}s) Dynamic Demonstration
+- Action: [Product interaction/rotation/functional demo]
+- Effects: [Light trails, particles, glow, modern graphics]
+- Text Overlay: [Key benefit keyword]
+- Emotion: [Desire trigger, aspiration, trust]
+
+【Shot 4】({duration*3//4}-{duration}s) Closing - Brand Presence
+- Composition: [Product front-facing, logo visible]
+- Lighting: [Warm, inviting, premium feel]
+- Camera: [Slow pullback, elegant reveal]
+- Branding: [Logo fade-in, tagline if applicable]
+- CTA: [Call-to-action emotion: "Own it", "Discover", "Experience"]
+
+**Advertising Principles:**
+✅ Emphasize product benefits, not just features
+✅ Create emotional connection with target audience
+✅ Use premium visual language (cinematic, high-end)
+✅ Maintain brand consistency throughout
+✅ End with strong desire-to-purchase moment
+
+**Technical Specs:**
+- Total duration: {duration} seconds
+- Style: Cinematic advertising aesthetic
+- Color grading: Premium, brand-appropriate
+- Pacing: Dynamic but clear messaging
+- Sound design notes: [Background music mood]
+
+Write the complete shot-by-shot advertising video script in English, following the exact format above. Ensure each shot advances the product story and builds towards purchase intent."""
 
     def _parse_response(self, response_text: str) -> Dict[str, Any]:
         """

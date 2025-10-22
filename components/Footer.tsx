@@ -2,7 +2,9 @@
 
 import { useState } from "react";
 import dynamic from "next/dynamic";
-import { Twitter, Github, Linkedin, Mail } from "lucide-react";
+import { Mail } from "lucide-react";
+import { SiTiktok } from "react-icons/si";
+import { FaReddit } from "react-icons/fa";
 import { AnimatedLogo } from "./AnimatedLogo";
 import { useTranslations } from "next-intl";
 import { useParams } from "next/navigation";
@@ -133,34 +135,25 @@ export const Footer = () => {
             </h3>
             <div className="flex space-x-4 sm:space-x-3">
               <a
-                href="https://twitter.com"
+                href="https://reddit.com/r/mokyvideo"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="p-3 sm:p-2 rounded-lg bg-gray-100 hover:bg-primary hover:text-white transition-all hover:scale-110"
-                aria-label="Twitter"
+                aria-label="Reddit"
               >
-                <Twitter className="w-6 h-6 sm:w-5 sm:h-5" />
+                <FaReddit className="w-6 h-6 sm:w-5 sm:h-5" />
               </a>
               <a
-                href="https://github.com"
+                href="https://tiktok.com/@mokyvideo"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="p-3 sm:p-2 rounded-lg bg-gray-100 hover:bg-primary hover:text-white transition-all hover:scale-110"
-                aria-label="Github"
+                aria-label="TikTok"
               >
-                <Github className="w-6 h-6 sm:w-5 sm:h-5" />
+                <SiTiktok className="w-5 h-5 sm:w-4 sm:h-4" />
               </a>
               <a
-                href="https://linkedin.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="p-3 sm:p-2 rounded-lg bg-gray-100 hover:bg-primary hover:text-white transition-all hover:scale-110"
-                aria-label="LinkedIn"
-              >
-                <Linkedin className="w-6 h-6 sm:w-5 sm:h-5" />
-              </a>
-              <a
-                href="mailto:contact@aivideo.diy"
+                href="mailto:contact@mokyvideo.com"
                 className="p-3 sm:p-2 rounded-lg bg-gray-100 hover:bg-primary hover:text-white transition-all hover:scale-110"
                 aria-label="Email"
               >

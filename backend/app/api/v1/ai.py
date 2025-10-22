@@ -87,6 +87,7 @@ async def generate_script(
     file: UploadFile = File(..., description="Product image (JPG/PNG, max 20MB)"),
     duration: int = Form(4, description="Video duration in seconds"),
     language: str = Form("en", description="Language for generated script (en, zh, ja, etc.)"),
+    user_description: Optional[str] = Form(None, description="User's product description and advertising ideas"),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -202,12 +203,14 @@ async def generate_script(
         logger.info(f"  Model: gpt-4o")
         logger.info(f"  Image size: {file_size_mb:.2f}MB")
         logger.info(f"  Target duration: {duration}s")
+        logger.info(f"  User description: {user_description[:50] if user_description else 'None'}...")
 
         result = openai_script_service.analyze_image_for_script(
             image_data=content,
             duration=duration,
             mime_type=file.content_type or "image/jpeg",
-            language=language
+            language=language,
+            user_description=user_description  # 🆕 Pass user input to service
         )
 
         # === 详细的输出日志 ===

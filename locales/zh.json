@@ -21,7 +21,7 @@
     },
     "subtitle": "AI驱动的脚本写作、视频生成，并发布到您的社交媒体。",
     "input": {
-      "placeholder": "描述您的产品和广告创意 — 或让我们的 Ads Pro AI 为您增强。"
+      "placeholder": "描述您的产品和广告创意，让我们的 Ads PRO AI 为您增强。"
     },
     "button": {
       "generate": "生成",

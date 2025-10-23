@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import dynamic from "next/dynamic";
 import { Button } from "./Button";
-import { Menu, X, LogOut, Film } from "lucide-react";
+import { Menu, X, LogOut, Film, Globe } from "lucide-react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
@@ -41,6 +41,7 @@ export const Navbar = () => {
   const [isPricingOpen, setIsPricingOpen] = useState(false);
   const [isCreditsModalOpen, setIsCreditsModalOpen] = useState(false);
   const [isLangMenuOpen, setIsLangMenuOpen] = useState(false);
+  const [isMobileLangMenuOpen, setIsMobileLangMenuOpen] = useState(false);
   const lastScrollY = useRef(0);
   const logoRef = useRef<HTMLDivElement>(null);
   const animationFrameId = useRef<number | undefined>(undefined);
@@ -90,12 +91,20 @@ export const Navbar = () => {
     setShowUserMenu(false);
   };
 
-  // Language list - Currently only English is active
-  // Other languages commented out - uncomment when ready to enable
+  const handleLanguageChange = (newLocale: Locale) => {
+    // Get current path without locale prefix
+    const pathWithoutLocale = pathname.replace(`/${locale}`, '') || '/';
+    // Navigate to new locale path
+    window.location.href = `/${newLocale}${pathWithoutLocale}`;
+    setIsLangMenuOpen(false);
+  };
+
+  // Language list - All languages enabled
   const languages: Array<{ code: Locale; name: string; flag: string }> = [
     { code: 'en', name: localeNames['en'], flag: localeFlags['en'] },
-    // { code: 'zh', name: localeNames['zh'], flag: localeFlags['zh'] },
-    // { code: 'zh-TW', name: localeNames['zh-TW'], flag: localeFlags['zh-TW'] },
+    { code: 'zh', name: localeNames['zh'], flag: localeFlags['zh'] },
+    { code: 'zh-TW', name: localeNames['zh-TW'], flag: localeFlags['zh-TW'] },
+    { code: 'ja', name: localeNames['ja'], flag: localeFlags['ja'] },
   ];
 
   // Helper function to check if a path is active
@@ -203,8 +212,8 @@ export const Navbar = () => {
             </span>
           </Link>
 
-          {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-4">
+          {/* Center Navigation Links - Desktop */}
+          <div className="hidden md:flex items-center space-x-4 absolute left-1/2 -translate-x-1/2">
             <Link
               href={`/${locale}`}
               className={`px-4 py-2 text-sm font-medium transition-colors relative ${
@@ -244,45 +253,68 @@ export const Navbar = () => {
                 <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-primary rounded-full" />
               )}
             </Link>
+            <Link
+              href={`/${locale}/help`}
+              className={`px-4 py-2 text-sm font-medium transition-colors relative ${
+                isActivePath(`/${locale}/help`)
+                  ? 'text-primary font-semibold'
+                  : 'text-text-secondary hover:text-primary'
+              }`}
+            >
+              FAQ
+              {isActivePath(`/${locale}/help`) && (
+                <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-primary rounded-full" />
+              )}
+            </Link>
             <button
               onClick={handlePricingClick}
               className="px-4 py-2 text-sm font-medium text-text-secondary hover:text-primary transition-colors"
             >
               {t('pricing')}
             </button>
+          </div>
 
-            {/* Language Switcher - Desktop (Currently only English) */}
+          {/* Right Section - Language & User Menu */}
+          <div className="hidden md:flex items-center space-x-4">
+            {/* Language Switcher - Desktop */}
             <div className="relative" ref={langMenuRef}>
               <button
                 onClick={() => setIsLangMenuOpen(!isLangMenuOpen)}
-                className="flex items-center gap-1.5 px-2 py-1.5 rounded-md hover:bg-gray-100 transition-colors text-gray-600 hover:text-gray-900"
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-all text-gray-700 hover:text-gray-900 group"
                 aria-label="Switch language"
               >
-                <span className="text-lg">{localeFlags[locale]}</span>
-                <span className="text-xs font-medium uppercase">{locale}</span>
+                <Globe className="w-3.5 h-3.5 text-gray-500 group-hover:text-gray-700 transition-colors" />
+                <span className="text-xs font-medium">{localeNames[locale]}</span>
               </button>
 
               {/* Language Dropdown Menu */}
               <AnimatePresence>
                 {isLangMenuOpen && (
                   <motion.div
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.95 }}
-                    transition={{ duration: 0.15, ease: [0.16, 1, 0.3, 1] }}
-                    className="absolute right-0 mt-2 w-36 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-[100] overflow-hidden"
+                    initial={{ opacity: 0, y: -8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -8 }}
+                    transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+                    className="absolute right-0 mt-2 w-44 bg-white rounded-xl shadow-lg border border-gray-200 py-2 z-[100] overflow-hidden"
                     style={{ transformOrigin: 'top right', willChange: 'transform, opacity' }}
                   >
-                    {languages.map((lang) => (
-                      <div
+                    {languages.map((lang, index) => (
+                      <button
                         key={lang.code}
-                        className={`w-full px-3 py-1.5 flex items-center gap-2 ${
-                          locale === lang.code ? 'bg-gray-50 text-gray-900 font-medium' : 'text-gray-700'
-                        }`}
+                        onClick={() => handleLanguageChange(lang.code)}
+                        className={`w-full px-4 py-2.5 text-left transition-all duration-150 flex items-center justify-between group ${
+                          locale === lang.code
+                            ? 'bg-purple-50 text-purple-600'
+                            : 'text-gray-700 hover:bg-gray-50'
+                        } ${index !== languages.length - 1 ? 'border-b border-gray-100' : ''}`}
                       >
-                        <span className="text-base">{lang.flag}</span>
-                        <span className="text-xs">{lang.name}</span>
-                      </div>
+                        <span className="text-sm font-medium">{lang.name}</span>
+                        {locale === lang.code && (
+                          <svg className="w-4 h-4 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                          </svg>
+                        )}
+                      </button>
                     ))}
                   </motion.div>
                 )}
@@ -319,12 +351,8 @@ export const Navbar = () => {
                         {user.name || 'User'}
                       </span>
                       {user.subscription_plan !== 'free' && (
-                        <span className={`px-2 py-0.5 text-[10px] font-bold rounded-md ${
-                          user.subscription_plan === 'pro'
-                            ? 'bg-gradient-to-r from-yellow-400 to-orange-500 text-white'
-                            : 'bg-gradient-to-r from-blue-400 to-blue-600 text-white'
-                        }`}>
-                          {user.subscription_plan.toUpperCase()}
+                        <span className="px-2 py-0.5 text-[10px] font-bold rounded-md bg-gradient-to-r from-yellow-400 to-orange-500 text-white">
+                          {user.subscription_plan === 'basic' ? 'BASIC' : 'PREMIUM'}
                         </span>
                       )}
                     </div>
@@ -397,10 +425,9 @@ export const Navbar = () => {
             className="md:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
             onClick={() => {
               setIsMobileMenuOpen(!isMobileMenuOpen);
-              // Commented out - only needed when multi-language support is enabled
-              // if (isMobileMenuOpen) {
-              //   setIsMobileLangMenuOpen(false);
-              // }
+              if (isMobileMenuOpen) {
+                setIsMobileLangMenuOpen(false);
+              }
             }}
             aria-label="Toggle menu"
           >
@@ -458,6 +485,17 @@ export const Navbar = () => {
               >
                 Blog
               </Link>
+              <Link
+                href={`/${locale}/help`}
+                onClick={() => setIsMobileMenuOpen(false)}
+                className={`block w-full text-left px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                  isActivePath(`/${locale}/help`)
+                    ? 'bg-purple-bg text-primary font-semibold'
+                    : 'text-text-secondary hover:text-primary hover:bg-purple-bg'
+                }`}
+              >
+                FAQ
+              </Link>
               <button
                 onClick={handlePricingClick}
                 className="w-full text-left px-4 py-2 text-sm font-medium text-text-secondary hover:text-primary hover:bg-purple-bg rounded-lg transition-colors"
@@ -465,14 +503,65 @@ export const Navbar = () => {
                 {t('pricing')}
               </button>
 
-              {/* Language Menu - Mobile (Currently only English) */}
+              {/* Language Menu - Mobile (Collapsible) */}
               <div className="border-t border-gray-200 pt-3 mt-3">
-                <div className="w-full px-4 py-2 bg-gray-50 rounded-lg">
-                  <div className="flex items-center gap-3 text-text-secondary">
-                    <span className="text-2xl">{localeFlags[locale]}</span>
-                    <span className="text-sm font-medium">{localeNames[locale]}</span>
+                <button
+                  onClick={() => setIsMobileLangMenuOpen(!isMobileLangMenuOpen)}
+                  className="w-full px-4 py-2.5 rounded-lg text-left transition-all duration-150 flex items-center justify-between hover:bg-gray-50"
+                >
+                  <div className="flex items-center gap-2">
+                    <Globe className="w-4 h-4 text-gray-500" />
+                    <span className="text-sm font-medium text-gray-700">{localeNames[locale]}</span>
                   </div>
-                </div>
+                  <svg
+                    className={`w-4 h-4 text-gray-500 transition-transform duration-200 ${
+                      isMobileLangMenuOpen ? 'rotate-180' : ''
+                    }`}
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+
+                {/* Collapsible Language Options */}
+                <AnimatePresence>
+                  {isMobileLangMenuOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      transition={{ duration: 0.2, ease: "easeOut" }}
+                      className="overflow-hidden"
+                    >
+                      <div className="px-2 pt-2 space-y-1">
+                        {languages.map((lang) => (
+                          <button
+                            key={lang.code}
+                            onClick={() => {
+                              handleLanguageChange(lang.code);
+                              setIsMobileMenuOpen(false);
+                              setIsMobileLangMenuOpen(false);
+                            }}
+                            className={`w-full px-3 py-2.5 rounded-lg text-left transition-all duration-150 flex items-center justify-between ${
+                              locale === lang.code
+                                ? 'bg-purple-50 text-purple-600 font-medium'
+                                : 'text-gray-700 hover:bg-gray-50'
+                            }`}
+                          >
+                            <span className="text-sm">{lang.name}</span>
+                            {locale === lang.code && (
+                              <svg className="w-4 h-4 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                              </svg>
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
 
               {loading ? (
@@ -502,12 +591,8 @@ export const Navbar = () => {
                           {user.name || 'User'}
                         </p>
                         {user.subscription_plan !== 'free' && (
-                          <span className={`px-1.5 py-0.5 text-[9px] font-bold rounded ${
-                            user.subscription_plan === 'pro'
-                              ? 'bg-gradient-to-r from-yellow-400 to-orange-500 text-white'
-                              : 'bg-gradient-to-r from-blue-400 to-blue-600 text-white'
-                          }`}>
-                            {user.subscription_plan.toUpperCase()}
+                          <span className="px-1.5 py-0.5 text-[9px] font-bold rounded bg-gradient-to-r from-yellow-400 to-orange-500 text-white">
+                            {user.subscription_plan === 'basic' ? 'BASIC' : 'PREMIUM'}
                           </span>
                         )}
                       </div>

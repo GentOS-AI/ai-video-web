@@ -4,54 +4,63 @@
  */
 
 // Trial sample images - AI/Tech/Business themed (using reliable Unsplash URLs)
+// Each image is linked to a showcase video demonstrating the AI-generated ad
 export const trialImages = [
   {
     id: 1,
     src: "https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=400&h=400&fit=crop",
     highResSrc: "https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=1280&h=720&fit=crop",
     alt: "Tech Product",
+    videoId: 1, // Links to "Tech Product Launch" showcase video
   },
   {
     id: 2,
     src: "https://images.unsplash.com/photo-1518770660439-4636190af475?w=400&h=400&fit=crop",
     highResSrc: "https://images.unsplash.com/photo-1518770660439-4636190af475?w=1280&h=720&fit=crop",
     alt: "AI Technology",
+    videoId: 6, // Links to "SaaS Platform Demo" showcase video
   },
   {
     id: 3,
     src: "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=400&h=400&fit=crop",
     highResSrc: "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=1280&h=720&fit=crop",
     alt: "Business Tech",
+    videoId: 4, // Links to "Real Estate Tour" showcase video
   },
   {
     id: 4,
     src: "https://images.unsplash.com/photo-1535378917042-10a22c95931a?w=400&h=400&fit=crop",
     highResSrc: "https://images.unsplash.com/photo-1535378917042-10a22c95931a?w=1280&h=720&fit=crop",
     alt: "Modern Office",
+    videoId: 4, // Links to "Real Estate Tour" showcase video
   },
   {
     id: 5,
     src: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&h=400&fit=crop",
     highResSrc: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=1280&h=720&fit=crop",
     alt: "Data Analytics",
+    videoId: 6, // Links to "SaaS Platform Demo" showcase video
   },
   {
     id: 6,
     src: "https://images.unsplash.com/photo-1504868584819-f8e8b4b6d7e3?w=400&h=400&fit=crop",
     highResSrc: "https://images.unsplash.com/photo-1504868584819-f8e8b4b6d7e3?w=1280&h=720&fit=crop",
     alt: "Digital Marketing",
+    videoId: 2, // Links to "Fashion Brand Story" showcase video
   },
   {
     id: 7,
     src: "https://images.unsplash.com/photo-1542744173-8e7e53415bb0?w=400&h=400&fit=crop",
     highResSrc: "https://images.unsplash.com/photo-1542744173-8e7e53415bb0?w=1280&h=720&fit=crop",
     alt: "Team Meeting",
+    videoId: 3, // Links to "Food & Beverage Ad" showcase video
   },
   {
     id: 8,
     src: "https://images.unsplash.com/photo-1557804506-669a67965ba0?w=400&h=400&fit=crop",
     highResSrc: "https://images.unsplash.com/photo-1557804506-669a67965ba0?w=1280&h=720&fit=crop",
     alt: "Presentation",
+    videoId: 5, // Links to "Automotive Showcase" showcase video
   },
 ];
 
@@ -237,6 +246,7 @@ export interface TrialImage {
   src: string;
   highResSrc: string;  // High-resolution version for AI video generation
   alt: string;
+  videoId: number;  // Links to showcaseVideo id to display the corresponding ad video
 }
 
 export interface Video {

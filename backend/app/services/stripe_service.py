@@ -37,7 +37,7 @@ class StripeService:
 
         Args:
             user: Current user
-            product_type: 'basic', 'pro', or 'credits'
+            product_type: 'basic', 'premium', or 'credits'
             success_url: Redirect URL after successful payment
             cancel_url: Redirect URL if payment cancelled
 
@@ -184,15 +184,15 @@ class StripeService:
                 print(f"   Plan before: {old_plan} ({old_status})")
                 print(f"   Plan after: {user.subscription_plan} ({user.subscription_status})")
 
-            elif product_type == "pro":
-                # Yearly Pro subscription
+            elif product_type == "premium":
+                # Yearly Premium subscription
                 old_plan = user.subscription_plan
                 old_status = user.subscription_status
 
-                user.subscription_plan = "pro"
+                user.subscription_plan = "premium"
                 user.subscription_status = "active"
 
-                print(f"   👑 Activating Pro plan")
+                print(f"   👑 Activating Premium plan")
                 print(f"   Plan before: {old_plan} ({old_status})")
                 print(f"   Plan after: {user.subscription_plan} ({user.subscription_status})")
 
@@ -290,11 +290,11 @@ class StripeService:
                     "credits": 500,
                     "stripe_price_id": self.config.basic_price_id,
                 },
-                "pro": {
+                "premium": {
                     "price": 129.99,
                     "interval": "year",
                     "credits": 3000,
-                    "stripe_price_id": self.config.pro_price_id,
+                    "stripe_price_id": self.config.premium_price_id,
                 },
                 "credits": {
                     "price": 49.99,
@@ -312,11 +312,11 @@ class StripeService:
                     "credits": 500,
                     "stripe_price_id": self.config.basic_price_id,
                 },
-                "pro": {
+                "premium": {
                     "price": 1.00,
                     "interval": "year",
                     "credits": 3000,
-                    "stripe_price_id": self.config.pro_price_id,
+                    "stripe_price_id": self.config.premium_price_id,
                 },
                 "credits": {
                     "price": 0.50,

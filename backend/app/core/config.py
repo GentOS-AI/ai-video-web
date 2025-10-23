@@ -76,7 +76,7 @@ class Settings(BaseSettings):
 
     # Test Price IDs
     STRIPE_BASIC_PRICE_ID_TEST: str = ""
-    STRIPE_PRO_PRICE_ID_TEST: str = ""
+    STRIPE_PREMIUM_PRICE_ID_TEST: str = ""
     STRIPE_CREDITS_PRICE_ID_TEST: str = ""
 
     # Live Keys
@@ -86,17 +86,17 @@ class Settings(BaseSettings):
 
     # Live Price IDs
     STRIPE_BASIC_PRICE_ID_LIVE: str = ""
-    STRIPE_PRO_PRICE_ID_LIVE: str = ""
+    STRIPE_PREMIUM_PRICE_ID_LIVE: str = ""
     STRIPE_CREDITS_PRICE_ID_LIVE: str = ""
 
     # Test Product IDs
     STRIPE_PRODUCT_BASIC_TEST: str = ""
-    STRIPE_PRODUCT_PRO_TEST: str = ""
+    STRIPE_PRODUCT_PREMIUM_TEST: str = ""
     STRIPE_PRODUCT_CREDITS_TEST: str = ""
 
     # Live Product IDs
     STRIPE_PRODUCT_BASIC_LIVE: str = ""
-    STRIPE_PRODUCT_PRO_LIVE: str = ""
+    STRIPE_PRODUCT_PREMIUM_LIVE: str = ""
     STRIPE_PRODUCT_CREDITS_LIVE: str = ""
 
     model_config = SettingsConfigDict(

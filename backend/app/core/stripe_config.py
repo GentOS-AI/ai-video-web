@@ -42,11 +42,11 @@ class StripeConfig:
         return settings.STRIPE_BASIC_PRICE_ID_TEST
 
     @property
-    def pro_price_id(self) -> str:
-        """Get Pro plan price ID"""
+    def premium_price_id(self) -> str:
+        """Get Premium plan price ID"""
         if self.is_production:
-            return settings.STRIPE_PRO_PRICE_ID_LIVE
-        return settings.STRIPE_PRO_PRICE_ID_TEST
+            return settings.STRIPE_PREMIUM_PRICE_ID_LIVE
+        return settings.STRIPE_PREMIUM_PRICE_ID_TEST
 
     @property
     def credits_price_id(self) -> str:
@@ -60,7 +60,7 @@ class StripeConfig:
         Get price ID by product type
 
         Args:
-            product_type: 'basic', 'pro', or 'credits'
+            product_type: 'basic', 'premium', or 'credits'
 
         Returns:
             Stripe Price ID
@@ -70,7 +70,7 @@ class StripeConfig:
         """
         price_map = {
             "basic": self.basic_price_id,
-            "pro": self.pro_price_id,
+            "premium": self.premium_price_id,
             "credits": self.credits_price_id,
         }
 

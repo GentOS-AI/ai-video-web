@@ -126,6 +126,15 @@ def generate_video_task(self, video_id: int):
             video.duration = requested_duration
             db.commit()
 
+            # 🎉 Update is_new_user flag on first successful video generation
+            from app.models.user import User
+            user = db.query(User).filter(User.id == video.user_id).first()
+            if user and user.is_new_user:
+                user.is_new_user = False
+                db.commit()
+                print(f"✅ [Task {task_id}] User {user.id} ({user.email}) is no longer a new user")
+                logger.publish(9, "🎉 First video completed! Welcome to AIVideo.DIY!")
+
             print(f"\n🎉 [Task {task_id}] Task completed successfully!")
             return {
                 "status": "success",

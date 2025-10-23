@@ -11,9 +11,9 @@ from pydantic import BaseModel, Field
 
 class CreateCheckoutSessionRequest(BaseModel):
     """Request to create Stripe Checkout Session"""
-    product_type: Literal["basic", "pro", "credits"] = Field(
+    product_type: Literal["basic", "premium", "credits"] = Field(
         ...,
-        description="Product type: basic (monthly subscription), pro (yearly subscription), or credits (one-time purchase)"
+        description="Product type: basic (monthly subscription), premium (yearly subscription), or credits (one-time purchase)"
     )
     success_url: str = Field(
         ...,
@@ -58,7 +58,7 @@ class WebhookEventResponse(BaseModel):
 
 class SubscriptionInfo(BaseModel):
     """User subscription information"""
-    plan: Literal["free", "basic", "pro"]
+    plan: Literal["free", "basic", "premium"]
     status: Literal["active", "cancelled", "expired"]
     current_period_start: Optional[str] = None
     current_period_end: Optional[str] = None
@@ -77,7 +77,7 @@ class CreditsBalance(BaseModel):
 
 class PricingPlan(BaseModel):
     """Pricing plan information"""
-    id: str  # 'basic' or 'pro'
+    id: str  # 'basic' or 'premium'
     name: str
     price: float
     currency: str = "USD"

@@ -29,6 +29,7 @@ class UserInDB(UserBase):
     id: int
     google_id: str
     credits: float
+    is_new_user: bool = True
     subscription_plan: str = "free"
     subscription_status: str = "active"
     subscription_start_date: Optional[datetime] = None
@@ -47,6 +48,7 @@ class UserResponse(BaseModel):
     name: Optional[str] = None
     avatar_url: Optional[str] = None
     credits: float
+    is_new_user: bool = True
     subscription_plan: str = "free"
     subscription_status: str = "active"
     subscription_start_date: Optional[datetime] = None

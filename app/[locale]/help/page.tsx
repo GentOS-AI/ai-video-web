@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import { HelpCircle } from "lucide-react";
-import { SimpleHeader } from "@/components/SimpleHeader";
+import { Navbar } from "@/components/Navbar";
+import { Footer } from "@/components/Footer";
 import { FAQAccordion } from "@/components/FAQAccordion";
 import Link from "next/link";
 
@@ -129,14 +129,24 @@ const faqData = [
 
 export default function HelpPage() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white to-purple-50/30">
-      <SimpleHeader
-        title="Help Center"
-        subtitle="Find answers to common questions"
-        icon={<HelpCircle className="w-6 h-6 text-white" />}
-      />
+    <>
+      <Navbar />
 
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <main className="min-h-screen bg-gradient-to-b from-white to-purple-50/30">
+        {/* Hero Section */}
+        <section className="pt-32 sm:pt-40 pb-12 px-4 sm:px-6 lg:px-8">
+          <div className="max-w-4xl mx-auto text-center">
+            <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-6">
+              <span className="text-gradient-purple">Help Center</span>
+            </h1>
+            <p className="text-xl text-gray-600 leading-relaxed">
+              Find answers to common questions about our AI video generation platform
+            </p>
+          </div>
+        </section>
+
+        {/* FAQ Content */}
+        <section className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
         {/* Intro */}
         <div className="text-center mb-12">
           <p className="text-lg text-gray-600">
@@ -182,7 +192,10 @@ export default function HelpPage() {
             </Link>
           </div>
         </div>
+        </section>
       </main>
-    </div>
+
+      <Footer />
+    </>
   );
 }

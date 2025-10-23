@@ -2,7 +2,7 @@
 User model
 """
 from datetime import datetime
-from sqlalchemy import Column, Integer, String, DateTime, Float
+from sqlalchemy import Column, Integer, String, DateTime, Float, Boolean
 from sqlalchemy.orm import relationship
 from app.database import Base
 
@@ -17,8 +17,11 @@ class User(Base):
     avatar_url = Column(String(500), nullable=True)
     credits = Column(Float, default=100.0)  # Initial credits for new users
 
+    # New user flag - True for users who haven't generated their first video
+    is_new_user = Column(Boolean, default=True)
+
     # Subscription fields
-    subscription_plan = Column(String(50), default="free")  # free, basic, pro
+    subscription_plan = Column(String(50), default="free")  # free, basic, premium
     subscription_status = Column(String(20), default="active")  # active, cancelled, expired
     subscription_start_date = Column(DateTime, nullable=True)
     subscription_end_date = Column(DateTime, nullable=True)

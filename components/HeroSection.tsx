@@ -45,11 +45,57 @@ const defaultHeroVideo = {
   title: thirdShowcaseVideo?.title ?? "AI Generated Video Demo",
 };
 
-// AI Models for dropdown with credit costs
+// AI Models configuration - New structured format
+type ModelType = 'sora-2' | 'sora-2-pro';
+type Duration = 4 | 8 | 12;
+
+interface DurationOption {
+  value: Duration;
+  credits: number;
+  quality: string;
+  badge: string;
+  badgeColor: string;
+}
+
+interface ModelTypeConfig {
+  id: ModelType;
+  name: string;
+  durations: DurationOption[];
+  color: string; // For UI theming
+  requiresSubscription: boolean;
+}
+
+const modelTypes: Record<ModelType, ModelTypeConfig> = {
+  'sora-2': {
+    id: 'sora-2',
+    name: 'Sora 2',
+    color: 'purple', // Purple theme
+    requiresSubscription: false,
+    durations: [
+      { value: 4, credits: 25, quality: '720P', badge: 'Free Trial', badgeColor: 'green' },
+      { value: 8, credits: 100, quality: '720P', badge: 'Basic', badgeColor: 'blue' },
+      { value: 12, credits: 150, quality: '720P', badge: 'Basic', badgeColor: 'blue' }
+    ]
+  },
+  'sora-2-pro': {
+    id: 'sora-2-pro',
+    name: 'Sora 2 Pro',
+    color: 'gold', // Gold theme
+    requiresSubscription: true,
+    durations: [
+      { value: 4, credits: 150, quality: '1080P', badge: 'Premium', badgeColor: 'orange' },
+      { value: 8, credits: 250, quality: '1080P', badge: 'Premium', badgeColor: 'orange' },
+      { value: 12, credits: 300, quality: '1080P', badge: 'Premium', badgeColor: 'orange' }
+    ]
+  }
+};
+
+// Legacy format for backward compatibility
 const aiModels = [
   { id: "sora-2", name: "Sora2-4s", version: "Lite", model: "sora-2", duration: 4, credits: 25, enabled: true, type: 'normal' },
   { id: "sora-2-standard", name: "Sora2-8s", version: "Standard", model: "sora-2", duration: 8, credits: 100, enabled: true, type: 'normal' },
-  { id: "sora-2-pro", name: "Sora2 Pro-12s", version: "Premium", model: "sora-2-pro", duration: 12, credits: 300, enabled: true, type: 'business' },
+  { id: "sora-2-premium", name: "Sora2-12s", version: "Premium", model: "sora-2", duration: 12, credits: 150, enabled: true, type: 'normal' },
+  { id: "sora-2-pro", name: "Sora2 Pro-12s", version: "Business", model: "sora-2-pro", duration: 12, credits: 300, enabled: true, type: 'business' },
 ];
 
 // Generation modes for dropdown
@@ -82,9 +128,13 @@ export const HeroSection = () => {
   const { isAuthenticated, user, refreshUser } = useAuth();
   const { showToast } = useNotification();
   const [prompt, setPrompt] = useState("");
-  const [selectedImage, setSelectedImage] = useState<number | null>(null);
+  const [selectedImage, setSelectedImage] = useState<number | null>(1);
   const [selectedModel, setSelectedModel] = useState(aiModels[0]);
   const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false);
+
+  // New state for model selector UI
+  const [selectedModelType, setSelectedModelType] = useState<ModelType>('sora-2');
+  const [selectedDuration, setSelectedDuration] = useState<Duration>(4);
   const [isPricingOpen, setIsPricingOpen] = useState(false);
   const [isCreditsOpen, setIsCreditsOpen] = useState(false);
   const [showYouTubeModal, setShowYouTubeModal] = useState(false);
@@ -119,7 +169,7 @@ export const HeroSection = () => {
   const [aiOptimizedImage, setAiOptimizedImage] = useState<string | null>(null);
 
   // Thumbnail preview state - show selected thumbnail in preview area
-  const [showThumbnailPreview, setShowThumbnailPreview] = useState(false);
+  const [showThumbnailPreview, setShowThumbnailPreview] = useState(true);
 
   // Uploaded file preview state - show uploaded file in preview area
   const [showUploadedPreview, setShowUploadedPreview] = useState(false);
@@ -195,6 +245,27 @@ export const HeroSection = () => {
 
   // Recent users state
   const [recentUsers, setRecentUsers] = useState<RecentUsersResponse | null>(null);
+
+  // Helper function to get current model info based on type + duration
+  const getCurrentModelInfo = (): DurationOption | undefined => {
+    const modelConfig = modelTypes[selectedModelType];
+    return modelConfig?.durations.find(d => d.value === selectedDuration);
+  };
+
+  // Sync new state with legacy selectedModel state
+  useEffect(() => {
+    const modelInfo = getCurrentModelInfo();
+    if (modelInfo) {
+      const legacyModel = aiModels.find(
+        m => m.duration === selectedDuration &&
+        ((selectedModelType === 'sora-2' && m.model === 'sora-2') ||
+         (selectedModelType === 'sora-2-pro' && m.model === 'sora-2-pro'))
+      );
+      if (legacyModel) {
+        setSelectedModel(legacyModel);
+      }
+    }
+  }, [selectedModelType, selectedDuration]);
 
   const handlePromptChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const text = e.target.value;
@@ -281,19 +352,6 @@ export const HeroSection = () => {
         `prompt=consent`;
 
       window.location.href = googleAuthUrl;
-      return;
-    }
-
-    // Check subscription
-    if (!user || user.subscription_plan === 'free') {
-      showToast(tToast('scriptGeneratorRequiresSubscription'), "warning");
-      setIsPricingOpen(true);
-      return;
-    }
-
-    if (user.subscription_status !== 'active') {
-      showToast(tToast('subscriptionExpired'), "warning");
-      setIsPricingOpen(true);
       return;
     }
 
@@ -424,19 +482,6 @@ export const HeroSection = () => {
       return;
     }
 
-    // Check subscription
-    if (!user || user.subscription_plan === 'free') {
-      showToast(tToast('subscriptionRequired'), "warning");
-      setIsPricingOpen(true);
-      return;
-    }
-
-    if (user.subscription_status !== 'active') {
-      showToast(tToast('subscriptionExpired'), "warning");
-      setIsPricingOpen(true);
-      return;
-    }
-
     // Check if image is uploaded (All-In-One requires uploaded file, not thumbnail)
     if (!uploadedFile) {
       showToast(tToast('uploadImageForScript'), "warning");
@@ -454,15 +499,10 @@ export const HeroSection = () => {
       return;
     }
 
-    // Check credits
+    // Check credits - show modal without toast
     const requiredCredits = selectedModel?.credits || 100;
-    if (user.credits < requiredCredits) {
-      showToast(tToast('insufficientCredits', {
-        current: user.credits.toFixed(0),
-        required: requiredCredits,
-        model: selectedModel?.name || 'this model'
-      }), "error");
-      setIsPricingOpen(true);
+    if (!user || user.credits < requiredCredits) {
+      setIsCreditsOpen(true);
       return;
     }
 
@@ -530,31 +570,6 @@ export const HeroSection = () => {
       return;
     }
 
-    // Check if user has a subscription
-    if (!user || user.subscription_plan === 'free') {
-      showToast(tToast('subscriptionRequired'), "warning");
-      setIsPricingOpen(true); // Open pricing modal
-      return;
-    }
-
-    // Check if subscription is active
-    if (user.subscription_status !== 'active') {
-      showToast(tToast('subscriptionExpired'), "warning");
-      setIsPricingOpen(true);
-      return;
-    }
-
-    // Check subscription expiry date
-    if (user.subscription_end_date) {
-      const expiryDate = new Date(user.subscription_end_date);
-      const now = new Date();
-      if (expiryDate < now) {
-        showToast(tToast('subscriptionExpired'), "warning");
-        setIsPricingOpen(true);
-        return;
-      }
-    }
-
     if (!prompt.trim()) {
       showToast(tToast('enterVideoDescription'), "warning");
       return;
@@ -571,15 +586,10 @@ export const HeroSection = () => {
       return;
     }
 
-    // Check if user has enough credits
+    // Check if user has enough credits - show modal without toast
     const requiredCredits = selectedModel?.credits || 100;
-    if (user.credits < requiredCredits) {
-      showToast(tToast('insufficientCredits', {
-        current: user.credits.toFixed(0),
-        required: requiredCredits,
-        model: selectedModel?.name || 'this model'
-      }), "error");
-      setIsPricingOpen(true);
+    if (!user || user.credits < requiredCredits) {
+      setIsCreditsOpen(true);
       return;
     }
 
@@ -895,70 +905,183 @@ export const HeroSection = () => {
                   <button
                     onClick={() => setIsModelDropdownOpen(!isModelDropdownOpen)}
                     disabled={isGeneratingScript || isGenerating}
-                    className="px-2.5 py-1.5 rounded-lg bg-purple-50 border border-purple-200 hover:border-purple-400 hover:bg-purple-100 transition-all flex items-center justify-center group disabled:opacity-50 disabled:cursor-not-allowed"
-                    title={selectedModel?.name}
+                    className="px-2 py-1 rounded-lg border transition-all flex items-center justify-center group disabled:opacity-50 disabled:cursor-not-allowed bg-purple-50 border-purple-200 hover:border-purple-400 hover:bg-purple-100"
+                    title={`${selectedModelType === 'sora-2' ? 'Sora 2' : 'Sora2 Pro'} - ${selectedDuration}s`}
                   >
-                    <span className="text-xs font-medium text-purple-600 group-hover:text-purple-700">{selectedModel?.name}</span>
+                    <span className="text-[11px] font-medium text-purple-600 group-hover:text-purple-700">
+                      {selectedModelType === 'sora-2' ? 'Sora 2' : 'Sora2 Pro'} · {selectedDuration}s
+                    </span>
                   </button>
 
-                  {/* Dropdown Menu */}
+                  {/* Professional 3-Row Dropdown Menu */}
                   {isModelDropdownOpen && (
-                    <div className="absolute right-0 top-full mt-2 w-52 bg-white border border-gray-200 rounded-lg shadow-lg z-20">
-                      {aiModels.map((model) => {
-                        const isPro = model.id === 'sora-2-pro';
-                        const isLite = model.id === 'sora-2';
-                        const isStandard = model.id === 'sora-2-standard';
-                        const isBusiness = model.type === 'business';
-
-                        return (
+                    <div className="absolute right-0 top-full mt-2 w-56 bg-white border border-gray-200 rounded-lg shadow-xl z-50 p-2.5">
+                      {/* Row 1: iOS-style Switch Toggle for Model Type */}
+                      <div className="mb-2.5">
+                        <label className="block text-[9px] font-semibold text-gray-600 mb-1">
+                          Model Type
+                        </label>
+                        <div className="flex items-center justify-between bg-gray-100 rounded-md p-0.5">
                           <button
-                            key={model.id}
-                            onClick={() => {
-                              if (isBusiness) {
-                                // Open email for business account application
-                                window.location.href = 'mailto:support@aivideo.diy?subject=Apply to Business Account';
-                                setIsModelDropdownOpen(false);
-                              } else {
-                                setSelectedModel(model);
-                                setIsModelDropdownOpen(false);
-                              }
-                            }}
-                            className={`w-full px-3 py-2.5 text-left transition-colors first:rounded-t-lg last:rounded-b-lg hover:bg-purple-50 ${
-                              selectedModel?.id === model.id && !isBusiness ? "bg-purple-50" : ""
+                            onClick={() => setSelectedModelType('sora-2')}
+                            className={`flex-1 px-2 py-1 rounded text-[11px] font-semibold transition-all duration-200 ${
+                              selectedModelType === 'sora-2'
+                                ? 'bg-white text-purple-600 shadow'
+                                : 'text-gray-600 hover:text-gray-900'
                             }`}
                           >
-                            <div className="flex items-center justify-between gap-2">
-                              <div className="flex-1">
-                                <div className="text-xs font-medium text-text-primary">
-                                  {model.name}
-                                </div>
-                                <div className="text-[10px] text-text-muted">
-                                  {model.version}
-                                </div>
-                              </div>
-                              {isPro ? (
-                                <div className="flex items-center gap-1 px-2 py-1 bg-gray-100 border border-gray-300 rounded-lg">
-                                  <span className="text-[10px] font-semibold text-gray-600">
-                                    Business
-                                  </span>
-                                </div>
-                              ) : isStandard ? (
-                                <div className="flex items-center gap-1 px-2 py-0.5 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-md">
-                                  <span className="text-[10px] font-bold text-white">
-                                    Subscribe
-                                  </span>
-                                </div>
-                              ) : isLite ? (
-                                <div className="flex items-center gap-1 px-2 py-1 bg-purple-100 rounded-full">
-                                  <span className="text-[10px] font-semibold text-purple-600">
-                                    Free Trial
-                                  </span>
-                                </div>
-                              ) : null}
-                            </div>
+                            Sora 2
                           </button>
-                        );
-                      })}
+                          <button
+                            onClick={() => {
+                              // Check if user needs Premium subscription for Pro model
+                              const proModel = modelTypes['sora-2-pro'];
+                              if (proModel.requiresSubscription) {
+                                if (!isAuthenticated) {
+                                  showToast(tToast('loginRequired'), "warning");
+                                  return;
+                                }
+                                if (!user || user.subscription_plan !== 'premium') {
+                                  // Show pricing modal without toast
+                                  setIsPricingOpen(true);
+                                  return;
+                                }
+                              }
+                              setSelectedModelType('sora-2-pro');
+                              // Auto-select first available duration for Pro
+                              setSelectedDuration(4);
+                            }}
+                            className={`flex-1 px-2 py-1 rounded text-[11px] font-semibold transition-all duration-200 ${
+                              selectedModelType === 'sora-2-pro'
+                                ? 'bg-gradient-to-r from-amber-400 to-orange-500 text-white shadow'
+                                : 'text-gray-600 hover:text-gray-900'
+                            }`}
+                          >
+                            Sora2 Pro
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Row 2: Radio Button Group for Duration */}
+                      <div className="mb-2.5">
+                        <label className="block text-[9px] font-semibold text-gray-600 mb-1">
+                          Duration
+                        </label>
+                        <div className="space-y-1">
+                          {modelTypes[selectedModelType]?.durations.map((durationOption) => {
+                            const isSelected = selectedDuration === durationOption.value;
+                            const themeColor = selectedModelType === 'sora-2-pro' ? 'orange' : 'purple';
+
+                            return (
+                              <button
+                                key={durationOption.value}
+                                onClick={() => {
+                                  // Check login status
+                                  if (!isAuthenticated) {
+                                    showToast(tToast('loginRequired'), "warning");
+                                    return;
+                                  }
+
+                                  // Check membership level for Basic/Premium badges
+                                  if (durationOption.badge === 'Basic' && user && user.subscription_plan === 'free') {
+                                    // Show pricing modal without toast
+                                    setIsPricingOpen(true);
+                                    return;
+                                  }
+
+                                  if (durationOption.badge === 'Premium' && user && user.subscription_plan !== 'premium') {
+                                    // Show pricing modal without toast
+                                    setIsPricingOpen(true);
+                                    return;
+                                  }
+
+                                  // Check credits
+                                  if (user && user.credits < durationOption.credits) {
+                                    // Show credits modal without toast
+                                    setIsCreditsOpen(true);
+                                    return;
+                                  }
+
+                                  // All checks passed, set duration
+                                  setSelectedDuration(durationOption.value);
+                                }}
+                                className={`w-full px-1.5 py-1 rounded border transition-all duration-200 text-left flex items-center gap-1.5 ${
+                                  isSelected
+                                    ? themeColor === 'orange'
+                                      ? 'border-orange-400 bg-orange-50'
+                                      : 'border-purple-400 bg-purple-50'
+                                    : 'border-gray-200 hover:border-gray-300 bg-white'
+                                }`}
+                              >
+                                {/* Radio Circle */}
+                                <div className={`w-3.5 h-3.5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
+                                  isSelected
+                                    ? themeColor === 'orange'
+                                      ? 'border-orange-500'
+                                      : 'border-purple-500'
+                                    : 'border-gray-300'
+                                }`}>
+                                  {isSelected && (
+                                    <div className={`w-1.5 h-1.5 rounded-full ${
+                                      themeColor === 'orange' ? 'bg-orange-500' : 'bg-purple-500'
+                                    }`} />
+                                  )}
+                                </div>
+
+                                {/* Duration Label */}
+                                <div className="flex-1">
+                                  <span className={`text-[11px] font-semibold ${
+                                    isSelected ? 'text-gray-900' : 'text-gray-700'
+                                  }`}>
+                                    {durationOption.value}s
+                                  </span>
+                                </div>
+
+                                {/* Credits Badge */}
+                                <div className={`px-1 py-0.5 rounded text-[9px] font-bold ${
+                                  themeColor === 'orange'
+                                    ? 'bg-orange-100 text-orange-700'
+                                    : 'bg-purple-100 text-purple-700'
+                                }`}>
+                                  {durationOption.credits}
+                                </div>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Row 3: Info Display Badges */}
+                      <div className="pt-1.5 border-t border-gray-200">
+                        <div className="flex items-center justify-between gap-1.5">
+                          {/* Quality Badge */}
+                          <div className="flex items-center gap-0.5">
+                            <span className="text-gray-500 text-[9px]">Quality:</span>
+                            <span className={`px-1 py-0.5 rounded text-[9px] font-bold ${
+                              selectedModelType === 'sora-2-pro'
+                                ? 'bg-orange-100 text-orange-700'
+                                : 'bg-purple-100 text-purple-700'
+                            }`}>
+                              {getCurrentModelInfo()?.quality || '720P'}
+                            </span>
+                          </div>
+
+                          {/* Access Badge */}
+                          <div className="flex items-center">
+                            <span className={`px-1 py-0.5 rounded text-[9px] font-bold ${
+                              getCurrentModelInfo()?.badgeColor === 'green'
+                                ? 'bg-green-100 text-green-700'
+                                : getCurrentModelInfo()?.badgeColor === 'orange'
+                                ? 'bg-gradient-to-r from-yellow-400 to-orange-500 text-white'
+                                : getCurrentModelInfo()?.badgeColor === 'blue'
+                                ? 'bg-gradient-to-r from-yellow-400 to-orange-500 text-white'
+                                : 'bg-gray-100 text-gray-700'
+                            }`}>
+                              {getCurrentModelInfo()?.badge || 'Free Trial'}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -1055,7 +1178,7 @@ export const HeroSection = () => {
                 <div className="flex items-center justify-between gap-3">
                   {/* Left: Upload Button + Image Thumbnails */}
                   <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
-                    {/* Upload Button with Uploaded File or Selected Image Preview - PURPLE HIGHLIGHT WHEN ACTIVE */}
+                    {/* Upload Button - PURPLE BORDER ONLY WHEN USER HAS UPLOADED */}
                     <button
                     onClick={() => {
                       // 1. Check if user is logged in - redirect without toast
@@ -1096,11 +1219,11 @@ export const HeroSection = () => {
                       document.getElementById("file-upload")?.click();
                     }}
                     className={`relative flex-shrink-0 rounded-xl transition-all ${
-                      uploadedFilePreview || selectedImage !== null
+                      uploadedFilePreview
                         ? "w-16 h-16 sm:w-14 sm:h-14 border-3 border-purple-500 shadow-lg shadow-purple-500/30 ring-2 ring-purple-200"
                         : "w-12 h-12 sm:w-11 sm:h-11 border border-dashed border-gray-300 hover:border-gray-400 hover:bg-gray-50"
                     } flex items-center justify-center overflow-hidden`}
-                    title={uploadedFilePreview ? t('upload.uploadedTitle') : selectedImage !== null ? t('upload.selectedTitle') : t('upload.uploadTitle')}
+                    title={uploadedFilePreview ? t('upload.uploadedTitle') : t('upload.uploadTitle')}
                   >
                     {uploadedFilePreview ? (
                       <>
@@ -1117,31 +1240,7 @@ export const HeroSection = () => {
                           <Upload className="w-4 h-4 text-white" />
                         </div>
 
-                        {/* Upload Badge - Blue indicator */}
-                        <div className="absolute -top-2 -right-2 w-6 h-6 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center shadow-md border-2 border-white z-10">
-                          <Upload className="w-3 h-3 text-white" strokeWidth={2.5} />
-                        </div>
-                      </>
-                    ) : selectedImage !== null ? (
-                      <>
-                        {/* Selected Image Thumbnail */}
-                        <Image
-                          src={trialImages.find(img => img.id === selectedImage)?.src || ""}
-                          alt="Selected"
-                          fill
-                          className="object-cover"
-                          sizes="(min-width: 640px) 56px, 64px"
-                          loading="eager"
-                          quality={80}
-                          priority
-                        />
-
-                        {/* Hover Overlay with Upload Icon - SUBTLE */}
-                        <div className="absolute inset-0 bg-black/30 opacity-0 hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
-                          <Upload className="w-4 h-4 text-white" />
-                        </div>
-
-                        {/* Checkmark Badge - Green check indicator */}
+                        {/* Upload Badge - Green checkmark indicator (consistent with thumbnails) */}
                         <div className="absolute -top-2 -right-2 w-6 h-6 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center shadow-md border-2 border-white z-10">
                           <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
@@ -1216,8 +1315,8 @@ export const HeroSection = () => {
                   {/* Trial Images Slider with gradient hint - Hidden on small screens */}
                   <div className="flex-1 relative overflow-hidden hidden min-[500px]:block">
                     {/* Gradient hints for scrollability */}
-                    <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-gray-50/90 to-transparent pointer-events-none z-10" />
-                    <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-gray-50/90 to-transparent pointer-events-none z-10" />
+                    <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-gray-50/90 to-transparent pointer-events-none z-[5]" />
+                    <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-gray-50/90 to-transparent pointer-events-none z-[5]" />
 
                     <div className="overflow-x-auto overflow-y-hidden scrollbar-hide trial-images-slider">
                       <div className="flex gap-2 py-1">
@@ -1238,10 +1337,10 @@ export const HeroSection = () => {
                                 console.log("📸 Thumbnail selected:", img.alt);
                               }
                             }}
-                            className={`relative flex-shrink-0 w-12 h-12 sm:w-11 sm:h-11 rounded-md overflow-hidden border transition-all hover:scale-105 ${
+                            className={`relative flex-shrink-0 w-12 h-12 sm:w-11 sm:h-11 rounded-md overflow-hidden transition-all hover:scale-105 ${
                               selectedImage === img.id
-                                ? "border-gray-400 opacity-100"
-                                : "border-gray-200 hover:border-gray-300 opacity-60 hover:opacity-90"
+                                ? "border-2 border-purple-500 opacity-100 shadow-md shadow-purple-200"
+                                : "border border-gray-200 hover:border-gray-300 opacity-60 hover:opacity-90"
                             }`}
                             title={img.alt}
                           >
@@ -1254,6 +1353,15 @@ export const HeroSection = () => {
                               loading="lazy"
                               quality={75}
                             />
+
+                            {/* Green Checkmark Badge when selected */}
+                            {selectedImage === img.id && (
+                              <div className="absolute -top-1 -right-1 w-5 h-5 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center shadow-md border-2 border-white z-10">
+                                <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                </svg>
+                              </div>
+                            )}
                           </button>
                         ))}
                       </div>
@@ -1291,10 +1399,12 @@ export const HeroSection = () => {
                               <span className="hidden sm:inline">
                                 {selectedMode === 'enhance-script' && workflowStage === 'video'
                                   ? 'Generate Video'
-                                  : generationModes.find(m => m.id === selectedMode)?.buttonLabel || 'Generate'
+                                  : user?.is_new_user
+                                    ? 'Try for Free'
+                                    : (generationModes.find(m => m.id === selectedMode)?.buttonLabel || 'Generate')
                                 }
                               </span>
-                              <span className="sm:hidden">Generate</span>
+                              <span className="sm:hidden">{user?.is_new_user ? 'Try for Free' : 'Generate'}</span>
                             </>
                           )}
                         </button>
@@ -1501,23 +1611,40 @@ export const HeroSection = () => {
                   </div>
                 </div>
               ) : showThumbnailPreview && selectedImage !== null ? (
-                /* Priority 3: Show selected thumbnail preview */
-                <div className="relative w-full h-full bg-gradient-to-br from-purple-50 to-pink-50">
-                  <Image
-                    src={trialImages.find(img => img.id === selectedImage)?.highResSrc || ""}
-                    alt={trialImages.find(img => img.id === selectedImage)?.alt || "Selected Image"}
-                    fill
-                    className="object-contain"
-                    sizes="(max-width: 768px) 100vw, (max-width: 1024px) 47vw, 560px"
-                    priority
-                    quality={85}
-                  />
+                /* Priority 3: Show showcase video for selected thumbnail */
+                (() => {
+                  const selectedImageData = trialImages.find(img => img.id === selectedImage);
+                  const showcaseVideo = selectedImageData ? showcaseVideos.find(v => v.id === selectedImageData.videoId) : null;
 
-                  {/* Status Badge - Light style */}
-                  <div className="absolute top-4 right-4 px-3 py-2 bg-blue-50/90 backdrop-blur-sm border border-blue-200 text-blue-600 rounded-lg shadow-sm flex items-center gap-2">
-                    <span className="text-xs font-semibold">Selected</span>
-                  </div>
-                </div>
+                  return showcaseVideo ? (
+                    <VideoPlayer
+                      key={`showcase-${showcaseVideo.id}`}
+                      src={showcaseVideo.src}
+                      poster={showcaseVideo.poster}
+                      autoPlay={true}
+                      objectFit="contain"
+                      className="h-full w-full"
+                    />
+                  ) : (
+                    /* Fallback to image if no video found */
+                    <div className="relative w-full h-full bg-gradient-to-br from-purple-50 to-pink-50">
+                      <Image
+                        src={trialImages.find(img => img.id === selectedImage)?.highResSrc || ""}
+                        alt={trialImages.find(img => img.id === selectedImage)?.alt || "Selected Image"}
+                        fill
+                        className="object-contain"
+                        sizes="(max-width: 768px) 100vw, (max-width: 1024px) 47vw, 560px"
+                        priority
+                        quality={85}
+                      />
+
+                      {/* Status Badge - Light style */}
+                      <div className="absolute top-4 right-4 px-3 py-2 bg-blue-50/90 backdrop-blur-sm border border-blue-200 text-blue-600 rounded-lg shadow-sm flex items-center gap-2">
+                        <span className="text-xs font-semibold">Selected</span>
+                      </div>
+                    </div>
+                  );
+                })()
               ) : (
                 /* Priority 6: Default sample video - ShowcaseSection 3rd video */
                 <VideoPlayer
@@ -1553,15 +1680,19 @@ export const HeroSection = () => {
             {/* Video Title */}
             <div className="mt-4 sm:mt-5 text-center">
               <p className="text-xs sm:text-sm font-medium text-text-secondary">
-                {generatedVideo ? (
-                  <>
-                    {t('videoArea.yourVideo')}: <span className="text-purple-600 font-semibold">{t('videoArea.generatedWith')}</span>
-                  </>
-                ) : (
-                  <>
-                    {t('videoArea.example')}: <span className="text-purple-600 font-semibold">{defaultHeroVideo.title}</span>
-                  </>
-                )}
+                What&apos;s showing: <span className="text-purple-600 font-semibold">
+                  {generatedVideo && generatedVideo.prompt ? (
+                    generatedVideo.prompt
+                  ) : showThumbnailPreview && selectedImage !== null ? (
+                    (() => {
+                      const selectedImageData = trialImages.find(img => img.id === selectedImage);
+                      const showcaseVideo = selectedImageData ? showcaseVideos.find(v => v.id === selectedImageData.videoId) : null;
+                      return showcaseVideo ? showcaseVideo.title : (selectedImageData?.alt || "Selected Image");
+                    })()
+                  ) : (
+                    defaultHeroVideo.title
+                  )}
+                </span>
               </p>
             </div>
 

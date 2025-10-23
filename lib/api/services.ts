@@ -12,7 +12,8 @@ export interface User {
   avatar_url: string | null;
   credits: number;
   created_at: string;
-  subscription_plan: 'free' | 'basic' | 'pro';
+  is_new_user: boolean;
+  subscription_plan: 'free' | 'basic' | 'premium';
   subscription_status: 'active' | 'cancelled' | 'expired';
   subscription_start_date: string | null;
   subscription_end_date: string | null;
@@ -619,7 +620,7 @@ export const paymentService = {
    * Create Stripe Checkout Session
    */
   async createCheckoutSession(
-    productType: 'basic' | 'pro' | 'credits',
+    productType: 'basic' | 'premium' | 'credits',
     successUrl: string,
     cancelUrl: string
   ): Promise<{

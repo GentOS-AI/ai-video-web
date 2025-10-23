@@ -153,12 +153,12 @@ def get_pricing():
                 stripe_price_id=pricing_data["basic"]["stripe_price_id"],
             ),
             PricingPlan(
-                id="pro",
-                name="Pro Plan",
-                price=pricing_data["pro"]["price"],
+                id="premium",
+                name="Premium Plan",
+                price=pricing_data["premium"]["price"],
                 currency="USD",
                 interval="year",
-                credits=pricing_data["pro"]["credits"],
+                credits=pricing_data["premium"]["credits"],
                 features=[
                     "3000 credits/year",
                     "4K resolution support",
@@ -170,7 +170,7 @@ def get_pricing():
                     "API access",
                     "Bulk generation",
                 ],
-                stripe_price_id=pricing_data["pro"]["stripe_price_id"],
+                stripe_price_id=pricing_data["premium"]["stripe_price_id"],
             ),
         ]
 

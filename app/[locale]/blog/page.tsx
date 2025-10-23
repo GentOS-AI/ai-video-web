@@ -3,7 +3,7 @@ import { BlogCard } from "@/components/BlogCard";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { getAllPosts, getAllCategories } from "@/lib/data/blog-posts";
-import { Sparkles, Lightbulb } from "lucide-react";
+import { Lightbulb } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "AI Video Generation Blog | Tips, Guides & Best Practices | AIVideo.DIY",
@@ -41,31 +41,25 @@ export default async function BlogPage({ params }: BlogPageProps) {
   return (
     <>
       <Navbar />
-      <div className="min-h-screen bg-gradient-to-b from-white via-purple-50/30 to-white">
+      <div className="min-h-screen bg-gradient-to-b from-white to-purple-50/30">
         {/* Hero Section */}
-      <section className="pt-32 pb-0 sm:pb-0 px-4">
+      <section className="pt-32 sm:pt-40 pb-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-4xl mx-auto text-center">
+          <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-6">
+            Learn & Master <span className="text-gradient-purple">AI Video Creation</span>
+          </h1>
+          <p className="text-xl text-gray-600 leading-relaxed">
+            Expert insights, comprehensive guides, and proven strategies to create stunning videos with AI.
+            Stay ahead with the latest tips and best practices.
+          </p>
+        </div>
+      </section>
+
+      {/* Category Pills Section */}
+      <section className="pb-6 px-4">
         <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-12">
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-purple-100 text-purple-600 rounded-full text-sm font-semibold mb-6">
-              <Sparkles className="w-4 h-4" />
-              <span>AI Video Generation Blog</span>
-            </div>
-
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-gray-900 mb-6">
-              Learn & Master{" "}
-              <span className="bg-gradient-to-r from-purple-600 via-pink-500 to-purple-600 bg-clip-text text-transparent">
-                AI Video Creation
-              </span>
-            </h1>
-
-            <p className="text-lg sm:text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-              Expert insights, comprehensive guides, and proven strategies to create stunning videos with AI.
-              Stay ahead with the latest tips and best practices.
-            </p>
-          </div>
-
           {/* Category Pills */}
-          <div className="flex flex-wrap justify-center gap-3 mb-12">
+          <div className="flex flex-wrap justify-center gap-3">
             <button className="px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-full text-sm font-semibold shadow-md hover:shadow-lg transition-all">
               All Posts
             </button>

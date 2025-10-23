@@ -272,7 +272,21 @@ class OpenAIScriptService:
 - 风格：电影广告美学
 - 调色：高端、符合品牌调性
 - 节奏：动态但信息清晰
-- 音效设计备注：[背景音乐情绪]
+
+**音频/声音设计要求：**
+⚠️ 重要：所有音频元素（背景音乐、旁白配音、音效）必须在视频结束前至少500毫秒（0.5秒）自然结束，避免被强制截断。
+
+- 背景音乐：应从第{duration - 1}秒开始优雅淡出，在第{duration - 0.5}秒前完全静音
+- 旁白配音：最后一句话必须在第{duration - 0.5}秒前说完，避免被截断
+- 音效：最后一个音效应在第{duration - 0.5}秒前完成
+- 音频结束风格：自然淡出，而非突然停止
+- 静音缓冲：保留第{duration - 0.5}秒到第{duration}秒作为静音缓冲（500毫秒）
+
+{duration}秒视频示例：
+✅ 音乐淡出：第{duration - 1}秒 到 第{duration - 0.5}秒
+✅ 最后一句旁白：在第{duration - 0.5}秒前结束
+✅ 静音缓冲：第{duration - 0.5}秒 到 第{duration}秒（500毫秒）
+❌ 禁止：音频持续到最后一帧
 
 请用中文撰写完整的分镜头广告视频脚本，严格遵循上述格式。确保每个镜头推进产品故事，朝向购买意图构建。"""
 
@@ -296,6 +310,21 @@ class OpenAIScriptService:
 **腳本格式:**
 以連續的鏡頭描述方式撰寫,供視頻製作團隊使用。重點突出產品的關鍵特性和吸引力。
 
+**音訊/聲音設計要求：**
+⚠️ 重要：所有音訊元素（背景音樂、旁白配音、音效）必須在視頻結束前至少500毫秒（0.5秒）自然結束，避免被強制截斷。
+
+- 背景音樂：應從第{duration - 1}秒開始優雅淡出，在第{duration - 0.5}秒前完全靜音
+- 旁白配音：最後一句話必須在第{duration - 0.5}秒前說完，避免被截斷
+- 音效：最後一個音效應在第{duration - 0.5}秒前完成
+- 音訊結束風格：自然淡出，而非突然停止
+- 靜音緩衝：保留第{duration - 0.5}秒到第{duration}秒作為靜音緩衝（500毫秒）
+
+{duration}秒視頻示例：
+✅ 音樂淡出：第{duration - 1}秒 到 第{duration - 0.5}秒
+✅ 最後一句旁白：在第{duration - 0.5}秒前結束
+✅ 靜音緩衝：第{duration - 0.5}秒 到 第{duration}秒（500毫秒）
+❌ 禁止：音訊持續到最後一幀
+
 請用繁體中文撰寫完整的視頻腳本。"""
 
         elif language == "ja":
@@ -317,6 +346,21 @@ class OpenAIScriptService:
 
 **スクリプト形式:**
 ビデオ制作チーム向けの連続したショットバイショットの説明として書いてください。製品の主要な特徴と魅力を強調する視覚的なストーリーテリングに焦点を当ててください。
+
+**オーディオ/サウンドデザイン要件：**
+⚠️ 重要：すべてのオーディオ要素（バックグラウンドミュージック、ナレーション、効果音）は、ビデオ終了の少なくとも500ミリ秒（0.5秒）前に自然に終了する必要があります。強制的なカットオフを避けるため。
+
+- バックグラウンドミュージック：{duration - 1}秒からエレガントにフェードアウトし、{duration - 0.5}秒前に完全に無音にする
+- ナレーション：最後の言葉は{duration - 0.5}秒前に終わる必要があります
+- 効果音：最後の効果音は{duration - 0.5}秒前に完了する必要があります
+- オーディオ終了スタイル：自然なフェードアウト、突然の停止ではない
+- 無音バッファ：{duration - 0.5}秒から{duration}秒を無音バッファとして保持（500ミリ秒）
+
+{duration}秒のビデオの例：
+✅ 音楽フェードアウト：{duration - 1}秒 から {duration - 0.5}秒
+✅ 最後のナレーション：{duration - 0.5}秒前に終了
+✅ 無音バッファ：{duration - 0.5}秒 から {duration}秒（500ミリ秒）
+❌ 禁止：最後のフレームまでオーディオを続ける
 
 日本語で完全なビデオスクリプトを書いてください。"""
 
@@ -385,7 +429,21 @@ class OpenAIScriptService:
 - Style: Cinematic advertising aesthetic
 - Color grading: Premium, brand-appropriate
 - Pacing: Dynamic but clear messaging
-- Sound design notes: [Background music mood]
+
+**Audio/Sound Design Requirements:**
+⚠️ CRITICAL: All audio elements (background music, voiceover, sound effects) MUST naturally conclude at least 500ms (0.5 seconds) BEFORE the video ends to avoid abrupt cutoff.
+
+- Background Music: Should fade out gracefully starting from {duration - 1}s, completely silent by {duration - 0.5}s
+- Voiceover/Narration: Final words must finish by {duration - 0.5}s to avoid being cut off
+- Sound Effects: Last sound effect should complete by {duration - 0.5}s
+- Audio Ending Style: Natural fade-out, NOT abrupt stop
+- Silent Buffer: Keep {duration - 0.5}s to {duration}s as silent buffer (500ms)
+
+Example for {duration}s video:
+✅ Music fades out: {duration - 1}s to {duration - 0.5}s
+✅ Last narration word: ends by {duration - 0.5}s
+✅ Silent buffer: {duration - 0.5}s to {duration}s (500ms)
+❌ DO NOT: Continue audio until the last frame
 
 Write the complete shot-by-shot advertising video script in English, following the exact format above. Ensure each shot advances the product story and builds towards purchase intent."""
 

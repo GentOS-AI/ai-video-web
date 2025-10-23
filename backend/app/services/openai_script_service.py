@@ -203,6 +203,68 @@ class OpenAIScriptService:
             logger.error("Full stack trace:", exc_info=True)
             raise Exception(f"Failed to generate script: {str(e)}")
 
+    def _calculate_shot_structure(self, duration: int) -> dict:
+        """
+        Calculate optimal shot structure based on duration
+
+        Returns:
+            dict: Contains num_product_shots, logo_start, logo_end, and shots list
+        """
+        if duration == 4:
+            return {
+                'num_product_shots': 2,
+                'logo_start': 3.5,
+                'logo_end': 4.0,
+                'shots': [
+                    {'num': 1, 'start': 0, 'end': 1.75},
+                    {'num': 2, 'start': 1.75, 'end': 3.5}
+                ]
+            }
+        elif duration == 8:
+            return {
+                'num_product_shots': 4,
+                'logo_start': 7.5,
+                'logo_end': 8.0,
+                'shots': [
+                    {'num': 1, 'start': 0, 'end': 1.875},
+                    {'num': 2, 'start': 1.875, 'end': 3.75},
+                    {'num': 3, 'start': 3.75, 'end': 5.625},
+                    {'num': 4, 'start': 5.625, 'end': 7.5}
+                ]
+            }
+        elif duration == 12:
+            return {
+                'num_product_shots': 6,
+                'logo_start': 11.5,
+                'logo_end': 12.0,
+                'shots': [
+                    {'num': 1, 'start': 0, 'end': 1.917},
+                    {'num': 2, 'start': 1.917, 'end': 3.833},
+                    {'num': 3, 'start': 3.833, 'end': 5.75},
+                    {'num': 4, 'start': 5.75, 'end': 7.667},
+                    {'num': 5, 'start': 7.667, 'end': 9.583},
+                    {'num': 6, 'start': 9.583, 'end': 11.5}
+                ]
+            }
+        else:
+            # Fallback
+            num_shots = max(2, duration // 2)
+            logo_start = duration - 0.5
+            shot_duration = logo_start / num_shots
+            shots = []
+            for i in range(num_shots):
+                shots.append({
+                    'num': i + 1,
+                    'start': round(i * shot_duration, 2),
+                    'end': round((i + 1) * shot_duration, 2)
+                })
+            return {
+                'num_product_shots': num_shots,
+                'logo_start': logo_start,
+                'logo_end': duration,
+                'shots': shots
+            }
+
     def _create_script_prompt(self, duration: int, language: str = "en", user_description: str = None) -> str:
         """Create optimized prompt for professional video script generation"""
 

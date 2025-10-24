@@ -187,6 +187,13 @@ class OpenAIScriptService:
             script_text = script_text.strip()
             logger.info(f"  ✅ Script extracted ({len(script_text)} characters)")
 
+            # 🆕 Translation layer - translate if not English
+            if language != "en":
+                logger.info(f"  🌐 Translation required for language: {language}")
+                script_text = self._translate_script(script_text, language)
+            else:
+                logger.info(f"  ✅ English script, no translation needed")
+
             # Parse response
             result = self._parse_response(script_text)
             result["tokens_used"] = response.usage.total_tokens
@@ -284,6 +291,71 @@ class OpenAIScriptService:
                 'logo_end': duration,
                 'shots': shots
             }
+    def _translate_script(self, script: str, target_language: str) -> str:
+        """
+        Translate English script to target language using GPT-4o
+
+        Args:
+            script: English script text
+            target_language: Target language code (zh, zh-TW, ja, etc.)
+
+        Returns:
+            Translated script in target language
+        """
+        if target_language == "en":
+            return script  # No translation needed
+
+        lang_cfg = LANGUAGE_CONFIG.get(target_language, LANGUAGE_CONFIG["en"])
+        target_lang_name = lang_cfg["name"]
+        target_lang_native = lang_cfg["native"]
+
+        logger.info(f"🌐 Translating script to {target_lang_name} ({target_lang_native})...")
+
+        translation_prompt = f"""You are a professional translator specializing in video production and advertising industry.
+
+Translate the following advertising video script from English to {target_lang_name} ({target_lang_native}).
+
+**Translation Requirements:**
+- Maintain the EXACT structure and formatting (including 【Shot X】markers, bullet points, timestamps)
+- Use professional advertising and video production terminology
+- Preserve all technical details (camera movements, lighting descriptions, timing)
+- Keep brand names, color codes, and technical specs in English
+- Ensure natural, fluent language appropriate for {target_lang_name} advertising industry
+- DO NOT add or remove any content, only translate
+- Preserve all special markers like 【】, ✅, ❌, etc.
+
+**Original English Script:**
+{script}
+
+**Translate to {target_lang_name} ({target_lang_native}):**"""
+
+        try:
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=[
+                    {
+                        "role": "user",
+                        "content": translation_prompt
+                    }
+                ],
+                temperature=0.3  # Lower temperature for more consistent translation
+            )
+
+            translated_script = response.choices[0].message.content
+            if not translated_script:
+                logger.warning(f"  ⚠️  Translation returned empty, using original script")
+                return script
+
+            translated_script = translated_script.strip()
+            logger.info(f"  ✅ Script translated to {target_lang_name} ({len(translated_script)} characters)")
+
+            return translated_script
+
+        except Exception as e:
+            logger.error(f"  ❌ Translation failed: {str(e)}")
+            logger.warning(f"  ⚠️  Falling back to original English script")
+            return script
+
     def _create_script_prompt(self, duration: int, language: str = "en", user_description: str = None) -> str:
         """Create optimized prompt for professional video script generation
 
@@ -337,35 +409,6 @@ class OpenAIScriptService:
 
         shots_text = "\n\n".join(shot_descs)
 
-        # Logo shot description
-        logo_shot = f"""【Logo Shot】({logo_start}-{logo_end}s) Brand Finale - MokyVideo Logo Display
-⚠️ CRITICAL: This is a STATIC branded ending card, NOT product footage.
-
-**Visual Requirements:**
-- Background: Pure white (#FFFFFF), completely clean
-- Logo Icon Design:
-  * Shape: Rounded square (1:1 aspect ratio, 20% corner radius)
-  * Background Gradient: Purple (#8B5CF6) → Yellow (#FCD34D) → Pink (#EC4899) left to right
-  * Inner Icon: White (#FFFFFF) triangle play button ▶, perfectly centered
-  * Size: 25% of screen height, maintaining square aspect ratio
-- Text "MokyVideo":
-  * Position: Directly below logo icon, spacing 10% of logo height
-  * "Moky": Purple (#8B5CF6), bold weight
-  * "Video": Black (#000000), normal weight
-  * Font: Modern sans-serif, font size 20% of logo height
-- Overall Layout: Logo icon + text combination, centered both horizontally and vertically
-- Animation:
-  * Fade in from pure white at {logo_start}s
-  * Fully visible by {logo_start + 0.1}s
-  * Hold static until {logo_end}s
-- Audio: Complete silence (no music, no voiceover, no sound effects)
-
-**Strictly Prohibited:**
-❌ Product imagery or any product-related elements
-❌ Background music, sound effects, or voiceover
-❌ Additional text, taglines, or CTA buttons
-❌ Any motion or animation after fade-in completes"""
-
         # Build final prompt
         return f"""You are a professional advertising video director with 10+ years of experience creating compelling product commercials for top brands.
 
@@ -384,7 +427,12 @@ class OpenAIScriptService:
 
 {shots_text}
 
-{logo_shot}
+【Ending Shot】({logo_start}-{logo_end}s) Final Shot
+- If the user has specified an ending shot in their description, follow their requirements exactly
+- If not specified, create an appropriate ending shot based on the product and advertising style
+- This should be a memorable closing that reinforces the brand message
+- Duration: 0.5 seconds
+- Audio: Complete silence (no music, no voiceover, no sound effects)
 
 **Advertising Principles:**
 ✅ Emphasize product benefits, not just features
@@ -393,42 +441,41 @@ class OpenAIScriptService:
 ✅ Maintain brand consistency
 
 **Technical Specs:**
-- Total duration: {duration} seconds (Product shots {logo_start}s + Logo shot 0.5s)
+- Total duration: {duration} seconds (Product shots {logo_start}s + Ending shot 0.5s)
 - Style: Cinematic advertising aesthetic
 - Color grading: Premium, brand-appropriate
 - Pacing: Dynamic but clear messaging
 
 **Audio/Sound Design Requirements:**
-⚠️ CRITICAL: All audio elements (background music, voiceover, sound effects) MUST conclude by {logo_start}s. Logo shot ({logo_start}-{logo_end}s) MUST be completely silent.
+⚠️ CRITICAL: All audio elements (background music, voiceover, sound effects) MUST conclude by {logo_start}s. Ending shot ({logo_start}-{logo_end}s) MUST be completely silent.
 
 **Background Music Selection:**
 - Choose appropriate background music that matches the product category and advertising tone
 - Music genre/style should complement the product (e.g., upbeat for sports products, elegant for luxury items, energetic for tech products)
 - Specify the music characteristics: tempo (slow/medium/fast), mood (exciting/calm/inspirational), instrumentation
 - Music timeline:
-  * Start: 0s (begins with first frame)
-  * Fade-out begins: {logo_start - 0.5}s (starts fading in the last 0.5 seconds)
-  * Fade-out duration: 0.5 seconds
-  * Complete silence: {logo_start}s
-  * Example: For {duration}s video, music fades from {logo_start - 0.5}s to {logo_start}s
+  * Plays from 0s to {logo_start}s
+  * Fade-out: Begins at {logo_start - 0.5}s, ends at {logo_start}s (0.5s fade-out to complete stop)
+  * Final 0.5s: Music fades to complete silence
 
 **Other Audio Elements:**
 - Voiceover/Narration: Final words must finish by {logo_start}s
 - Sound Effects: Last effect must complete by {logo_start}s
-- Logo Shot: Complete silence (no music, no voiceover, no sound effects)
+- Ending Shot: Complete silence (no music, no voiceover, no sound effects)
 
 Audio Timeline Example:
 ✅ Product shots (0-{logo_start}s): Background music + voiceover
-✅ Music fade-out: {logo_start - 0.5}s to {logo_start}s (0.5s fade-out duration)
-✅ Logo shot ({logo_start}-{logo_end}s): Complete silence
-❌ DO NOT: Continue any audio into Logo shot
+✅ Music fade-out: Last 0.5s ({logo_start - 0.5}s to {logo_start}s) fades to complete stop
+✅ Ending shot ({logo_start}-{logo_end}s): Complete silence
+❌ DO NOT: Continue any audio into ending shot
 
-**OUTPUT LANGUAGE REQUIREMENT:**
-Write the complete shot-by-shot advertising video script **IN {output_lang_name} ({output_lang_native})**.
-- All shot descriptions, narration, and creative copy must be in {output_lang_name}
+**OUTPUT REQUIREMENT:**
+Write the complete shot-by-shot advertising video script **IN ENGLISH**.
+- All shot descriptions, narration, and creative copy must be in English
+- Use professional advertising industry terminology
 - Follow the exact format structure above
-- Ensure product shots advance the story and Logo shot displays MokyVideo branding
-- Maintain professional advertising tone appropriate for {output_lang_name} market"""
+- Maintain cinematic and high-end language style
+- Ensure product shots advance the story and ending shot provides a memorable close"""
 
     def _parse_response(self, response_text: str) -> Dict[str, Any]:
         """

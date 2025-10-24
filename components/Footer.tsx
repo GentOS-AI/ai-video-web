@@ -3,9 +3,8 @@
 import { useState } from "react";
 import dynamic from "next/dynamic";
 import { Mail } from "lucide-react";
-import { SiTiktok } from "react-icons/si";
-import { FaReddit } from "react-icons/fa";
-import { AnimatedLogo } from "./AnimatedLogo";
+import { SiTiktok, SiX, SiDiscord, SiLinkedin } from "react-icons/si";
+import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { useParams } from "next/navigation";
 import type { Locale } from "@/lib/i18n/config";
@@ -40,7 +39,15 @@ export const Footer = () => {
           {/* Company Info */}
           <div className="space-y-4">
             <div className="flex items-center space-x-2">
-              <AnimatedLogo size={32} />
+              <div className="relative p-0.5 bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-md shadow-sm">
+                <Image
+                  src="/logo.png"
+                  alt="Logo"
+                  width={32}
+                  height={32}
+                  className="h-8 w-8 rounded-sm"
+                />
+              </div>
               <span className="text-xl font-bold flex items-center gap-0">
                 <span className="bg-gradient-to-r from-purple-600 via-pink-500 to-purple-600 bg-clip-text text-transparent">
                   Moky
@@ -135,13 +142,31 @@ export const Footer = () => {
             </h3>
             <div className="flex space-x-4 sm:space-x-3">
               <a
-                href="https://reddit.com/r/mokyvideo"
+                href="https://x.com/mokyvideo"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="p-3 sm:p-2 rounded-lg bg-gray-100 hover:bg-primary hover:text-white transition-all hover:scale-110"
-                aria-label="Reddit"
+                aria-label="X (Twitter)"
               >
-                <FaReddit className="w-6 h-6 sm:w-5 sm:h-5" />
+                <SiX className="w-5 h-5 sm:w-4 sm:h-4" />
+              </a>
+              <a
+                href="https://discord.gg/mokyvideo"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-3 sm:p-2 rounded-lg bg-gray-100 hover:bg-primary hover:text-white transition-all hover:scale-110"
+                aria-label="Discord"
+              >
+                <SiDiscord className="w-6 h-6 sm:w-5 sm:h-5" />
+              </a>
+              <a
+                href="https://linkedin.com/company/mokyvideo"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-3 sm:p-2 rounded-lg bg-gray-100 hover:bg-primary hover:text-white transition-all hover:scale-110"
+                aria-label="LinkedIn"
+              >
+                <SiLinkedin className="w-5 h-5 sm:w-4 sm:h-4" />
               </a>
               <a
                 href="https://tiktok.com/@mokyvideo"

@@ -448,7 +448,8 @@ export const aiService = {
     file: File,
     duration: number = 8,
     language: string = 'en',
-    userDescription?: string  // 🆕 User's product description and advertising ideas
+    userDescription?: string,  // 🆕 User's product description and advertising ideas
+    model: string = 'sora-2'
   ): Promise<{
     script: string;
     style?: string;
@@ -462,6 +463,7 @@ export const aiService = {
     const normalizedDuration = [4, 8, 12].includes(duration) ? duration : 8;
     formData.append('duration', normalizedDuration.toString());
     formData.append('language', language);
+    formData.append('model', model);
 
     // 🆕 Add user description if provided
     if (userDescription) {
@@ -472,6 +474,7 @@ export const aiService = {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
+      timeout: 60000, // 60 seconds for GPT-4o script generation
     });
     return data;
   },

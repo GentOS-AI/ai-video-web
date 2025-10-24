@@ -24,8 +24,17 @@ router = APIRouter()
 
 # Response models
 class ScriptGenerationResponse(BaseModel):
-    """Response model for script generation"""
+    """
+    Response model for script generation
+
+    DUAL-FORMAT SUPPORT (2025-01-23):
+    - script: Complete response (may contain both formats)
+    - structured_script: Easy-to-read shot-by-shot format (Optional)
+    - natural_script: Flowing narrative for Sora AI (Optional)
+    """
     script: str
+    structured_script: Optional[str] = None  # 🆕 Shot-by-shot structured format
+    natural_script: Optional[str] = None     # 🆕 Natural language paragraph
     style: Optional[str] = None
     camera: Optional[str] = None
     lighting: Optional[str] = None
@@ -87,6 +96,7 @@ async def generate_script(
     file: UploadFile = File(..., description="Product image (JPG/PNG, max 20MB)"),
     duration: int = Form(8, description="Video duration in seconds"),
     language: str = Form("en", description="Language for generated script (en, zh, ja, etc.)"),
+    model: str = Form("sora-2", description="AI model to use for subsequent video generation"),
     user_description: Optional[str] = Form(None, description="User's product description and advertising ideas"),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
@@ -120,24 +130,36 @@ async def generate_script(
         logger.info(f"  📄 Filename: {file.filename}")
         logger.info(f"  🎨 Content Type: {file.content_type}")
         logger.info(f"  ⏱️  Duration: {duration}s")
+        logger.info(f"  🧠 Model: {model}")
         logger.info(f"  🌍 Language: {language}")
         logger.info(f"  💳 Subscription: {current_user.subscription_plan} ({current_user.subscription_status})")
         logger.info("=" * 60)
 
-        # Validate user subscription status
-        if current_user.subscription_plan == 'free':
-            logger.warning(f"❌ User {current_user.id} attempted script generation with free plan")
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Subscription required. Please upgrade to access AI Script Generator."
-            )
+        allow_without_subscription = model == "sora-2" and duration == 4
 
-        if current_user.subscription_status != 'active':
-            logger.warning(f"❌ User {current_user.id} has inactive subscription: {current_user.subscription_status}")
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Your subscription has expired. Please renew to continue."
-            )
+        if allow_without_subscription:
+            logger.info("🎁 Special case: sora-2 4s script request – skipping subscription check, validating credits only")
+            if current_user.credits <= 0:
+                logger.warning(f"❌ User {current_user.id} has insufficient credits ({current_user.credits}) for script generation")
+                raise HTTPException(
+                    status_code=status.HTTP_402_PAYMENT_REQUIRED,
+                    detail="Insufficient credits. Please top up to continue."
+                )
+        else:
+            # Validate user subscription status
+            if current_user.subscription_plan == 'free':
+                logger.warning(f"❌ User {current_user.id} attempted script generation with free plan")
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Subscription required. Please upgrade to access AI Script Generator."
+                )
+
+            if current_user.subscription_status != 'active':
+                logger.warning(f"❌ User {current_user.id} has inactive subscription: {current_user.subscription_status}")
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Your subscription has expired. Please renew to continue."
+                )
 
         # Read file content
         logger.info("📖 Reading uploaded file...")
@@ -218,6 +240,10 @@ async def generate_script(
         logger.info("📤 [AI Script Generation] Response generated successfully")
         logger.info(f"  👤 User ID: {current_user.id}")
         logger.info(f"  📝 Script length: {len(result['script'])} characters")
+        if result.get('structured_script'):
+            logger.info(f"  📋 Structured script: {len(result['structured_script'])} chars")
+        if result.get('natural_script'):
+            logger.info(f"  📝 Natural script: {len(result['natural_script'])} chars")
         logger.info(f"  🎬 Style: {result.get('style', 'N/A')}")
         logger.info(f"  🎥 Camera: {result.get('camera', 'N/A')}")
         logger.info(f"  💡 Lighting: {result.get('lighting', 'N/A')}")
@@ -227,6 +253,8 @@ async def generate_script(
 
         return ScriptGenerationResponse(
             script=result["script"],
+            structured_script=result.get("structured_script"),  # 🆕 Dual format support
+            natural_script=result.get("natural_script"),        # 🆕 Dual format support
             style=result.get("style"),
             camera=result.get("camera"),
             lighting=result.get("lighting"),

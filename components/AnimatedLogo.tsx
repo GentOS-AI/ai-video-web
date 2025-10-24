@@ -37,12 +37,19 @@ export const AnimatedLogo: React.FC<AnimatedLogoProps> = ({
           fill="url(#logoGradient)"
         />
 
-        {/* Play triangle - 白色播放按钮 */}
-        <path
-          d="M13 10L23 16L13 22V10Z"
+        {/* Ads text - 白色文字 */}
+        <text
+          x="16"
+          y="20"
+          textAnchor="middle"
           fill="white"
+          fontSize="11"
+          fontWeight="700"
+          fontFamily="system-ui, -apple-system, sans-serif"
           opacity="0.95"
-        />
+        >
+          Ads
+        </text>
       </svg>
     </div>
   );

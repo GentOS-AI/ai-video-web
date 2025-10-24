@@ -40,23 +40,32 @@ def create_video_generation_task(
         SubscriptionExpiredException: If user's subscription has expired
         InsufficientCreditsException: If user doesn't have enough credits
     """
-    # Check if user has a subscription
-    if user.subscription_plan == "free":
-        raise SubscriptionRequiredException(
-            "Subscription required. Please upgrade to generate videos."
-        )
+    # 🆕 Special case: sora-2 with 4s duration - only check credits (no subscription required)
+    is_sora2_4s = video_request.model == "sora-2" and video_request.duration == 4
 
-    # Check if subscription is active
-    if user.subscription_status != "active":
-        raise SubscriptionExpiredException(
-            "Your subscription is not active. Please renew your subscription."
-        )
+    if is_sora2_4s:
+        print(f"🎁 Special case detected: sora-2 with 4s duration")
+        print(f"   Subscription check: SKIPPED (only credits required)")
+        print(f"   User: {user.email}, Plan: {user.subscription_plan}")
 
-    # Check subscription expiry date
-    if user.subscription_end_date and user.subscription_end_date < datetime.utcnow():
-        raise SubscriptionExpiredException(
-            "Your subscription has expired. Please renew to continue."
-        )
+    if not is_sora2_4s:
+        # Check if user has a subscription (skip for sora-2 4s)
+        if user.subscription_plan == "free":
+            raise SubscriptionRequiredException(
+                "Subscription required. Please upgrade to generate videos."
+            )
+
+        # Check if subscription is active
+        if user.subscription_status != "active":
+            raise SubscriptionExpiredException(
+                "Your subscription is not active. Please renew your subscription."
+            )
+
+        # Check subscription expiry date
+        if user.subscription_end_date and user.subscription_end_date < datetime.utcnow():
+            raise SubscriptionExpiredException(
+                "Your subscription has expired. Please renew to continue."
+            )
 
     # Calculate credits cost based on model
     model_id = video_request.model

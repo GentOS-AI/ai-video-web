@@ -877,17 +877,14 @@ export const HeroSection = () => {
                 All-in-one AI solution for image enhancement, video scripting and generation for your product advertising.{" "}
                 <span className="inline-flex items-center gap-1 text-[10px] sm:text-xs whitespace-nowrap">
                   <span className="text-gray-400 font-medium">POWERED BY</span>
-                  <a
-                    href="https://moky.ai"
-                    target="_blank"
-                    rel="noopener noreferrer"
+                  <span
                     className="relative inline-block px-1.5 py-0.5 rounded-md bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 hover:border-purple-300 hover:shadow-md hover:shadow-purple-200/50 active:scale-95 transition-all duration-200 cursor-pointer"
                   >
                     {/* Main text with gradient */}
                     <span className="bg-gradient-to-r from-purple-600 via-pink-500 to-purple-600 bg-clip-text text-transparent font-bold tracking-tight">
                       Moky.ai
                     </span>
-                  </a>
+                  </span>
                 </span>
               </p>
             </div>
@@ -1337,9 +1334,9 @@ export const HeroSection = () => {
                                 console.log("📸 Thumbnail selected:", img.alt);
                               }
                             }}
-                            className={`relative flex-shrink-0 w-12 h-12 sm:w-11 sm:h-11 rounded-md overflow-hidden transition-all hover:scale-105 ${
+                            className={`relative flex-shrink-0 w-12 h-12 sm:w-11 sm:h-11 rounded-md overflow-hidden transition-all ${
                               selectedImage === img.id
-                                ? "border-2 border-purple-500 opacity-100 shadow-md shadow-purple-200"
+                                ? "border-2 border-purple-500 opacity-100 shadow-md shadow-purple-200 scale-110"
                                 : "border border-gray-200 hover:border-gray-300 opacity-60 hover:opacity-90"
                             }`}
                             title={img.alt}
@@ -1356,8 +1353,8 @@ export const HeroSection = () => {
 
                             {/* Green Checkmark Badge when selected */}
                             {selectedImage === img.id && (
-                              <div className="absolute -top-1 -right-1 w-5 h-5 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center shadow-md border-2 border-white z-10">
-                                <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <div className="absolute -top-2 -right-2 w-6 h-6 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center shadow-md border-2 border-white z-10">
+                                <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                                 </svg>
                               </div>
@@ -1681,15 +1678,21 @@ export const HeroSection = () => {
             <div className="mt-4 sm:mt-5 text-center">
               <p className="text-xs sm:text-sm font-medium text-text-secondary">
                 What&apos;s showing: <span className="text-purple-600 font-semibold">
-                  {generatedVideo && generatedVideo.prompt ? (
-                    generatedVideo.prompt
+                  {isGenerating && !generatedVideo?.video_url ? (
+                    // Show "Generating..." when video is being generated
+                    "Generating..."
+                  ) : generatedVideo && generatedVideo.video_url ? (
+                    // Show success message when video is completed
+                    "Your Video Generated Successfully"
                   ) : showThumbnailPreview && selectedImage !== null ? (
+                    // Show selected showcase video title
                     (() => {
                       const selectedImageData = trialImages.find(img => img.id === selectedImage);
                       const showcaseVideo = selectedImageData ? showcaseVideos.find(v => v.id === selectedImageData.videoId) : null;
                       return showcaseVideo ? showcaseVideo.title : (selectedImageData?.alt || "Selected Image");
                     })()
                   ) : (
+                    // Default showcase video title
                     defaultHeroVideo.title
                   )}
                 </span>

@@ -1,9 +1,10 @@
-# 🚀 AdsVideo.co - 生产环境部署文档
+# 🚀 Video4Ads.com - 生产环境部署文档
 
-**部署架构**: PM2 + Nginx + Let's Encrypt SSL
-**服务器**: Ubuntu 20.04+
-**域名**: https://adsvideo.co
-**最后更新**: 2025-10-18
+**部署架构**: PM2 + Nginx + PostgreSQL + Let's Encrypt SSL
+**服务器**: Ubuntu 22.04 LTS
+**域名**: https://video4ads.com
+**数据库**: PostgreSQL 14
+**最后更新**: 2025-10-24
 
 ---
 
@@ -35,14 +36,15 @@
     │  PM2: Frontend   │         │  PM2: Backend    │
     │  Next.js (3000)  │         │  FastAPI (8000)  │
     │  - SSR           │         │  - REST API      │
-    │  - Static Gen    │         │  - SQLite DB     │
+    │  - Static Gen    │         │  - PostgreSQL DB │
     │  - SEO           │         │  - Celery Jobs   │
-    └──────────────────┘         └──────────────────┘
+    └──────────────────┘         └────────┬─────────┘
                                           │
                                   ┌───────┴────────┐
-                                  │ Redis (6379)   │
-                                  │ - Task Queue   │
-                                  │ - Cache        │
+                                  │ PostgreSQL     │
+                                  │ (5432)         │
+                                  │ - User Data    │
+                                  │ - Video Data   │
                                   └────────────────┘
 ```
 
@@ -124,7 +126,7 @@ cd ai-video-web
 
 ```bash
 # 必须配置项
-NEXT_PUBLIC_API_URL=https://adsvideo.co/api/v1
+NEXT_PUBLIC_API_URL=https://video4ads.com/api/v1
 NEXT_PUBLIC_GOOGLE_CLIENT_ID=your-client-id
 GOOGLE_CLIENT_ID=your-client-id
 GOOGLE_CLIENT_SECRET=your-client-secret
@@ -150,15 +152,19 @@ nano .env
 # 必须配置项
 GOOGLE_CLIENT_ID=your-client-id
 GOOGLE_CLIENT_SECRET=your-client-secret
-GOOGLE_REDIRECT_URI=https://adsvideo.co/auth/callback
+GOOGLE_REDIRECT_URI=https://video4ads.com/en/auth/callback
 
 JWT_SECRET_KEY=<生成: openssl rand -hex 32>
 
 OPENAI_API_KEY=sk-proj-...
 GEMINI_API_KEY=AIza...
 
-DATABASE_URL=sqlite:///./aivideo.db
-ALLOWED_ORIGINS=["https://adsvideo.co"]
+# PostgreSQL 数据库 (生产环境)
+DATABASE_URL=postgresql://aivideo_user:aivideo2025@localhost:5432/aivideo_prod
+
+# CORS配置
+ALLOWED_ORIGINS=["https://video4ads.com","https://www.video4ads.com"]
+BASE_URL=https://video4ads.com
 ```
 
 ### 4. 执行部署
@@ -170,7 +176,7 @@ cd /root/ai-video-web
 
 ### 5. 配置Nginx
 
-Nginx配置文件已存在于: `/etc/nginx/sites-available/adsvideo.co`
+Nginx配置文件已存在于: `/etc/nginx/sites-available/video4ads.com`
 
 **关键配置**:
 ```nginx
@@ -190,8 +196,8 @@ location /api/ {
 
 # WWW重定向
 server {
-    server_name www.adsvideo.co;
-    return 301 https://adsvideo.co$request_uri;
+    server_name www.video4ads.com;
+    return 301 https://video4ads.com$request_uri;
 }
 ```
 
@@ -207,11 +213,11 @@ systemctl reload nginx
 # 安装Certbot
 apt install -y certbot python3-certbot-nginx
 
-# 申请证书
+# 申请证书 (已完成,证书已存在)
 certbot --nginx \
-  -d adsvideo.co \
-  -d www.adsvideo.co \
-  --email your-email@example.com \
+  -d video4ads.com \
+  -d www.video4ads.com \
+  --email support@video4ads.com \
   --agree-tos \
   --no-eff-email
 
@@ -248,16 +254,17 @@ curl http://localhost:3000
 curl http://localhost:8000/api/v1/health
 
 # Nginx
-curl -I https://adsvideo.co
+curl -I https://video4ads.com
 ```
 
 ### 浏览器测试
 
-1. ✅ 访问 https://adsvideo.co (主页加载)
-2. ✅ 访问 https://www.adsvideo.co (重定向到非www)
+1. ✅ 访问 https://video4ads.com (主页加载)
+2. ✅ 访问 https://www.video4ads.com (重定向到非www)
 3. ✅ 点击登录按钮 (Google OAuth)
 4. ✅ 上传图片生成视频
 5. ✅ 查看"我的视频"页面
+6. ✅ 验证数据库连接 (PostgreSQL)
 
 ---
 
@@ -299,7 +306,7 @@ pm2 save
 ```bash
 # 1. 检查环境变量
 grep NEXT_PUBLIC_API_URL .env.production
-# 必须是: https://adsvideo.co/api/v1 (不是localhost!)
+# 必须是: https://video4ads.com/api/v1 (不是localhost!)
 
 # 2. 重新构建
 npm run build
@@ -311,9 +318,9 @@ pm2 restart ai-video-web
 ```
 
 **Google Cloud Console检查**:
-- 授权重定向URI: `https://adsvideo.co/auth/callback`
-- 授权JavaScript来源: `https://adsvideo.co`
-- ⚠️ 不要包含 `www.adsvideo.co` (会被重定向)
+- 授权重定向URI: `https://video4ads.com/en/auth/callback`
+- 授权JavaScript来源: `https://video4ads.com`
+- ⚠️ 不要包含 `www.video4ads.com` (会被重定向)
 
 ### 问题3: 后端API返回502
 
@@ -562,23 +569,34 @@ gzip_types text/plain text/css application/json application/javascript;
 gzip_min_length 1000;
 ```
 
-### 3. 数据库优化
+### 3. 数据库优化 (PostgreSQL)
 
-如果流量增大,考虑升级到PostgreSQL:
+**已完成配置**: 生产环境已使用 PostgreSQL 14
 
 ```bash
-# 安装PostgreSQL
-apt install -y postgresql postgresql-contrib
+# 数据库信息
+数据库名: aivideo_prod
+用户: aivideo_user
+端口: 5432
 
-# 创建数据库
-sudo -u postgres psql
-CREATE DATABASE aivideo_prod;
-CREATE USER aivideo_user WITH PASSWORD 'strong-password';
-GRANT ALL PRIVILEGES ON DATABASE aivideo_prod TO aivideo_user;
+# 连接字符串
+DATABASE_URL=postgresql://aivideo_user:aivideo2025@localhost:5432/aivideo_prod
 
-# 更新backend/.env
-DATABASE_URL=postgresql://aivideo_user:password@localhost:5432/aivideo_prod
+# 维护命令
+sudo -u postgres psql -d aivideo_prod
+
+# 查看表
+\dt
+
+# 查看数据量
+SELECT COUNT(*) FROM users;
+SELECT COUNT(*) FROM videos;
+
+# 性能优化
+VACUUM ANALYZE;
 ```
+
+**备份和恢复**: 参考 `docs/POSTGRES_SETUP_GUIDE.md`
 
 ---
 
@@ -588,7 +606,7 @@ DATABASE_URL=postgresql://aivideo_user:password@localhost:5432/aivideo_prod
 
 ```bash
 # 一行命令检查所有服务
-pm2 status && systemctl status nginx && curl -I https://adsvideo.co
+pm2 status && systemctl status nginx && systemctl status postgresql && curl -I https://video4ads.com
 ```
 
 ### 报告问题时提供
@@ -625,13 +643,19 @@ pm2 status && systemctl status nginx && curl -I https://adsvideo.co
 
 ---
 
-**版本**: 2.0.0
-**最后更新**: 2025-10-18
-**维护**: AI Video Web Team
+**版本**: 3.0.0
+**最后更新**: 2025-10-24
+**维护**: Video4Ads Team
 
-**关键改进**:
-- ✅ 统一使用PM2部署 (移除Systemd混淆)
+**最新改进** (v3.0.0):
+- ✅ 更新域名: adsvideo.co → video4ads.com
+- ✅ 升级数据库: SQLite → PostgreSQL 14
+- ✅ 配置PostgreSQL远程访问
+- ✅ 本地开发环境统一数据源
+- ✅ SSL证书更新为新域名
+- ✅ WWW重定向配置
+
+**历史版本** (v2.0.0):
+- ✅ 统一使用PM2部署
 - ✅ 前后端独立部署脚本
 - ✅ 修复ecosystem.config.js端口配置
-- ✅ 清理过时文档
-- ✅ 添加详细故障排查指南

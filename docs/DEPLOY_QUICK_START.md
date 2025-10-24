@@ -1,6 +1,6 @@
-# 🚀 AdsVideo.co - 快速部署指南
+# 🚀 Video4Ads.com - 快速部署指南
 
-**最新更新**: 2025-10-18 | **部署时间**: 约30分钟
+**最新更新**: 2025-10-24 | **部署时间**: 约30分钟
 
 ---
 
@@ -12,9 +12,10 @@
 | **SSH端口** | 3200 |
 | **SSH命令** | `ssh -p3200 -lroot 23.95.254.67` |
 | **项目路径** | `/root/ai-video-web` |
-| **域名** | https://adsvideo.co |
+| **域名** | https://video4ads.com |
 | **前端端口** | 3000 (内部) |
 | **后端端口** | 8000 (内部) |
+| **数据库** | PostgreSQL 14 (5432) |
 
 ---
 
@@ -106,7 +107,7 @@ GOOGLE_CLIENT_ID=your-google-client-id
 GOOGLE_CLIENT_SECRET=your-google-client-secret
 
 # API URL (重要!)
-NEXT_PUBLIC_API_URL=https://adsvideo.co/api/v1
+NEXT_PUBLIC_API_URL=https://video4ads.com/api/v1
 
 # Stripe (生产环境)
 STRIPE_SECRET_KEY=sk_live_...
@@ -133,7 +134,7 @@ nano .env
 # Google OAuth (与前端相同)
 GOOGLE_CLIENT_ID=your-google-client-id
 GOOGLE_CLIENT_SECRET=your-google-client-secret
-GOOGLE_REDIRECT_URI=https://adsvideo.co/auth/callback
+GOOGLE_REDIRECT_URI=https://video4ads.com/en/auth/callback
 
 # JWT密钥 (生成: openssl rand -hex 32)
 JWT_SECRET_KEY=your-super-secret-jwt-key-here
@@ -142,11 +143,12 @@ JWT_SECRET_KEY=your-super-secret-jwt-key-here
 OPENAI_API_KEY=sk-proj-...
 GEMINI_API_KEY=AIza...
 
-# 数据库 (SQLite - 默认)
-DATABASE_URL=sqlite:///./aivideo.db
+# 数据库 (PostgreSQL - 生产环境)
+DATABASE_URL=postgresql://aivideo_user:aivideo2025@localhost:5432/aivideo_prod
 
 # CORS
-ALLOWED_ORIGINS=["https://adsvideo.co","https://www.adsvideo.co"]
+ALLOWED_ORIGINS=["https://video4ads.com","https://www.video4ads.com"]
+BASE_URL=https://video4ads.com
 ```
 
 ### 第4步: 执行首次部署
@@ -188,7 +190,10 @@ curl http://localhost:3000
 curl http://localhost:8000/api/v1/health
 
 # 测试域名
-curl -I https://adsvideo.co
+curl -I https://video4ads.com
+
+# 测试数据库
+PGPASSWORD='aivideo2025' psql -U aivideo_user -d aivideo_prod -h localhost -c 'SELECT COUNT(*) FROM users;'
 ```
 
 ---
@@ -215,7 +220,7 @@ pm2 logs --err
 ```bash
 # 1. 确认环境变量正确
 grep NEXT_PUBLIC_API_URL .env.production
-# 应该输出: NEXT_PUBLIC_API_URL=https://adsvideo.co/api/v1
+# 应该输出: NEXT_PUBLIC_API_URL=https://video4ads.com/api/v1
 
 # 2. 重新构建 (环境变量更改后必须重建)
 npm run build
@@ -226,8 +231,8 @@ pm2 restart ai-video-web
 ```
 
 **Google Cloud Console配置**:
-- 授权重定向URI: `https://adsvideo.co/auth/callback`
-- 授权JavaScript来源: `https://adsvideo.co`
+- 授权重定向URI: `https://video4ads.com/en/auth/callback`
+- 授权JavaScript来源: `https://video4ads.com`
 
 ### 问题3: 后端API无法访问
 
@@ -311,8 +316,8 @@ systemctl restart nginx
 systemctl status nginx
 
 # 查看日志
-tail -f /var/log/nginx/adsvideo-access.log
-tail -f /var/log/nginx/adsvideo-error.log
+tail -f /var/log/nginx/video4ads-access.log
+tail -f /var/log/nginx/video4ads-error.log
 ```
 
 ### Git操作
@@ -368,15 +373,15 @@ GIT_SSH_COMMAND="ssh -i ~/.ssh/id_ed25519" git reset --hard COMMIT_ID
 /root/ai-video-web/logs/backend-error.log
 
 # Nginx日志
-/var/log/nginx/adsvideo-access.log
-/var/log/nginx/adsvideo-error.log
+/var/log/nginx/video4ads-access.log
+/var/log/nginx/video4ads-error.log
 ```
 
 ### 健康检查
 
 ```bash
 # 快速状态检查
-pm2 status && systemctl status nginx && curl -I https://adsvideo.co
+pm2 status && systemctl status nginx && systemctl status postgresql && curl -I https://video4ads.com
 ```
 
 ---
@@ -384,12 +389,18 @@ pm2 status && systemctl status nginx && curl -I https://adsvideo.co
 ## 🎉 完成!
 
 部署成功后,你的应用将运行在:
-- **网站**: https://adsvideo.co
-- **API**: https://adsvideo.co/api/v1
-- **API文档**: https://adsvideo.co/api/v1/docs
+- **网站**: https://video4ads.com
+- **API**: https://video4ads.com/api/v1
+- **API文档**: https://video4ads.com/docs
 
 ---
 
-**版本**: 1.0.0
-**最后更新**: 2025-10-18
-**维护**: AI Video Web Team
+**版本**: 2.0.0
+**最后更新**: 2025-10-24
+**维护**: Video4Ads Team
+
+**v2.0.0 更新**:
+- ✅ 域名更新为 video4ads.com
+- ✅ 数据库升级为 PostgreSQL 14
+- ✅ 配置远程数据库访问
+- ✅ 统一本地和生产数据源

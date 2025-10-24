@@ -4,10 +4,10 @@ import { useState } from "react";
 import dynamic from "next/dynamic";
 import { Mail } from "lucide-react";
 import { SiTiktok, SiX, SiDiscord, SiLinkedin } from "react-icons/si";
-import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { useParams } from "next/navigation";
 import type { Locale } from "@/lib/i18n/config";
+import { AnimatedLogo } from "./AnimatedLogo";
 
 // Lazy load PricingModal
 const PricingModal = dynamic(
@@ -38,7 +38,8 @@ export const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-5 gap-6 sm:gap-4 md:gap-6">
           {/* Company Info */}
           <div className="space-y-4">
-            <div className="flex items-center">
+            <div className="flex items-center space-x-2">
+              <AnimatedLogo size={32} />
               <span className="text-xl font-bold flex items-center gap-0">
                 <span className="text-gray-900">Video</span>
                 <span className="bg-gradient-to-r from-yellow-500 via-pink-500 to-purple-600 bg-clip-text text-transparent">4Ads</span>

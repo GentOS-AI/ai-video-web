@@ -1,11 +1,10 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import dynamic from "next/dynamic";
 import { VideoPlayer } from "./VideoPlayer";
-import { ShareDropdown } from "./ShareDropdown";
 import { Sparkles, Loader2, AlertCircle, Upload, X, Check, Wand2 } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, useInView } from "framer-motion";
 import Image from "next/image";
 import { showcaseVideos, trialImages } from "@/lib/assets";
 import { videoService, userService, aiService } from "@/lib/api/services";
@@ -41,9 +40,11 @@ const thirdShowcaseVideo = showcaseVideos[2] || showcaseVideos[0];
 
 const defaultHeroVideo = {
   src: thirdShowcaseVideo?.src ?? "",
-  poster: thirdShowcaseVideo?.poster ?? "",
+  poster: thirdShowcaseVideo?.poster ?? trialImages[0]?.highResSrc ?? "",
   title: thirdShowcaseVideo?.title ?? "AI Generated Video Demo",
 };
+
+const heroBackgroundImage = trialImages[0]?.highResSrc ?? "";
 
 // AI Models configuration - New structured format
 type ModelType = 'sora-2' | 'sora-2-pro';
@@ -180,6 +181,8 @@ export const HeroSection = () => {
   // Replace confirmation dialog state
   const [showReplaceConfirmDialog, setShowReplaceConfirmDialog] = useState(false);
   const [pendingThumbnailId, setPendingThumbnailId] = useState<number | null>(null);
+  const videoContainerRef = useRef<HTMLDivElement | null>(null);
+  const isVideoInView = useInView(videoContainerRef, { once: true, margin: "-100px" });
 
   // Use SSE Hook for real-time video progress updates
   const { messages, isConnected, lastMessage } = useVideoStream({
@@ -247,10 +250,10 @@ export const HeroSection = () => {
   const [recentUsers, setRecentUsers] = useState<RecentUsersResponse | null>(null);
 
   // Helper function to get current model info based on type + duration
-  const getCurrentModelInfo = (): DurationOption | undefined => {
+  const getCurrentModelInfo = useCallback((): DurationOption | undefined => {
     const modelConfig = modelTypes[selectedModelType];
     return modelConfig?.durations.find(d => d.value === selectedDuration);
-  };
+  }, [selectedModelType, selectedDuration]);
 
   // Sync new state with legacy selectedModel state
   useEffect(() => {
@@ -265,7 +268,7 @@ export const HeroSection = () => {
         setSelectedModel(legacyModel);
       }
     }
-  }, [selectedModelType, selectedDuration]);
+  }, [selectedModelType, selectedDuration, getCurrentModelInfo]);
 
   const handlePromptChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const text = e.target.value;
@@ -789,12 +792,6 @@ export const HeroSection = () => {
     });
   };
 
-  // Handle TikTok share (coming soon)
-  const handleTikTokShare = () => {
-    showToast("TikTok sharing coming soon!", "info");
-    console.log("TikTok share clicked - feature coming soon");
-  };
-
   // Typing animation effect for placeholder
   useEffect(() => {
     if (prompt) return; // Don't show placeholder animation if user is typing
@@ -838,16 +835,22 @@ export const HeroSection = () => {
   }, [isModelDropdownOpen, isModeDropdownOpen]);
 
   return (
-    <section className="pt-20 sm:pt-24 pb-12 sm:pb-16">
-      <div className="w-full md:max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
+    <section className="relative pt-20 sm:pt-24 pb-12 sm:pb-16 overflow-hidden">
+      {heroBackgroundImage && (
+        <Image
+          src={heroBackgroundImage}
+          alt="Hero background"
+          fill
+          priority
+          className="object-cover object-center opacity-30"
+          sizes="100vw"
+        />
+      )}
+      <div className="absolute inset-0 bg-gradient-to-br from-white via-white/80 to-purple-50/70 pointer-events-none" />
+      <div className="relative w-full md:max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
         <div className="flex flex-col lg:grid lg:grid-cols-[53%_47%] gap-6 sm:gap-8 lg:gap-12 lg:items-end">
           {/* Left Side - Generation Form */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, ease: "easeOut" }}
-            className="space-y-4 sm:space-y-6 pt-6 md:pt-0"
-          >
+          <div className="space-y-4 sm:space-y-6 pt-6 md:pt-0">
             {/* Heading */}
             <div className="space-y-2 sm:space-y-3">
               <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold leading-[1.15] tracking-tight">
@@ -1501,7 +1504,7 @@ export const HeroSection = () => {
                 </p>
               </div>
             </div>
-          </motion.div>
+          </div>
 
           {/* Right Side - Video Carousel */}
           <motion.div
@@ -1517,9 +1520,26 @@ export const HeroSection = () => {
             </div>
 
             {/* Main Video/Image Container - Fixed 16:9 aspect ratio */}
-            <div className="relative aspect-video rounded-2xl overflow-hidden shadow-2xl">
-              {/* Priority 1: Show video area when generating or completed */}
-              {(isGenerating || (generatedVideo && generatedVideo.video_url)) ? (
+            <div
+              ref={videoContainerRef}
+              className="relative aspect-video rounded-2xl overflow-hidden shadow-2xl"
+            >
+              {!isVideoInView ? (
+                <div className="relative w-full h-full">
+                  <Image
+                    src={defaultHeroVideo.poster || heroBackgroundImage || trialImages[0]?.highResSrc || trialImages[0]?.src || "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw=="}
+                    alt={defaultHeroVideo.title}
+                    fill
+                    priority
+                    className="object-cover"
+                    sizes="(max-width: 768px) 100vw, (max-width: 1024px) 47vw, 560px"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent" />
+                  <div className="absolute bottom-4 left-4 right-4 text-sm text-white/90 backdrop-blur-sm bg-black/30 px-3 py-2 rounded-lg">
+                    Preparing preview...
+                  </div>
+                </div>
+              ) : (isGenerating || (generatedVideo && generatedVideo.video_url)) ? (
                 <div className="relative w-full h-full">
                   {generatedVideo && generatedVideo.video_url ? (
                     /* Video completed - show video player with contain mode */
@@ -1529,6 +1549,7 @@ export const HeroSection = () => {
                       autoPlay={true}
                       objectFit="contain"
                       className="h-full w-full"
+                      preload="metadata"
                     />
                   ) : (
                     /* Video generating - show loading with status badge */
@@ -1609,6 +1630,7 @@ export const HeroSection = () => {
                       autoPlay={true}
                       objectFit="contain"
                       className="h-full w-full"
+                      preload="metadata"
                     />
                   ) : (
                     /* Fallback to image if no video found */
@@ -1638,6 +1660,7 @@ export const HeroSection = () => {
                   autoPlay={true}
                   objectFit="contain"
                   className="h-full w-full"
+                  preload="metadata"
                 />
               )}
 

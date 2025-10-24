@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { Play, Pause, Maximize2, X } from "lucide-react";
 import { useIntersectionObserver } from "@/lib/hooks/useIntersectionObserver";
 import { motion, AnimatePresence } from "framer-motion";
@@ -152,7 +152,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     setIsFullscreen(true);
   };
 
-  const closeFullscreen = () => {
+  const closeFullscreen = useCallback(() => {
     setIsFullscreen(false);
 
     // Resume original video if it was playing before
@@ -160,7 +160,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
       videoRef.current.play();
       setIsPlaying(true);
     }
-  };
+  }, [wasPlayingBeforeFullscreen]);
 
   // Handle ESC key to close fullscreen
   useEffect(() => {
@@ -179,7 +179,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
       document.removeEventListener('keydown', handleEsc);
       document.body.style.overflow = 'unset';
     };
-  }, [isFullscreen]);
+  }, [isFullscreen, closeFullscreen]);
 
   // Notify parent when play state changes
   useEffect(() => {

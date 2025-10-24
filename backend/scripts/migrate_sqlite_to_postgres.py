@@ -27,7 +27,7 @@ from typing import Any, Dict, List
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from sqlalchemy import create_engine, MetaData, Table, select, inspect
+from sqlalchemy import create_engine, MetaData, Table, select, inspect, text
 from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.exc import IntegrityError
 
@@ -111,7 +111,7 @@ def test_connections(sqlite_url: str, postgres_url: str) -> tuple[Any, Any]:
         # Test SQLite connection
         sqlite_engine = create_engine(sqlite_url)
         with sqlite_engine.connect() as conn:
-            result = conn.execute("SELECT 1").scalar()
+            result = conn.execute(text("SELECT 1")).scalar()
             if result == 1:
                 print_success("SQLite connection successful")
     except Exception as e:
@@ -122,7 +122,7 @@ def test_connections(sqlite_url: str, postgres_url: str) -> tuple[Any, Any]:
         # Test PostgreSQL connection
         postgres_engine = create_engine(postgres_url)
         with postgres_engine.connect() as conn:
-            result = conn.execute("SELECT 1").scalar()
+            result = conn.execute(text("SELECT 1")).scalar()
             if result == 1:
                 print_success("PostgreSQL connection successful")
     except Exception as e:
@@ -188,8 +188,12 @@ def migrate_table(
             # Convert row to dict
             row_dict = dict(row._mapping)
 
+            # Filter out columns that don't exist in target table
+            target_columns = {col.name for col in postgres_table.columns}
+            filtered_dict = {k: v for k, v in row_dict.items() if k in target_columns}
+
             # Insert into PostgreSQL
-            insert_stmt = postgres_table.insert().values(**row_dict)
+            insert_stmt = postgres_table.insert().values(**filtered_dict)
             postgres_session.execute(insert_stmt)
             postgres_session.commit()
             success_count += 1
@@ -234,13 +238,13 @@ def reset_sequences(postgres_engine: Any, tables: List[str]):
 
             # Get max ID
             with postgres_engine.connect() as conn:
-                result = conn.execute(f"SELECT MAX({pk_column}) FROM {table_name}")
+                result = conn.execute(text(f"SELECT MAX({pk_column}) FROM {table_name}"))
                 max_id = result.scalar()
 
                 if max_id is not None:
                     # Reset sequence
                     sequence_name = f"{table_name}_{pk_column}_seq"
-                    conn.execute(f"SELECT setval('{sequence_name}', {max_id})")
+                    conn.execute(text(f"SELECT setval('{sequence_name}', {max_id})"))
                     conn.commit()
                     print_success(f"Reset sequence for {table_name} to {max_id + 1}")
 
@@ -258,11 +262,11 @@ def verify_migration(sqlite_engine: Any, postgres_engine: Any, tables: List[str]
         try:
             # Count rows in SQLite
             with sqlite_engine.connect() as conn:
-                sqlite_count = conn.execute(f"SELECT COUNT(*) FROM {table_name}").scalar()
+                sqlite_count = conn.execute(text(f"SELECT COUNT(*) FROM {table_name}")).scalar()
 
             # Count rows in PostgreSQL
             with postgres_engine.connect() as conn:
-                postgres_count = conn.execute(f"SELECT COUNT(*) FROM {table_name}").scalar()
+                postgres_count = conn.execute(text(f"SELECT COUNT(*) FROM {table_name}")).scalar()
 
             # Compare
             if sqlite_count == postgres_count:

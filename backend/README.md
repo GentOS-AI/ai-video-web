@@ -1,4 +1,4 @@
-# AIVideo.DIY Backend
+# Video4Ads Backend
 
 FastAPI + Celery + Redis backend for AI video generation platform.
 

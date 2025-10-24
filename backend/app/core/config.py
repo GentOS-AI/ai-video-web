@@ -68,9 +68,23 @@ class Settings(BaseSettings):
 
     # Credits
     DEFAULT_USER_CREDITS: float = 100.0
-    # Model-specific credit costs
-    SORA_2_COST: float = 100.0  # Sora-2 Standard
-    SORA_2_PRO_COST: float = 300.0  # Sora-2 Pro
+
+    # Script Generation Credits (统一扣除)
+    SCRIPT_GENERATION_COST: float = 10.0  # 所有模型+时长统一10积分
+
+    # Video Generation Credits - Sora 2 (按时长差异化)
+    SORA_2_4S_COST: float = 40.0   # 4秒视频
+    SORA_2_8S_COST: float = 80.0   # 8秒视频
+    SORA_2_12S_COST: float = 120.0 # 12秒视频
+
+    # Video Generation Credits - Sora 2 Pro (Sora2的3倍)
+    SORA_2_PRO_4S_COST: float = 120.0  # 4秒视频 (40*3)
+    SORA_2_PRO_8S_COST: float = 240.0  # 8秒视频 (80*3)
+    SORA_2_PRO_12S_COST: float = 360.0 # 12秒视频 (120*3)
+
+    # Legacy costs (向后兼容,作为fallback)
+    SORA_2_COST: float = 100.0  # Sora-2 Standard (deprecated, use duration-based)
+    SORA_2_PRO_COST: float = 300.0  # Sora-2 Pro (deprecated, use duration-based)
 
     # Stripe Payment Configuration
     STRIPE_ENVIRONMENT: str = "development"  # development | production

@@ -67,12 +67,27 @@ def create_video_generation_task(
                 "Your subscription has expired. Please renew to continue."
             )
 
-    # Calculate credits cost based on model
+    # 🆕 Calculate credits cost based on model AND duration (差异化扣除)
     model_id = video_request.model
+    duration = video_request.duration or 8  # Default to 8s if not specified
+
+    # 根据模型和时长计算积分消耗
     if model_id == "sora-2-pro":
-        credits_cost = settings.SORA_2_PRO_COST
-    else:  # Default to sora-2
-        credits_cost = settings.SORA_2_COST
+        # Sora 2 Pro: 根据时长
+        if duration == 4:
+            credits_cost = settings.SORA_2_PRO_4S_COST  # 120积分
+        elif duration == 12:
+            credits_cost = settings.SORA_2_PRO_12S_COST  # 360积分
+        else:  # Default 8s
+            credits_cost = settings.SORA_2_PRO_8S_COST  # 240积分
+    else:  # sora-2
+        # Sora 2: 根据时长
+        if duration == 4:
+            credits_cost = settings.SORA_2_4S_COST  # 40积分
+        elif duration == 12:
+            credits_cost = settings.SORA_2_12S_COST  # 120积分
+        else:  # Default 8s
+            credits_cost = settings.SORA_2_8S_COST  # 80积分
 
     # Check if user has enough credits
     if user.credits < credits_cost:
@@ -92,10 +107,10 @@ def create_video_generation_task(
 
     db.add(video)
 
-    # Deduct credits based on model
+    # Deduct credits based on model AND duration
     user.credits -= credits_cost
 
-    print(f"💰 Credits deducted: {credits_cost} for model {model_id}")
+    print(f"💰 Credits deducted: {credits_cost} for model {model_id} ({duration}s)")
     print(f"   Remaining credits: {user.credits}")
 
     db.commit()

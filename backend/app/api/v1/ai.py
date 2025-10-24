@@ -235,6 +235,25 @@ async def generate_script(
             user_description=user_description  # 🆕 Pass user input to service
         )
 
+        # === 🆕 脚本生成成功后扣除积分 ===
+        logger.info("💰 [Script Generation] Deducting credits...")
+        credits_cost = settings.SCRIPT_GENERATION_COST  # 10积分
+        previous_credits = current_user.credits
+        current_user.credits -= credits_cost
+
+        # 🆕 更新新用户标识 (如果是新用户,第一次生成脚本后设为False)
+        if current_user.is_new_user:
+            logger.info(f"  🎉 First-time user {current_user.id} completed script generation")
+            current_user.is_new_user = False
+
+        db.commit()
+        db.refresh(current_user)
+
+        logger.info(f"  ✅ Credits deducted: {credits_cost}")
+        logger.info(f"  💳 Previous balance: {previous_credits}")
+        logger.info(f"  💳 New balance: {current_user.credits}")
+        logger.info(f"  👤 Is new user: {current_user.is_new_user}")
+
         # === 详细的输出日志 ===
         logger.info("=" * 60)
         logger.info("📤 [AI Script Generation] Response generated successfully")

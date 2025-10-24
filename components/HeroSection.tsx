@@ -73,9 +73,9 @@ const modelTypes: Record<ModelType, ModelTypeConfig> = {
     color: 'purple', // Purple theme
     requiresSubscription: false,
     durations: [
-      { value: 4, credits: 25, quality: '720P', badge: 'Free Trial', badgeColor: 'green' },
-      { value: 8, credits: 100, quality: '720P', badge: 'Basic', badgeColor: 'blue' },
-      { value: 12, credits: 150, quality: '720P', badge: 'Basic', badgeColor: 'blue' }
+      { value: 4, credits: 40, quality: '720P', badge: 'Free Trial', badgeColor: 'green' },
+      { value: 8, credits: 80, quality: '720P', badge: 'Basic', badgeColor: 'blue' },
+      { value: 12, credits: 120, quality: '720P', badge: 'Basic', badgeColor: 'blue' }
     ]
   },
   'sora-2-pro': {
@@ -84,19 +84,19 @@ const modelTypes: Record<ModelType, ModelTypeConfig> = {
     color: 'gold', // Gold theme
     requiresSubscription: true,
     durations: [
-      { value: 4, credits: 150, quality: '1080P', badge: 'Premium', badgeColor: 'orange' },
-      { value: 8, credits: 250, quality: '1080P', badge: 'Premium', badgeColor: 'orange' },
-      { value: 12, credits: 300, quality: '1080P', badge: 'Premium', badgeColor: 'orange' }
+      { value: 4, credits: 120, quality: '1080P', badge: 'Premium', badgeColor: 'orange' },
+      { value: 8, credits: 240, quality: '1080P', badge: 'Premium', badgeColor: 'orange' },
+      { value: 12, credits: 360, quality: '1080P', badge: 'Premium', badgeColor: 'orange' }
     ]
   }
 };
 
-// Legacy format for backward compatibility
+// Legacy format for backward compatibility (与后端配置保持一致)
 const aiModels = [
-  { id: "sora-2", name: "Sora2-4s", version: "Lite", model: "sora-2", duration: 4, credits: 25, enabled: true, type: 'normal' },
-  { id: "sora-2-standard", name: "Sora2-8s", version: "Standard", model: "sora-2", duration: 8, credits: 100, enabled: true, type: 'normal' },
-  { id: "sora-2-premium", name: "Sora2-12s", version: "Premium", model: "sora-2", duration: 12, credits: 150, enabled: true, type: 'normal' },
-  { id: "sora-2-pro", name: "Sora2 Pro-12s", version: "Business", model: "sora-2-pro", duration: 12, credits: 300, enabled: true, type: 'business' },
+  { id: "sora-2", name: "Sora2-4s", version: "Lite", model: "sora-2", duration: 4, credits: 40, enabled: true, type: 'normal' },
+  { id: "sora-2-standard", name: "Sora2-8s", version: "Standard", model: "sora-2", duration: 8, credits: 80, enabled: true, type: 'normal' },
+  { id: "sora-2-premium", name: "Sora2-12s", version: "Premium", model: "sora-2", duration: 12, credits: 120, enabled: true, type: 'normal' },
+  { id: "sora-2-pro", name: "Sora2 Pro-12s", version: "Business", model: "sora-2-pro", duration: 12, credits: 360, enabled: true, type: 'business' },
 ];
 
 // Generation modes for dropdown

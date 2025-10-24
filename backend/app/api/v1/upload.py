@@ -167,11 +167,44 @@ async def upload_image(
         )
 
 
+@router.get("/images/count")
+async def get_images_count(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Get total count of uploaded images for the current user
+
+    Lightweight endpoint for getting just the count without fetching all image data.
+    Useful for displaying counts in tabs/badges.
+
+    Requires authentication
+    """
+    try:
+        total_count = (
+            db.query(UploadedImage)
+            .filter(UploadedImage.user_id == current_user.id)
+            .count()
+        )
+
+        return JSONResponse(
+            status_code=status.HTTP_200_OK,
+            content={
+                "count": total_count
+            }
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to fetch image count: {str(e)}"
+        )
+
+
 @router.get("/images")
 async def get_uploaded_images(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
-    limit: int = 50,
+    limit: int = 20,
     offset: int = 0,
 ):
     """

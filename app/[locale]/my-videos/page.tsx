@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
@@ -11,7 +11,7 @@ import { useNotification } from "@/contexts/NotificationContext";
 import { VideoCard } from "@/components/VideoCard";
 import { VideoStatusFilter, type VideoStatusType } from "@/components/VideoStatusFilter";
 import { getUserVideos, deleteVideo, retryVideo, type Video } from "@/lib/services/videoService";
-import { uploadService, type UploadedImage } from "@/lib/api/services";
+import { uploadService, videoService, type UploadedImage } from "@/lib/api/services";
 
 // Lazy load VideoModal - only loaded when user clicks play
 const VideoModal = dynamic(
@@ -44,89 +44,155 @@ export default function MediaCenterPage() {
 
   const [page, setPage] = useState(1);
   const [totalVideos, setTotalVideos] = useState(0);
+  const [hasMoreVideos, setHasMoreVideos] = useState(true);
+  const [loadingMoreVideos, setLoadingMoreVideos] = useState(false);
 
   // Image states
   const [images, setImages] = useState<UploadedImage[]>([]);
   const [imagesLoading, setImagesLoading] = useState(false);
+  const [imagePage, setImagePage] = useState(1);
+  const [hasMoreImages, setHasMoreImages] = useState(true);
+  const [loadingMoreImages, setLoadingMoreImages] = useState(false);
 
-  // Calculate status counts
-  const statusCounts = {
-    all: videos.length,
-    pending: videos.filter(v => v.status === 'pending').length,
-    processing: videos.filter(v => v.status === 'processing').length,
-    completed: videos.filter(v => v.status === 'completed').length,
-    failed: videos.filter(v => v.status === 'failed').length,
-  };
+  // Totals
+  const [totalImagesCount, setTotalImagesCount] = useState(0);
+  const [totalVideosCount, setTotalVideosCount] = useState(0);
+
+  // Video status counts for filter badges
+  const [statusCounts, setStatusCounts] = useState({
+    all: 0,
+    pending: 0,
+    processing: 0,
+    completed: 0,
+    failed: 0,
+  });
+
+  const initialLoadRef = useRef(false);
 
   // Fetch videos
-  const fetchVideos = useCallback(async () => {
+  const fetchVideos = useCallback(async (pageNum: number = 1, append: boolean = false, statusOverride?: VideoStatusType) => {
     try {
-      setLoading(true);
+      if (pageNum === 1 && !append) {
+        setLoading(true);
+      } else {
+        setLoadingMoreVideos(true);
+      }
       setError(null);
 
       const response = await getUserVideos(
-        page,
+        pageNum,
         20,
-        activeStatus === 'all' ? undefined : activeStatus
+        (statusOverride ?? activeStatus) === 'all' ? undefined : (statusOverride ?? activeStatus)
       );
 
-      setVideos(response.videos);
+      if (append) {
+        setVideos(prev => [...prev, ...response.videos]);
+      } else {
+        setVideos(response.videos);
+      }
+
       setTotalVideos(response.total);
+      setTotalVideosCount(response.total);
+      setPage(pageNum);
+      setHasMoreVideos(pageNum * 20 < response.total);
     } catch (err) {
       console.error('Failed to fetch videos:', err);
       setError('Failed to load videos. Please try again.');
       showToast('Failed to load videos', 'error');
     } finally {
       setLoading(false);
+      setLoadingMoreVideos(false);
     }
-  }, [page, activeStatus, showToast]);
+  }, [activeStatus, showToast]);
 
   // Fetch images
-  const fetchImages = useCallback(async () => {
+  const fetchImages = useCallback(async (pageNum: number = 1, append: boolean = false) => {
     try {
-      setImagesLoading(true);
+      if (pageNum === 1 && !append) {
+        setImagesLoading(true);
+      } else {
+        setLoadingMoreImages(true);
+      }
 
-      const response = await uploadService.getUploadedImages(50, 0);
-      setImages(response.images);
+      const offset = (pageNum - 1) * 20;
+      const response = await uploadService.getUploadedImages(20, offset);
+
+      if (append) {
+        setImages(prev => [...prev, ...response.images]);
+      } else {
+        setImages(response.images);
+      }
+
+      setImagePage(pageNum);
+      setHasMoreImages(pageNum * 20 < response.total);
+      setTotalImagesCount(response.total);
     } catch (err) {
       console.error('Failed to fetch images:', err);
       showToast('Failed to load images', 'error');
     } finally {
       setImagesLoading(false);
+      setLoadingMoreImages(false);
     }
   }, [showToast]);
 
-  // Initial fetch - Load both videos and images on mount
+  const fetchCounts = useCallback(async () => {
+    try {
+      const [imagesCount, videosCount] = await Promise.all([
+        uploadService.getImagesCount(),
+        videoService.getVideosCount(),
+      ]);
+      setTotalImagesCount(imagesCount);
+      setTotalVideosCount(videosCount);
+    } catch (err) {
+      console.error('Failed to fetch media counts:', err);
+    }
+  }, []);
+
+  const fetchStatusCounts = useCallback(async () => {
+    try {
+      const [allRes, pendingRes, processingRes, completedRes, failedRes] = await Promise.all([
+        getUserVideos(1, 1, undefined),
+        getUserVideos(1, 1, 'pending'),
+        getUserVideos(1, 1, 'processing'),
+        getUserVideos(1, 1, 'completed'),
+        getUserVideos(1, 1, 'failed'),
+      ]);
+
+      setStatusCounts({
+        all: allRes.total,
+        pending: pendingRes.total,
+        processing: processingRes.total,
+        completed: completedRes.total,
+        failed: failedRes.total,
+      });
+    } catch (err) {
+      console.error('Failed to fetch status counts:', err);
+    }
+  }, []);
+
+  // Initial fetch - load counts and first page once after authentication
   useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
+    if (authLoading) return;
+
+    if (!isAuthenticated) {
+      initialLoadRef.current = false;
       router.push('/');
       return;
     }
 
-    if (isAuthenticated) {
-      // Always fetch both to show accurate counts in tabs
-      fetchVideos();
-      fetchImages();
+    if (!initialLoadRef.current) {
+      initialLoadRef.current = true;
+      fetchCounts();
+      fetchStatusCounts();
+      fetchVideos(1, false);
+      fetchImages(1, false);
     }
-  }, [isAuthenticated, authLoading, router, fetchVideos, fetchImages]);
-
-  // Fetch data when switching tabs
-  useEffect(() => {
-    if (!isAuthenticated) return;
-
-    if (activeTab === 'videos') {
-      fetchVideos();
-    } else if (activeTab === 'images') {
-      fetchImages();
-    }
-  }, [activeTab, isAuthenticated, fetchVideos, fetchImages]);
+  }, [authLoading, isAuthenticated, router, fetchCounts, fetchStatusCounts, fetchVideos, fetchImages]);
 
   // Auto-refresh removed - users can manually refresh using the button
 
   // Filter videos by active status
-  const filteredVideos = activeStatus === 'all'
-    ? videos
-    : videos.filter(v => v.status === activeStatus);
+  const filteredVideos = videos;
 
   // Handlers
   const handlePlay = (video: Video) => {
@@ -135,6 +201,8 @@ export default function MediaCenterPage() {
   };
 
   const handleDelete = async (id: number) => {
+    const targetVideo = videos.find(v => v.id === id);
+
     showConfirm({
       title: 'Delete Video',
       message: 'Are you sure you want to delete this video? This action cannot be undone.',
@@ -145,6 +213,19 @@ export default function MediaCenterPage() {
         try {
           await deleteVideo(id);
           setVideos(prev => prev.filter(v => v.id !== id));
+          setTotalVideos(prev => Math.max(0, prev - 1));
+          setTotalVideosCount(prev => Math.max(0, prev - 1));
+          if (targetVideo) {
+            setStatusCounts(prev => {
+              const updated = { ...prev };
+              updated.all = Math.max(0, updated.all - 1);
+              const key = targetVideo.status as keyof typeof prev;
+              updated[key] = Math.max(0, updated[key] - 1);
+              return updated;
+            });
+          }
+          fetchCounts();
+          fetchStatusCounts();
           showToast('Video deleted successfully', 'success');
         } catch (err) {
           console.error('Failed to delete video:', err);
@@ -158,6 +239,7 @@ export default function MediaCenterPage() {
     try {
       const updatedVideo = await retryVideo(id);
       setVideos(prev => prev.map(v => v.id === id ? updatedVideo : v));
+      fetchStatusCounts();
       showToast('Video generation restarted', 'success');
     } catch (err) {
       console.error('Failed to retry video:', err);
@@ -168,11 +250,30 @@ export default function MediaCenterPage() {
   const handleStatusChange = (status: VideoStatusType) => {
     setActiveStatus(status);
     setPage(1);
+    setHasMoreVideos(true);
+    setVideos([]);
+    fetchVideos(1, false, status);
   };
 
   const handleManualRefresh = async () => {
-    await fetchVideos();
+    await Promise.all([
+      fetchVideos(1, false),
+      fetchCounts(),
+      fetchStatusCounts(),
+    ]);
+    setPage(1);
+    setHasMoreVideos(true);
     showToast('Video list refreshed', 'success');
+  };
+
+  const handleLoadMoreVideos = () => {
+    if (loadingMoreVideos || !hasMoreVideos) return;
+    fetchVideos(page + 1, true);
+  };
+
+  const handleLoadMoreImages = () => {
+    if (loadingMoreImages || !hasMoreImages) return;
+    fetchImages(imagePage + 1, true);
   };
 
   const handleDeleteImage = async (imageId: number) => {
@@ -186,6 +287,8 @@ export default function MediaCenterPage() {
         try {
           await uploadService.deleteImage(imageId);
           setImages(prev => prev.filter(img => img.id !== imageId));
+          setTotalImagesCount(prev => Math.max(0, prev - 1));
+          fetchCounts();
           showToast('Image deleted successfully', 'success');
         } catch (err) {
           console.error('Failed to delete image:', err);
@@ -248,7 +351,16 @@ export default function MediaCenterPage() {
             {/* Tab Switcher */}
             <div className="flex items-center gap-2 mb-6">
               <button
-                onClick={() => setActiveTab('images')}
+                onClick={() => {
+                  if (activeTab !== 'images') {
+                    setActiveTab('images');
+                    setImagePage(1);
+                    setHasMoreImages(true);
+                    if (images.length === 0) {
+                      fetchImages(1, false);
+                    }
+                  }
+                }}
                 className={`flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all ${
                   activeTab === 'images'
                     ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg shadow-purple-500/25'
@@ -260,11 +372,20 @@ export default function MediaCenterPage() {
                 <span className={`ml-1 px-2 py-0.5 rounded-full text-xs font-bold ${
                   activeTab === 'images' ? 'bg-white/20' : 'bg-gray-100'
                 }`}>
-                  {images.length}
+                  {totalImagesCount}
                 </span>
               </button>
               <button
-                onClick={() => setActiveTab('videos')}
+                onClick={() => {
+                  if (activeTab !== 'videos') {
+                    setActiveTab('videos');
+                    setPage(1);
+                    setHasMoreVideos(true);
+                    if (videos.length === 0) {
+                      fetchVideos(1, false);
+                    }
+                  }
+                }}
                 className={`flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all ${
                   activeTab === 'videos'
                     ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg shadow-purple-500/25'
@@ -276,7 +397,7 @@ export default function MediaCenterPage() {
                 <span className={`ml-1 px-2 py-0.5 rounded-full text-xs font-bold ${
                   activeTab === 'videos' ? 'bg-white/20' : 'bg-gray-100'
                 }`}>
-                  {videos.length}
+                  {totalVideosCount}
                 </span>
               </button>
             </div>
@@ -330,7 +451,7 @@ export default function MediaCenterPage() {
                   <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
                     <p className="text-red-600">{error}</p>
                     <button
-                      onClick={fetchVideos}
+                      onClick={() => fetchVideos(1, false)}
                       className="mt-4 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
                     >
                       Try Again
@@ -375,8 +496,27 @@ export default function MediaCenterPage() {
 
                     {/* Pagination Info */}
                     <div className="mt-8 text-center text-sm text-gray-600">
-                      Showing {filteredVideos.length} of {totalVideos} videos
+                      Showing {Math.min(filteredVideos.length, totalVideos)} of {totalVideos} videos
                     </div>
+
+                    {hasMoreVideos && (
+                      <div className="mt-4 flex justify-center">
+                        <button
+                          onClick={handleLoadMoreVideos}
+                          disabled={loadingMoreVideos}
+                          className="px-5 py-2.5 bg-gradient-purple text-white rounded-lg font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {loadingMoreVideos ? (
+                            <span className="flex items-center gap-2">
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                              Loading...
+                            </span>
+                          ) : (
+                            'Load more videos'
+                          )}
+                        </button>
+                      </div>
+                    )}
                   </>
                 )}
               </motion.div>
@@ -412,105 +552,130 @@ export default function MediaCenterPage() {
                     </button>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                    {images.map((image) => {
-                      return (
-                        <motion.div
-                          key={image.id}
-                          initial={{ opacity: 0, scale: 0.95 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          transition={{ duration: 0.2 }}
-                          className="relative group cursor-pointer"
-                        >
-                          {/* Image Container - Fixed Square */}
-                          <div
-                            className="relative w-full aspect-square bg-slate-900 rounded-lg overflow-hidden border border-gray-700 hover:border-purple-400 transition-all duration-200 hover:shadow-lg hover:shadow-purple-500/30"
-                            onClick={() => {
-                              setSelectedImage(image);
-                              setIsImageModalOpen(true);
-                            }}
+                  <>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                      {images.map((image) => {
+                        return (
+                          <motion.div
+                            key={image.id}
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ duration: 0.2 }}
+                            className="relative group cursor-pointer"
                           >
-                            <Image
-                              src={image.file_url}
-                              alt={image.filename}
-                              fill
-                              className="object-contain group-hover:scale-105 transition-transform duration-300"
-                              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
-                              loading="lazy"
-                              quality={80}
-                            />
-
-                            {/* Hover Overlay */}
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
-                              <div className="text-white text-center">
-                                <svg className="w-10 h-10 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
-                                </svg>
-                                <p className="text-sm font-medium">Click to enlarge</p>
-                              </div>
-                            </div>
-
-                            {/* Three-dot menu button (top-right) */}
+                            {/* Image Container - Fixed Square */}
                             <div
-                              className="absolute top-3 right-3 z-30"
-                              onClick={(e) => e.stopPropagation()}
+                              className="relative w-full aspect-square bg-slate-900 rounded-lg overflow-hidden border border-gray-700 hover:border-purple-400 transition-all duration-200 hover:shadow-lg hover:shadow-purple-500/30"
+                              onClick={() => {
+                                setSelectedImage(image);
+                                setIsImageModalOpen(true);
+                              }}
                             >
-                              <div className="relative">
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setImageMenuOpen(imageMenuOpen === image.id ? null : image.id);
-                                  }}
-                                  className="p-2 bg-white/90 hover:bg-white rounded-full shadow-md backdrop-blur-sm transition-all hover:scale-110"
-                                >
-                                  <MoreVertical className="w-4 h-4 text-gray-700" />
-                                </button>
+                              <Image
+                                src={image.file_url}
+                                alt={image.filename}
+                                fill
+                                className="object-contain group-hover:scale-105 transition-transform duration-300"
+                                sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
+                                loading="lazy"
+                                quality={80}
+                              />
 
-                                {/* Dropdown menu */}
-                                {imageMenuOpen === image.id && (
-                                  <>
-                                    {/* Backdrop to close menu */}
-                                    <div
-                                      className="fixed inset-0 z-10"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setImageMenuOpen(null);
-                                      }}
-                                    />
+                              {/* Hover Overlay */}
+                              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
+                                <div className="text-white text-center">
+                                  <svg className="w-10 h-10 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
+                                  </svg>
+                                  <p className="text-sm font-medium">Click to enlarge</p>
+                                </div>
+                              </div>
 
-                                    {/* Menu items */}
-                                    <div className="absolute right-0 mt-2 w-40 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20">
-                                      <button
+                              {/* Three-dot menu button (top-right) */}
+                              <div
+                                className="absolute top-3 right-3 z-30"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <div className="relative">
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setImageMenuOpen(imageMenuOpen === image.id ? null : image.id);
+                                    }}
+                                    className="p-2 bg-white/90 hover:bg-white rounded-full shadow-md backdrop-blur-sm transition-all hover:scale-110"
+                                  >
+                                    <MoreVertical className="w-4 h-4 text-gray-700" />
+                                  </button>
+
+                                  {/* Dropdown menu */}
+                                  {imageMenuOpen === image.id && (
+                                    <>
+                                      {/* Backdrop to close menu */}
+                                      <div
+                                        className="fixed inset-0 z-10"
                                         onClick={(e) => {
                                           e.stopPropagation();
                                           setImageMenuOpen(null);
-                                          handleDeleteImage(image.id);
                                         }}
-                                        className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 transition-colors flex items-center gap-2"
-                                      >
-                                        <Trash2 className="w-4 h-4" />
-                                        Delete
-                                      </button>
-                                    </div>
-                                  </>
-                                )}
+                                      />
+
+                                      {/* Menu items */}
+                                      <div className="absolute right-0 mt-2 w-40 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20">
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setImageMenuOpen(null);
+                                            handleDeleteImage(image.id);
+                                          }}
+                                          className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 transition-colors flex items-center gap-2"
+                                        >
+                                          <Trash2 className="w-4 h-4" />
+                                          Delete
+                                        </button>
+                                      </div>
+                                    </>
+                                  )}
+                                </div>
                               </div>
                             </div>
-                          </div>
 
-                          {/* Image Info */}
-                          <div className="mt-2 px-1">
-                            <p className="text-sm text-gray-700 dark:text-gray-300 truncate font-medium">
-                              {image.filename}
-                            </p>
-                            <p className="text-xs text-gray-500 mt-0.5">
-                              {image.width} × {image.height}
-                            </p>
-                          </div>
-                        </motion.div>
-                      );
-                    })}
-                  </div>
+                            {/* Image Info */}
+                            <div className="mt-2 px-1">
+                              <p className="text-sm text-gray-700 dark:text-gray-300 truncate font-medium">
+                                {image.filename}
+                              </p>
+                              <p className="text-xs text-gray-500 mt-0.5">
+                                {image.width} × {image.height}
+                              </p>
+                            </div>
+                          </motion.div>
+                        );
+                      })}
+                    </div>
+
+                    <div className="mt-6 text-center text-sm text-gray-600">
+                      Showing {Math.min(images.length, totalImagesCount)} of {totalImagesCount} images
+                    </div>
+
+                    {hasMoreImages && (
+                      <div className="mt-4 flex justify-center">
+                        <button
+                          onClick={handleLoadMoreImages}
+                          disabled={loadingMoreImages}
+                          className="px-5 py-2.5 bg-gradient-purple text-white rounded-lg font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {loadingMoreImages ? (
+                            <span className="flex items-center gap-2">
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                              Loading...
+                            </span>
+                          ) : (
+                            'Load more images'
+                          )}
+                        </button>
+                      </div>
+                    )}
+                  </>
                 )}
               </motion.div>
             )}

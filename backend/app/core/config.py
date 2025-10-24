@@ -16,6 +16,12 @@ class Settings(BaseSettings):
     # Database
     DATABASE_URL: str = "sqlite:///./aivideo.db"
 
+    # Database Connection Pool Settings (PostgreSQL only)
+    DB_POOL_SIZE: int = 5  # Number of connections in pool
+    DB_MAX_OVERFLOW: int = 10  # Maximum overflow connections
+    DB_POOL_PRE_PING: bool = True  # Enable connection health checks
+    DB_POOL_RECYCLE: int = 3600  # Recycle connections after 1 hour (seconds)
+
     # Google OAuth
     GOOGLE_CLIENT_ID: str = ""
     GOOGLE_CLIENT_SECRET: str = ""

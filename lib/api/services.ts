@@ -187,6 +187,14 @@ export const videoService = {
   },
 
   /**
+   * Get total video count for current user
+   */
+  async getVideosCount(): Promise<number> {
+    const { data } = await apiClient.get<{ count: number }>('/videos/count');
+    return data.count;
+  },
+
+  /**
    * Delete a video
    */
   async deleteVideo(id: number): Promise<void> {
@@ -379,6 +387,14 @@ export const uploadService = {
    */
   async deleteImage(imageId: number): Promise<void> {
     await apiClient.delete(`/upload/images/${imageId}`);
+  },
+
+  /**
+   * Get total uploaded image count for current user
+   */
+  async getImagesCount(): Promise<number> {
+    const { data } = await apiClient.get<{ count: number }>('/upload/images/count');
+    return data.count;
   },
 };
 

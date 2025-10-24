@@ -360,6 +360,22 @@ async def generate_video_simple(
         )
 
 
+@router.get("/count")
+def get_videos_count(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Get total count of videos for the current user
+
+    Lightweight endpoint for getting just the count without fetching all video data.
+    Useful for displaying counts in tabs/badges.
+    """
+    total_count = db.query(Video).filter(Video.user_id == current_user.id).count()
+
+    return {"count": total_count}
+
+
 @router.get("", response_model=VideoListResponse)
 def get_videos(
     page: int = Query(1, ge=1, description="Page number"),

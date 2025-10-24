@@ -1516,8 +1516,8 @@ export const HeroSection = () => {
               <div className="absolute inset-0 bg-gradient-to-br from-purple-50 via-transparent to-pink-50 opacity-40" />
             </div>
 
-            {/* Main Video/Image Container - Fixed 16:9 aspect ratio with black letterbox background */}
-            <div className="relative aspect-video rounded-2xl overflow-hidden shadow-2xl bg-black">
+            {/* Main Video/Image Container - Fixed 16:9 aspect ratio */}
+            <div className="relative aspect-video rounded-2xl overflow-hidden shadow-2xl">
               {/* Priority 1: Show video area when generating or completed */}
               {(isGenerating || (generatedVideo && generatedVideo.video_url)) ? (
                 <div className="relative w-full h-full">

@@ -196,19 +196,10 @@ export const Navbar = () => {
       <div className="w-full md:max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo Section */}
-          <Link href={`/${locale}`} className="flex items-center space-x-2 cursor-pointer group">
-            <div
-              ref={logoRef}
-              className="transition-transform duration-200 ease-out group-hover:scale-105"
-              style={{ display: 'inline-block' }}
-            >
-              <AnimatedLogo size={32} />
-            </div>
-            <span className="text-xl font-bold flex items-center gap-0 transition-opacity duration-200 group-hover:opacity-80">
-              <span className="bg-gradient-to-r from-purple-600 via-pink-500 to-purple-600 bg-clip-text text-transparent">
-                Moky
-              </span>
+          <Link href={`/${locale}`} className="flex items-center cursor-pointer group">
+            <span className="text-xl font-bold transition-opacity duration-200 group-hover:opacity-80 flex items-center gap-0">
               <span className="text-gray-900">Video</span>
+              <span className="bg-gradient-to-r from-yellow-500 via-pink-500 to-purple-600 bg-clip-text text-transparent">4Ads</span>
             </span>
           </Link>
 

@@ -858,7 +858,7 @@ export const HeroSection = () => {
                     <span className="absolute inset-0 blur-2xl opacity-30 bg-gradient-to-r from-purple-600 to-pink-500"></span>
                     {/* Main gradient text */}
                     <span className="relative bg-gradient-to-r from-purple-600 via-pink-500 to-purple-600 bg-clip-text text-transparent animate-gradient">
-                      AI Videos
+                      AI Video
                     </span>
                   </span>
                   {" "}
@@ -1523,25 +1523,13 @@ export const HeroSection = () => {
                 <div className="relative w-full h-full">
                   {generatedVideo && generatedVideo.video_url ? (
                     /* Video completed - show video player with contain mode */
-                    <>
-                      <VideoPlayer
-                        src={`${process.env.NEXT_PUBLIC_API_URL?.replace('/api/v1', '')}${generatedVideo.video_url}`}
-                        poster={generatedVideo.poster_url || undefined}
-                        autoPlay={true}
-                        objectFit="contain"
-                        className="h-full w-full"
-                      />
-
-                      {/* Share Dropdown - Top Right Corner */}
-                      <div className="absolute top-4 right-4 z-50">
-                        <ShareDropdown
-                          videoUrl={generatedVideo.video_url}
-                          videoTitle={generatedVideo.prompt || "Generated Video"}
-                          onShareToYouTube={() => setShowYouTubeModal(true)}
-                          onShareToTikTok={handleTikTokShare}
-                        />
-                      </div>
-                    </>
+                    <VideoPlayer
+                      src={`${process.env.NEXT_PUBLIC_API_URL?.replace('/api/v1', '')}${generatedVideo.video_url}`}
+                      poster={generatedVideo.poster_url || undefined}
+                      autoPlay={true}
+                      objectFit="contain"
+                      className="h-full w-full"
+                    />
                   ) : (
                     /* Video generating - show loading with status badge */
                     <>

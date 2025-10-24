@@ -38,21 +38,11 @@ export const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-5 gap-6 sm:gap-4 md:gap-6">
           {/* Company Info */}
           <div className="space-y-4">
-            <div className="flex items-center space-x-2">
-              <div className="relative p-0.5 bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-md shadow-sm">
-                <Image
-                  src="/logo.png"
-                  alt="Logo"
-                  width={32}
-                  height={32}
-                  className="h-8 w-8 rounded-sm"
-                />
-              </div>
+            <div className="flex items-center">
               <span className="text-xl font-bold flex items-center gap-0">
-                <span className="bg-gradient-to-r from-purple-600 via-pink-500 to-purple-600 bg-clip-text text-transparent">
-                  Moky
-                </span>
                 <span className="text-gray-900">Video</span>
+                <span className="bg-gradient-to-r from-yellow-500 via-pink-500 to-purple-600 bg-clip-text text-transparent">4Ads</span>
+                <span className="text-gray-900">.com</span>
               </span>
             </div>
             <p className="text-sm text-text-secondary">

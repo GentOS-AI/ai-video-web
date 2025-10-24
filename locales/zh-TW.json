@@ -40,7 +40,7 @@
       "uploadTitle": "上傳圖片",
       "uploadedTitle": "已上傳圖片 - 點擊更換",
       "selectedTitle": "已選擇圖片 - 點擊更換",
-      "instructions": "上傳 (僅支援 1280x720 或 720x1280) 或選擇圖片免費試用。",
+      "instructions": "上傳 (僅支援 1280x720 或 720x1280) 或選擇以探索我們的案例。",
       "swipeHint": "← 滑動查看更多圖片"
     },
     "status": {
@@ -257,7 +257,7 @@
   },
   "seo": {
     "home": {
-      "title": "MokyVideo - AI廣告影片生成器",
+      "title": "Video4Ads - AI廣告影片生成器",
       "description": "使用AI驅動的Sora 2技術將您的想法轉化為專業廣告影片。適合行銷人員、企業和內容創作者。"
     },
     "about": {

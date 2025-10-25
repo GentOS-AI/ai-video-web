@@ -10,8 +10,9 @@
 
 ## 📚 文档导航
 
+- **[标准化部署流程 - DEPLOYMENT_SOP.md](DEPLOYMENT_SOP.md)** ⭐⭐⭐ **运维工程师必读**
 - **[快速开始 - DEPLOY_QUICK_START.md](DEPLOY_QUICK_START.md)** ⭐ 推荐新手使用
-- **本文档 - DEPLOYMENT.md** (详细技术说明)
+- **本文档 - DEPLOYMENT.md** (详细技术说明和架构文档)
 
 ---
 

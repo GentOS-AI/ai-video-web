@@ -5,9 +5,9 @@ import { FAQAccordion } from "@/components/FAQAccordion";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Help Center - AdsVideo",
+  title: "Help Center - Video4Ads",
   description:
-    "Find answers to common questions about AdsVideo's AI video generation platform. Get help with account setup, video creation, billing, and more.",
+    "Find answers to common questions about Video4Ads's AI video generation platform. Get help with account setup, video creation, billing, and more.",
   robots: {
     index: true,
     follow: true,
@@ -20,9 +20,9 @@ const faqData = [
     items: [
       {
         id: "faq-1",
-        question: "What is AdsVideo?",
+        question: "What is Video4Ads?",
         answer:
-          "AdsVideo is an AI-powered platform that transforms your ideas into professional advertising videos using advanced AI models including Sora 2. Simply describe your vision, upload a reference image, and our AI generates stunning videos in minutes.",
+          "Video4Ads is an AI-powered platform that transforms your ideas into professional advertising videos using advanced AI models including Sora 2. Simply describe your vision, upload a reference image, and our AI generates stunning videos in minutes.",
       },
       {
         id: "faq-2",
@@ -34,7 +34,7 @@ const faqData = [
         id: "faq-3",
         question: "Do I need video editing experience?",
         answer:
-          "Not at all! AdsVideo is designed for everyone, from complete beginners to professional marketers. Our AI handles all the complex video production work. You just need to describe what you want, and we'll create it for you.",
+          "Not at all! Video4Ads is designed for everyone, from complete beginners to professional marketers. Our AI handles all the complex video production work. You just need to describe what you want, and we'll create it for you.",
       },
     ],
   },
@@ -121,7 +121,7 @@ const faqData = [
         id: "faq-15",
         question: "Do you offer API access?",
         answer:
-          "Yes! API access is available for Pro plan subscribers. With our API, you can integrate AdsVideo's video generation capabilities directly into your applications. Visit our API documentation for detailed integration guides.",
+          "Yes! API access is available for Pro plan subscribers. With our API, you can integrate Video4Ads's video generation capabilities directly into your applications. Visit our API documentation for detailed integration guides.",
       },
     ],
   },

@@ -13,6 +13,7 @@ logger = logging.getLogger(__name__)
 from app.models.video import Video, VideoStatus, AIModel
 from app.models.user import User
 from app.core.config import settings
+from app.services.gcs_service import gcs_service
 from app.core.exceptions import (
     InsufficientCreditsException,
     NotFoundException,
@@ -395,10 +396,6 @@ async def save_uploaded_image(
                 detail=f"Failed to resize image for Sora: {str(e)}"
             )
 
-    # Create user upload directory
-    user_dir = os.path.join(settings.UPLOAD_DIR, f"user_{user.id}", "original")
-    os.makedirs(user_dir, exist_ok=True)
-
     # Determine file extension and type based on whether image was resized
     if is_landscape_correct or is_portrait_correct:
         # Keep original format
@@ -411,21 +408,34 @@ async def save_uploaded_image(
 
     # Generate unique filename
     filename = f"original_{uuid.uuid4()}.{file_extension}"
-    file_path = os.path.join(user_dir, filename)
 
-    # Save file
-    with open(file_path, "wb") as f:
-        f.write(content_to_save)
-
-    # Create relative URL
-    relative_url = f"/uploads/user_{user.id}/original/{filename}"
-
-    # Save to database
+    # Upload to Google Cloud Storage
     try:
+        from fastapi import UploadFile
+        from io import BytesIO
+
+        # Create temporary UploadFile object for GCS
+        temp_file = UploadFile(
+            filename=filename,
+            file=BytesIO(content_to_save)
+        )
+        temp_file.content_type = file_type
+
+        # Upload to GCS
+        blob_name, gcs_url, _ = gcs_service.upload_file(
+            file=temp_file,
+            user_id=user.id,
+            file_type="image",
+            content_type=file_type
+        )
+
+        logger.info(f"✅ Image uploaded to GCS: {gcs_url}")
+
+        # Save to database
         db_image = UploadedImage(
             user_id=user.id,
             filename=filename,
-            file_url=relative_url,
+            file_url=gcs_url,  # GCS public URL
             file_size=len(content_to_save),
             file_type=file_type,
             width=final_metadata['width'],
@@ -435,13 +445,18 @@ async def save_uploaded_image(
         db.commit()
         db.refresh(db_image)
 
-        logger.info(f"✅ Image saved: {relative_url}")
+        logger.info(f"✅ Image saved to database (ID: {db_image.id})")
+
+        return gcs_url  # Return GCS URL instead of relative path
 
     except Exception as save_error:
-        logger.warning(f"⚠️ Failed to save to database: {str(save_error)}")
+        logger.error(f"❌ Failed to upload to GCS or save to database: {str(save_error)}")
         db.rollback()
-
-    return relative_url
+        from fastapi import HTTPException, status
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to save image: {str(save_error)}"
+        )
 
 
 async def generate_sora_prompt(

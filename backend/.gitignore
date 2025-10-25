@@ -37,6 +37,11 @@ ENV/
 .env
 .env.local
 
+# Google Cloud Storage Credentials
+gcs-service-account.json
+*-service-account.json
+google-credentials.json
+
 # Database
 *.db
 *.sqlite

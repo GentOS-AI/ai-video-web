@@ -19,7 +19,10 @@ export const VideoModal = ({ video, isOpen, onClose }: VideoModalProps) => {
     if (!isOpen || !video?.video_url) return;
 
     const videoElement = document.createElement('video');
-    const videoUrl = `${process.env.NEXT_PUBLIC_API_URL?.replace('/api/v1', '')}${video.video_url}`;
+    // Use video_url directly if it's a full URL (GCS), otherwise prepend API URL
+    const videoUrl = video.video_url.startsWith('http')
+      ? video.video_url
+      : `${process.env.NEXT_PUBLIC_API_URL?.replace('/api/v1', '')}${video.video_url}`;
     videoElement.src = videoUrl;
 
     const handleLoadedMetadata = () => {
@@ -69,8 +72,11 @@ export const VideoModal = ({ video, isOpen, onClose }: VideoModalProps) => {
 
   if (!video) return null;
 
+  // Use video_url directly if it's a full URL (GCS), otherwise prepend API URL
   const videoUrl = video.video_url
-    ? `${process.env.NEXT_PUBLIC_API_URL?.replace('/api/v1', '')}${video.video_url}`
+    ? (video.video_url.startsWith('http')
+        ? video.video_url
+        : `${process.env.NEXT_PUBLIC_API_URL?.replace('/api/v1', '')}${video.video_url}`)
     : '';
 
   return (

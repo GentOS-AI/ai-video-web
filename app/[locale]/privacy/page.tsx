@@ -4,9 +4,9 @@ import { SimpleHeader } from "@/components/SimpleHeader";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy - AdsVideo",
+  title: "Privacy Policy - Video4Ads",
   description:
-    "Learn how AdsVideo collects, uses, and protects your personal information. Read our Privacy Policy for complete details.",
+    "Learn how Video4Ads collects, uses, and protects your personal information. Read our Privacy Policy for complete details.",
   robots: {
     index: true,
     follow: true,
@@ -33,7 +33,7 @@ export default function PrivacyPage() {
                 1. Introduction
               </h2>
               <p className="text-gray-600 leading-relaxed mb-4">
-                At AdsVideo (&quot;we,&quot; &quot;our,&quot; or &quot;us&quot;), we take your privacy seriously. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our AI-powered video generation platform.
+                At Video4Ads (&quot;we,&quot; &quot;our,&quot; or &quot;us&quot;), we take your privacy seriously. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our AI-powered video generation platform.
               </p>
               <p className="text-gray-600 leading-relaxed">
                 By using our Service, you consent to the data practices described in this policy. If you do not agree with this policy, please do not access or use our Service.
@@ -266,7 +266,7 @@ export default function PrivacyPage() {
                 If you have any questions about this Privacy Policy or our data practices, please contact us:
               </p>
               <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
-                <p className="text-gray-700 font-medium mb-2">AdsVideo Privacy Team</p>
+                <p className="text-gray-700 font-medium mb-2">Video4Ads Privacy Team</p>
                 <p className="text-gray-600 text-sm">
                   Email:{" "}
                   <a

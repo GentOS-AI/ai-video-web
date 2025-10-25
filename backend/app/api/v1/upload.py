@@ -15,6 +15,7 @@ from app.api.deps import get_current_user, get_db
 from app.models.user import User
 from app.models.uploaded_image import UploadedImage
 from app.core.config import settings
+from app.services.gcs_service import gcs_service
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -43,41 +44,44 @@ def validate_image_file(file: UploadFile) -> bool:
     return True
 
 
-def save_upload_file(file: UploadFile, user_id: int) -> str:
+# ⚠️  本地存储已废弃 - 已移除 save_upload_file() 函数
+# 所有文件上传现在强制使用 GCS (save_upload_file_gcs)
+
+
+def save_upload_file_gcs(file: UploadFile, user_id: int) -> tuple[str, str]:
     """
-    Save uploaded file to disk
+    Save uploaded file to Google Cloud Storage
 
     Args:
         file: Uploaded file
         user_id: User ID
 
     Returns:
-        Saved file path (relative)
+        Tuple of (blob_name, public_url)
+
+    Raises:
+        HTTPException: If upload fails
     """
-    # Create user upload directory
-    user_upload_dir = os.path.join(settings.UPLOAD_DIR, f"user_{user_id}")
-    os.makedirs(user_upload_dir, exist_ok=True)
+    # Check file size before upload
+    file.file.seek(0, 2)  # Seek to end
+    file_size = file.file.tell()
+    file.file.seek(0)  # Reset to beginning
 
-    # Generate unique filename
-    file_extension = os.path.splitext(file.filename or "image.jpg")[1]
-    unique_filename = f"{uuid.uuid4()}{file_extension}"
-    file_path = os.path.join(user_upload_dir, unique_filename)
+    if file_size > settings.MAX_UPLOAD_SIZE:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail=f"File too large. Maximum size: {settings.MAX_UPLOAD_SIZE / (1024 * 1024)} MB",
+        )
 
-    # Save file
-    with open(file_path, "wb") as f:
-        content = file.file.read()
+    # Upload to GCS
+    blob_name, public_url, _ = gcs_service.upload_file(
+        file=file,
+        user_id=user_id,
+        file_type="image",
+        content_type=file.content_type
+    )
 
-        # Check file size
-        if len(content) > settings.MAX_UPLOAD_SIZE:
-            raise HTTPException(
-                status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-                detail=f"File too large. Maximum size: {settings.MAX_UPLOAD_SIZE / (1024 * 1024)} MB",
-            )
-
-        f.write(content)
-
-    # Return relative path
-    return f"/uploads/user_{user_id}/{unique_filename}"
+    return blob_name, public_url
 
 
 @router.post("/image")
@@ -88,6 +92,8 @@ async def upload_image(
 ):
     """
     Upload reference image for video generation and save to database
+
+    All uploads are now stored in Google Cloud Storage (GCS)
 
     Requires authentication
     """
@@ -117,16 +123,15 @@ async def upload_image(
         if existing_image:
             # Image already exists, return existing record
             logger.info(f"  ℹ️  Image already exists in database (ID: {existing_image.id}), skipping save")
-            file_path = existing_image.file_url.replace(settings.BASE_URL or "http://localhost:8000", "")
             file_url = existing_image.file_url
+            file_path = file_url  # GCS URL
             db_image = existing_image
         else:
-            # Save file to disk
-            file_path = save_upload_file(file, current_user.id)
-
-            # Create full HTTPS URL
-            base_url = settings.BASE_URL or "http://localhost:8000"
-            file_url = f"{base_url}{file_path}"
+            # Upload to Google Cloud Storage
+            logger.info("  ☁️  Uploading to Google Cloud Storage...")
+            blob_name, file_url = save_upload_file_gcs(file, current_user.id)
+            file_path = file_url  # GCS URL
+            logger.info(f"  ✅ File uploaded to GCS: {blob_name}")
 
             # Save image record to database
             db_image = UploadedImage(
@@ -147,13 +152,14 @@ async def upload_image(
             status_code=status.HTTP_200_OK,
             content={
                 "message": "File uploaded successfully",
-                "url": file_path,  # Frontend expects 'url' key (relative path)
-                "file_url": file_url,  # Full HTTPS URL
+                "url": file_path,  # GCS public URL
+                "file_url": file_url,  # GCS public URL
                 "file_path": file_path,  # Keep for backward compatibility
                 "filename": file.filename,
                 "image_id": db_image.id,
                 "width": width,
                 "height": height,
+                "storage_type": "gcs",  # Always GCS
             },
         )
 
@@ -303,6 +309,8 @@ async def delete_uploaded_image(
     """
     Delete an uploaded image
 
+    All files are now deleted from Google Cloud Storage (GCS)
+
     Requires authentication
     Only the owner can delete their own images
     """
@@ -319,19 +327,20 @@ async def delete_uploaded_image(
                 detail="Image not found or you don't have permission to delete it"
             )
 
-        # Delete the file from disk
+        # Delete from Google Cloud Storage
         try:
-            # Extract file path from URL
-            file_path = image.file_url.replace(settings.BASE_URL or "http://localhost:8000", "")
-            full_path = os.path.join(settings.UPLOAD_DIR, file_path.lstrip("/uploads/"))
-
-            if os.path.exists(full_path):
-                os.remove(full_path)
-                logger.info(f"  🗑️  Deleted file from disk: {full_path}")
+            blob_name = gcs_service.extract_blob_name_from_url(image.file_url)
+            if blob_name:
+                success = gcs_service.delete_file(blob_name)
+                if success:
+                    logger.info(f"  🗑️  Deleted file from GCS: {blob_name}")
+                else:
+                    logger.warning(f"  ⚠️  File not found in GCS: {blob_name}")
             else:
-                logger.warning(f"  ⚠️  File not found on disk: {full_path}")
+                logger.warning(f"  ⚠️  Could not extract blob name from URL: {image.file_url}")
+
         except Exception as file_error:
-            logger.error(f"  ❌ Failed to delete file from disk: {file_error}")
+            logger.error(f"  ❌ Failed to delete file from GCS: {file_error}")
             # Continue with database deletion even if file deletion fails
 
         # Delete the database record
@@ -343,7 +352,8 @@ async def delete_uploaded_image(
             status_code=status.HTTP_200_OK,
             content={
                 "message": "Image deleted successfully",
-                "image_id": image_id
+                "image_id": image_id,
+                "storage_type": "gcs",  # Always GCS
             }
         )
 

@@ -37,7 +37,7 @@ export const PricingModal = ({ isOpen, onClose }: PricingModalProps) => {
     name: t('basic.name'),
     price: basicBillingCycle === 'monthly' ? "$34.99" : "$24.99",
     period: "/mo.",
-    billingNote: basicBillingCycle === 'monthly' ? t('billedMonthly') : "billed yearly",
+    billingNote: basicBillingCycle === 'monthly' ? t('billedMonthly') : t('billedYearly'),
     billingNoteColor: 'gray',
     description: t('basic.description'),
     credits: t('monthlyCredits', { count: 1000 }),
@@ -60,7 +60,7 @@ export const PricingModal = ({ isOpen, onClose }: PricingModalProps) => {
     name: t('pro.name'),
     price: proBillingCycle === 'monthly' ? "$54.99" : "$39.99",
     period: "/mo.",
-    billingNote: proBillingCycle === 'monthly' ? t('billedMonthly') : "billed yearly",
+    billingNote: proBillingCycle === 'monthly' ? t('billedMonthly') : t('billedYearly'),
     description: t('pro.description'),
     credits: t('yearlyCredits', { count: 12000 }),
     features: [
@@ -162,7 +162,7 @@ export const PricingModal = ({ isOpen, onClose }: PricingModalProps) => {
 
                 {PRICING_CONFIG.isDevelopment && (
                   <p className="text-xs text-yellow-300 mt-3 text-center">
-                    🧪 Test Mode: ${PRICING_CONFIG.basic.priceValue} / ${PRICING_CONFIG.pro.priceValue}
+                    🧪 {t('testMode')}: ${PRICING_CONFIG.basic.priceValue} / ${PRICING_CONFIG.pro.priceValue}
                   </p>
                 )}
               </div>
@@ -216,7 +216,7 @@ export const PricingModal = ({ isOpen, onClose }: PricingModalProps) => {
                                 : 'text-gray-600 hover:text-gray-900'
                             }`}
                           >
-                            Monthly
+                            {t('monthly')}
                           </button>
                           <button
                             onClick={() => setBasicBillingCycle('yearly')}
@@ -226,7 +226,7 @@ export const PricingModal = ({ isOpen, onClose }: PricingModalProps) => {
                                 : 'text-gray-600 hover:text-gray-900'
                             }`}
                           >
-                            Yearly
+                            {t('yearly')}
                           </button>
                         </div>
                       </div>
@@ -272,7 +272,7 @@ export const PricingModal = ({ isOpen, onClose }: PricingModalProps) => {
                           {isProcessing === 'basic' ? (
                             <div className="flex items-center justify-center gap-2">
                               <Loader2 className="w-4 h-4 animate-spin" />
-                              <span>Processing...</span>
+                              <span>{t('processing')}</span>
                             </div>
                           ) : (
                             t('subscribeNow')
@@ -337,7 +337,7 @@ export const PricingModal = ({ isOpen, onClose }: PricingModalProps) => {
                                 : 'text-purple-400 hover:text-purple-600'
                             }`}
                           >
-                            Monthly
+                            {t('monthly')}
                           </button>
                           <button
                             onClick={() => setProBillingCycle('yearly')}
@@ -347,7 +347,7 @@ export const PricingModal = ({ isOpen, onClose }: PricingModalProps) => {
                                 : 'text-purple-400 hover:text-purple-600'
                             }`}
                           >
-                            Yearly
+                            {t('yearly')}
                           </button>
                         </div>
                       </div>
@@ -393,7 +393,7 @@ export const PricingModal = ({ isOpen, onClose }: PricingModalProps) => {
                           {isProcessing === 'pro' ? (
                             <div className="flex items-center justify-center gap-2">
                               <Loader2 className="w-4 h-4 animate-spin" />
-                              <span>Processing...</span>
+                              <span>{t('processing')}</span>
                             </div>
                           ) : (
                             t('subscribeNow')
@@ -408,7 +408,7 @@ export const PricingModal = ({ isOpen, onClose }: PricingModalProps) => {
                 <div className="text-center mt-4">
                   <p className="text-[10px] text-center text-gray-500 flex items-center justify-center gap-1 mb-1">
                     <span>🔒</span>
-                    <span>Secure payment powered by Stripe</span>
+                    <span>{t('securePayment')}</span>
                   </p>
                   <p className="text-[10px] text-text-muted">
                     {t('footerGuarantee')}

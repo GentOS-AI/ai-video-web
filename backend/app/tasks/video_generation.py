@@ -5,11 +5,15 @@ This module handles asynchronous video generation using OpenAI Sora 2 API
 and streams real-time progress updates to frontend via Redis Pub/Sub + SSE.
 """
 import asyncio
+import os
 from pathlib import Path
+from io import BytesIO
+from fastapi import UploadFile
 from app.core.celery_app import celery_app
 from app.database import SessionLocal
 from app.services.sora_service import sora_service
 from app.services.video_service import get_video_by_id, update_video_status
+from app.services.gcs_service import gcs_service
 from app.models.video import VideoStatus
 from app.utils.sse_logger import SSELogger
 
@@ -104,20 +108,74 @@ def generate_video_task(self, video_id: int):
 
         # Step 3: Handle result
         if result["status"] == "completed":
-            # ✅ 成功
-            video_path = result["video_path"]
-            video_url_relative = f"/uploads/videos/{output_filename}"
+            # ✅ 成功 - Upload video to GCS
+            local_video_path = result["video_path"]
 
             print(f"\n✅ [Task {task_id}] Video generation COMPLETED!")
-            print(f"   Local path: {video_path}")
-            print(f"   URL: {video_url_relative}")
+            print(f"   Local path: {local_video_path}")
 
-            # Update database with completed status
+            # Step 3.1: Upload video to Google Cloud Storage
+            print(f"\n☁️  [Task {task_id}] Uploading video to GCS...")
+            logger.publish(8, "☁️  Uploading video to cloud storage...")
+
+            try:
+                # Read local video file
+                with open(local_video_path, 'rb') as f:
+                    video_content = f.read()
+
+                print(f"   Video size: {len(video_content) / (1024*1024):.2f} MB")
+
+                # Create UploadFile object for GCS
+                temp_file = UploadFile(
+                    filename=output_filename,
+                    file=BytesIO(video_content)
+                )
+                temp_file.content_type = "video/mp4"
+
+                # Upload to GCS
+                blob_name, video_gcs_url, _ = gcs_service.upload_file(
+                    file=temp_file,
+                    user_id=video.user_id,
+                    file_type="video",
+                    content_type="video/mp4"
+                )
+
+                print(f"✅ [Task {task_id}] Video uploaded to GCS!")
+                print(f"   GCS URL: {video_gcs_url}")
+                logger.publish(9, f"✅ Video uploaded successfully!")
+
+                # Step 3.2: Delete local temporary file
+                try:
+                    os.remove(local_video_path)
+                    print(f"🗑️  [Task {task_id}] Deleted local temporary file: {local_video_path}")
+                except Exception as cleanup_error:
+                    print(f"⚠️  [Task {task_id}] Failed to delete local file: {cleanup_error}")
+
+            except Exception as upload_error:
+                error_message = f"Failed to upload video to GCS: {str(upload_error)}"
+                print(f"❌ [Task {task_id}] {error_message}")
+                logger.publish_error(error_message)
+
+                # Update video status to failed
+                update_video_status(
+                    db,
+                    video_id,
+                    VideoStatus.FAILED,
+                    error_message=error_message
+                )
+
+                return {
+                    "status": "failed",
+                    "video_id": video_id,
+                    "error": error_message
+                }
+
+            # Step 3.3: Update database with GCS URL
             update_video_status(
                 db,
                 video_id,
                 VideoStatus.COMPLETED,
-                video_url=video_url_relative,
+                video_url=video_gcs_url,  # GCS public URL
                 poster_url=None,  # TODO: Generate poster from first frame
             )
 
@@ -133,13 +191,13 @@ def generate_video_task(self, video_id: int):
                 user.is_new_user = False
                 db.commit()
                 print(f"✅ [Task {task_id}] User {user.id} ({user.email}) is no longer a new user")
-                logger.publish(9, "🎉 First video completed! Welcome to AIVideo.DIY!")
+                logger.publish(10, "🎉 First video completed! Welcome to AIVideo.DIY!")
 
             print(f"\n🎉 [Task {task_id}] Task completed successfully!")
             return {
                 "status": "success",
                 "video_id": video_id,
-                "video_url": video_url_relative,
+                "video_url": video_gcs_url,  # Return GCS URL
             }
 
         elif result["status"] == "failed":

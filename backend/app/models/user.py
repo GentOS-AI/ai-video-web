@@ -32,6 +32,7 @@ class User(Base):
     # Relationships
     videos = relationship("Video", back_populates="user", cascade="all, delete-orphan")
     uploaded_images = relationship("UploadedImage", back_populates="user", cascade="all, delete-orphan")
+    generated_scripts = relationship("GeneratedScript", back_populates="user", cascade="all, delete-orphan")
 
     def __repr__(self):
         return f"<User(id={self.id}, email={self.email}, name={self.name}, subscription={self.subscription_plan})>"

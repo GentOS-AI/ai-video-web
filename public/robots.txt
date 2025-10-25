@@ -1,4 +1,4 @@
-# robots.txt for AdsVideo
+# robots.txt for Video4Ads
 
 User-agent: *
 Allow: /

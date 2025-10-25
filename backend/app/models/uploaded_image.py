@@ -24,6 +24,7 @@ class UploadedImage(Base):
 
     # Relationships
     user = relationship("User", back_populates="uploaded_images")
+    generated_scripts = relationship("GeneratedScript", back_populates="uploaded_image")
 
     def __repr__(self):
         return f"<UploadedImage(id={self.id}, user_id={self.user_id}, filename={self.filename})>"

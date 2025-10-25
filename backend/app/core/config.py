@@ -119,6 +119,23 @@ class Settings(BaseSettings):
     STRIPE_PRODUCT_PREMIUM_LIVE: str = ""
     STRIPE_PRODUCT_CREDITS_LIVE: str = ""
 
+    # ========================================
+    # Google Cloud Storage Configuration
+    # ========================================
+    # ⚠️  GCS 现在是唯一的存储方式 (已移除 USE_GCS_STORAGE 开关)
+
+    # GCS 项目配置
+    GOOGLE_CLOUD_PROJECT: str = ""
+    GOOGLE_CLOUD_BUCKET: str = ""
+
+    # GCS 认证
+    GOOGLE_APPLICATION_CREDENTIALS: str = ""  # JSON 文件路径
+    GOOGLE_CLOUD_CREDENTIALS_JSON: str = ""   # JSON 内容字符串 (优先级高于文件路径)
+
+    # GCS 公开 URL 配置
+    GCS_PUBLIC_URL_BASE: str = "https://storage.googleapis.com"
+    GCS_FOLDER_PREFIX: str = "video4ads"  # 文件夹前缀
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

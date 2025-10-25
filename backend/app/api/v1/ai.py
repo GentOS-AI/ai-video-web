@@ -15,6 +15,7 @@ from app.api.deps import get_current_user, get_db
 from app.models.user import User
 from app.models.uploaded_image import UploadedImage
 from app.services.openai_script_service import openai_script_service
+from app.services.gcs_service import gcs_service
 from app.core.config import settings
 
 logger = logging.getLogger(__name__)
@@ -187,36 +188,31 @@ async def generate_script(
         validate_image_for_script(file, content)
         logger.info("  ✅ Image validation passed")
 
-        # Save uploaded image to database
-        logger.info("💾 Saving image to database...")
+        # Save uploaded image to GCS and database
+        logger.info("💾 Uploading image to GCS and saving to database...")
         try:
             # Get image dimensions
             image = PILImage.open(BytesIO(content))
             width, height = image.size
 
-            # Create user upload directory
-            user_upload_dir = os.path.join(settings.UPLOAD_DIR, f"user_{current_user.id}")
-            os.makedirs(user_upload_dir, exist_ok=True)
+            # Reset file pointer for GCS upload
+            await file.seek(0)
 
-            # Generate unique filename
-            file_extension = os.path.splitext(file.filename or "image.jpg")[1]
-            unique_filename = f"{uuid.uuid4()}{file_extension}"
-            file_path = os.path.join(user_upload_dir, unique_filename)
+            # Upload to Google Cloud Storage
+            blob_name, file_url, _ = gcs_service.upload_file(
+                file=file,
+                user_id=current_user.id,
+                file_type="image",
+                content_type=file.content_type
+            )
 
-            # Save file to disk
-            with open(file_path, "wb") as f:
-                f.write(content)
-
-            # Create file URL
-            relative_path = f"/uploads/user_{current_user.id}/{unique_filename}"
-            base_url = settings.BASE_URL or "http://localhost:8000"
-            file_url = f"{base_url}{relative_path}"
+            logger.info(f"  ✅ File uploaded to GCS: {blob_name}")
 
             # Save to database
             db_image = UploadedImage(
                 user_id=current_user.id,
                 filename=file.filename or "untitled.jpg",
-                file_url=file_url,
+                file_url=file_url,  # GCS public URL
                 file_size=len(content),
                 file_type=file.content_type,
                 width=width,
@@ -227,11 +223,10 @@ async def generate_script(
             db.refresh(db_image)
 
             logger.info(f"  ✅ Image saved to database (ID: {db_image.id})")
-            logger.info(f"  📁 File path: {file_path}")
-            logger.info(f"  🔗 URL: {file_url}")
+            logger.info(f"  🔗 GCS URL: {file_url}")
 
         except Exception as save_error:
-            logger.warning(f"  ⚠️  Failed to save image to database: {str(save_error)}")
+            logger.warning(f"  ⚠️  Failed to save image to GCS/database: {str(save_error)}")
             # Note: Do NOT rollback here! We need the same session for credit deduction
             # Continue with script generation even if image save fails
 

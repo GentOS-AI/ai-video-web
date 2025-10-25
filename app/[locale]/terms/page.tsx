@@ -4,9 +4,9 @@ import { SimpleHeader } from "@/components/SimpleHeader";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Terms of Service - AdsVideo",
+  title: "Terms of Service - Video4Ads",
   description:
-    "Read our Terms of Service to understand the rules and regulations for using AdsVideo's AI video generation platform.",
+    "Read our Terms of Service to understand the rules and regulations for using Video4Ads's AI video generation platform.",
   robots: {
     index: true,
     follow: true,
@@ -33,7 +33,7 @@ export default function TermsPage() {
                 1. Introduction
               </h2>
               <p className="text-gray-600 leading-relaxed mb-4">
-                Welcome to AdsVideo (&quot;we,&quot; &quot;our,&quot; or &quot;us&quot;). These Terms of Service (&quot;Terms&quot;) govern your access to and use of our AI-powered video generation platform, including our website, services, and applications (collectively, the &quot;Service&quot;).
+                Welcome to Video4Ads (&quot;we,&quot; &quot;our,&quot; or &quot;us&quot;). These Terms of Service (&quot;Terms&quot;) govern your access to and use of our AI-powered video generation platform, including our website, services, and applications (collectively, the &quot;Service&quot;).
               </p>
               <p className="text-gray-600 leading-relaxed">
                 By accessing or using our Service, you agree to be bound by these Terms. If you do not agree to these Terms, please do not use our Service.
@@ -107,7 +107,7 @@ export default function TermsPage() {
                 <strong>Generated Videos:</strong> You own the videos generated through our Service. We grant you a perpetual, worldwide license to use, modify, and distribute your generated videos.
               </p>
               <p className="text-gray-600 leading-relaxed">
-                <strong>Our Platform:</strong> The Service, including its software, design, and technology, is owned by AdsVideo and protected by copyright, trademark, and other intellectual property laws.
+                <strong>Our Platform:</strong> The Service, including its software, design, and technology, is owned by Video4Ads and protected by copyright, trademark, and other intellectual property laws.
               </p>
             </section>
 
@@ -179,7 +179,7 @@ export default function TermsPage() {
                 If you have any questions about these Terms, please contact us:
               </p>
               <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
-                <p className="text-gray-700 font-medium mb-2">AdsVideo Support</p>
+                <p className="text-gray-700 font-medium mb-2">Video4Ads Support</p>
                 <p className="text-gray-600 text-sm">
                   Email:{" "}
                   <a

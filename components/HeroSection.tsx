@@ -559,30 +559,33 @@ export const HeroSection = () => {
             {/* Heading */}
             <div className="space-y-2 sm:space-y-3">
               <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold leading-[1.15] tracking-tight">
+                {/* First Line - "From Image to" */}
                 <span className="block text-gray-900 mb-1.5">
-                  From Image to{" "}
+                  {t('title.prefix')}
+                </span>
+                {/* Second Line - "Professional Advertising Video One Click Generated!" */}
+                <span className="block text-gray-900">
                   <span className="relative inline-block">
                     {/* Glow effect background */}
                     <span className="absolute inset-0 blur-2xl opacity-30 bg-gradient-to-r from-purple-600 to-pink-500"></span>
                     {/* Main gradient text */}
                     <span className="relative bg-gradient-to-r from-purple-600 via-pink-500 to-purple-600 bg-clip-text text-transparent animate-gradient">
-                      AI Video
+                      {t('title.aiVideo')}
                     </span>
                   </span>
-                  {" "}
                   <span className="relative inline-block">
-                    <span className="text-purple-600">for Ads</span>
+                    <span className="text-purple-600">{t('title.forAds')}</span>
                     <svg className="absolute -bottom-1.5 left-0 right-0" viewBox="0 0 200 12" preserveAspectRatio="none">
                       <path d="M0,7 Q50,0 100,7 T200,7" fill="none" stroke="currentColor" strokeWidth="3" className="text-purple-600/30" />
                     </svg>
                   </span>
-                </span>
-                <span className="block text-gray-900 mt-1.5">
-                  One Click Away
+                  <span className="inline-block">
+                    {t('title.oneClickAway')}
+                  </span>
                 </span>
               </h1>
               <p className="text-base sm:text-lg md:text-xl text-gray-600 leading-relaxed max-w-2xl">
-                All-in-one AI solution for image enhancement, video scripting and generation for your product advertising.{" "}
+                {t('subtitle')}{" "}
                 <span className="inline-flex items-center gap-1 text-[10px] sm:text-xs whitespace-nowrap">
                   <span className="text-gray-400 font-medium">POWERED BY</span>
                   <span
@@ -624,7 +627,7 @@ export const HeroSection = () => {
                       {/* Row 1: iOS-style Switch Toggle for Model Type */}
                       <div className="mb-2.5">
                         <label className="block text-[9px] font-semibold text-gray-600 mb-1">
-                          Model Type
+                          {t('modelSelector.modelType')}
                         </label>
                         <div className="flex items-center justify-between bg-gray-100 rounded-md p-0.5">
                           <button
@@ -635,7 +638,7 @@ export const HeroSection = () => {
                                 : 'text-gray-600 hover:text-gray-900'
                             }`}
                           >
-                            Sora 2
+                            {t('modelSelector.sora2')}
                           </button>
                           <button
                             onClick={() => {
@@ -662,7 +665,7 @@ export const HeroSection = () => {
                                 : 'text-gray-600 hover:text-gray-900'
                             }`}
                           >
-                            Sora2 Pro
+                            {t('modelSelector.sora2Pro')}
                           </button>
                         </div>
                       </div>
@@ -670,7 +673,7 @@ export const HeroSection = () => {
                       {/* Row 2: Radio Button Group for Duration */}
                       <div className="mb-2.5">
                         <label className="block text-[9px] font-semibold text-gray-600 mb-1">
-                          Duration
+                          {t('modelSelector.duration')}
                         </label>
                         <div className="space-y-1">
                           {modelTypes[selectedModelType]?.durations.map((durationOption) => {
@@ -761,7 +764,7 @@ export const HeroSection = () => {
                         <div className="flex items-center justify-between gap-1.5">
                           {/* Quality Badge */}
                           <div className="flex items-center gap-0.5">
-                            <span className="text-gray-500 text-[9px]">Quality:</span>
+                            <span className="text-gray-500 text-[9px]">{t('modelSelector.quality')}:</span>
                             <span className={`px-1 py-0.5 rounded text-[9px] font-bold ${
                               selectedModelType === 'sora-2-pro'
                                 ? 'bg-orange-100 text-orange-700'
@@ -876,7 +879,7 @@ export const HeroSection = () => {
 
                       // 2. Check if prompt is provided
                       if (!prompt.trim()) {
-                        showToast("Please describe your product or any advertising ideas", "warning");
+                        showToast(t('prompts.describeProduct'), "warning");
                         // Focus on textarea
                         document.getElementById("prompt")?.focus();
                         return;
@@ -1053,7 +1056,7 @@ export const HeroSection = () => {
                       {isGeneratingScript ? (
                         <>
                           <Loader2 className="w-4 h-4 sm:w-4.5 sm:h-4.5 animate-spin" />
-                          <span>Scripting...</span>
+                          <span>{t('button.scripting')}</span>
                         </>
                       ) : isGenerating ? (
                         <>
@@ -1064,9 +1067,9 @@ export const HeroSection = () => {
                         <>
                           <Sparkles className="w-4 h-4 sm:w-4.5 sm:h-4.5" />
                           <span className="hidden sm:inline">
-                            {user?.is_new_user ? 'Try for Free' : 'All-In-One Generate'}
+                            {user?.is_new_user ? t('button.tryForFree') : t('button.allInOneGenerate')}
                           </span>
-                          <span className="sm:hidden">{user?.is_new_user ? 'Try for Free' : 'Generate'}</span>
+                          <span className="sm:hidden">{user?.is_new_user ? t('button.tryForFree') : t('button.generate')}</span>
                         </>
                       )}
                     </button>
@@ -1112,7 +1115,7 @@ export const HeroSection = () => {
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent" />
                   <div className="absolute bottom-4 left-4 right-4 text-sm text-white/90 backdrop-blur-sm bg-black/30 px-3 py-2 rounded-lg">
-                    Preparing preview...
+                    {t('statusMessages.preparingPreview')}
                   </div>
                 </div>
               ) : (isGenerating || (generatedVideo && generatedVideo.video_url)) ? (
@@ -1143,7 +1146,7 @@ export const HeroSection = () => {
                       {/* Generating Status Badge - Top Right Corner */}
                       <div className="absolute top-4 right-4 z-50 px-3 py-2 bg-purple-50/90 backdrop-blur-sm border border-purple-200 text-purple-600 rounded-lg shadow-sm flex items-center gap-2">
                         <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                        <span className="text-xs font-semibold">Generating...</span>
+                        <span className="text-xs font-semibold">{t('statusMessages.generating')}</span>
                       </div>
                     </>
                   )}
@@ -1167,10 +1170,10 @@ export const HeroSection = () => {
                     {isGeneratingScript ? (
                       <>
                         <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                        <span className="text-xs font-semibold">Scripting...</span>
+                        <span className="text-xs font-semibold">{t('statusMessages.scripting')}</span>
                       </>
                     ) : (
-                      <span className="text-xs font-semibold">Ready</span>
+                      <span className="text-xs font-semibold">{t('statusMessages.ready')}</span>
                     )}
                   </div>
                 </div>
@@ -1205,7 +1208,7 @@ export const HeroSection = () => {
 
                       {/* Status Badge - Light style */}
                       <div className="absolute top-4 right-4 px-3 py-2 bg-blue-50/90 backdrop-blur-sm border border-blue-200 text-blue-600 rounded-lg shadow-sm flex items-center gap-2">
-                        <span className="text-xs font-semibold">Selected</span>
+                        <span className="text-xs font-semibold">{t('statusMessages.selected')}</span>
                       </div>
                     </div>
                   );
@@ -1246,19 +1249,19 @@ export const HeroSection = () => {
             {/* Video Title */}
             <div className="mt-4 sm:mt-5 text-center">
               <p className="text-xs sm:text-sm font-medium text-text-secondary">
-                What&apos;s showing: <span className="text-purple-600 font-semibold">
+                {t('whatsShowing')} <span className="text-purple-600 font-semibold">
                   {isGenerating && !generatedVideo?.video_url ? (
                     // Show "Generating..." when video is being generated
-                    "Generating..."
+                    t('statusMessages.generating')
                   ) : generatedVideo && generatedVideo.video_url ? (
                     // Show success message when video is completed
-                    "Your Video Generated Successfully"
+                    t('statusMessages.generatedSuccess')
                   ) : showThumbnailPreview && selectedImage !== null ? (
                     // Show selected showcase video title
                     (() => {
                       const selectedImageData = trialImages.find(img => img.id === selectedImage);
                       const showcaseVideo = selectedImageData ? showcaseVideos.find(v => v.id === selectedImageData.videoId) : null;
-                      return showcaseVideo ? showcaseVideo.title : (selectedImageData?.alt || "Selected Image");
+                      return showcaseVideo ? showcaseVideo.title : (selectedImageData?.alt || t('statusMessages.selectedImage'));
                     })()
                   ) : (
                     // Default showcase video title
@@ -1381,11 +1384,11 @@ export const HeroSection = () => {
             </button>
 
             <h3 className="text-xl font-bold text-gray-900 text-center mb-4 pr-8">
-              Replace Uploaded Image?
+              {t('replaceDialog.title')}
             </h3>
 
             <p className="text-gray-600 text-center mb-6">
-              You currently have an uploaded image. Do you want to replace it with the selected thumbnail?
+              {t('replaceDialog.message')}
             </p>
 
             <div className="flex gap-3">
@@ -1393,14 +1396,14 @@ export const HeroSection = () => {
                 onClick={handleCancelReplace}
                 className="flex-1 px-6 py-3 bg-white border-2 border-gray-300 text-gray-700 rounded-lg hover:border-gray-400 hover:bg-gray-50 transition-all font-medium"
               >
-                Cancel
+                {t('replaceDialog.cancel')}
               </button>
 
               <button
                 onClick={handleConfirmReplace}
                 className="flex-1 px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:from-purple-600 hover:to-pink-600 transition-all font-medium shadow-md hover:shadow-lg"
               >
-                Yes, Continue
+                {t('replaceDialog.confirm')}
               </button>
             </div>
           </motion.div>
@@ -1412,7 +1415,7 @@ export const HeroSection = () => {
         <YouTubeUploadModal
           isOpen={showYouTubeModal}
           onClose={() => setShowYouTubeModal(false)}
-          videoTitle={generatedVideo.prompt || "Generated Video"}
+          videoTitle={generatedVideo.prompt || t('defaults.generatedVideo')}
           onUpload={handleYouTubeUpload}
         />
       )}

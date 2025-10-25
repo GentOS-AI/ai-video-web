@@ -9,6 +9,7 @@ import { useNotification } from "@/contexts/NotificationContext";
 import { paymentService } from "@/lib/api/services";
 import { redirectToCheckout } from "@/lib/stripe/stripe";
 import { PRICING_CONFIG, getSuccessUrl, getCancelUrl } from "@/lib/config/pricing";
+import { useTranslations } from "next-intl";
 
 interface CreditsModalProps {
   isOpen: boolean;
@@ -16,6 +17,7 @@ interface CreditsModalProps {
 }
 
 export const CreditsModal = ({ isOpen, onClose }: CreditsModalProps) => {
+  const t = useTranslations('credits');
   const { isAuthenticated } = useAuth();
   const { showToast } = useNotification();
   const [isPurchasing, setIsPurchasing] = useState(false);
@@ -27,29 +29,29 @@ export const CreditsModal = ({ isOpen, onClose }: CreditsModalProps) => {
   const creditPacks = {
     standard: {
       id: 'standard',
-      name: 'Standard Pack',
+      name: t('standardPack'),
       credits: 1000,
       price: PRICING_CONFIG.credits.price,
-      description: '~10 AI Videos',
+      description: t('videoCount10'),
       features: [
         `${PRICING_CONFIG.credits.credits} Credits`,
-        'No Expiration Date',
-        'Instant Delivery',
-        'Secure Payment',
+        t('noExpiration'),
+        t('instantDelivery'),
+        t('securePayment'),
       ],
       gradient: 'from-purple-500 to-pink-500',
     },
     premium: {
       id: 'premium',
-      name: 'Premium Pack',
+      name: t('premiumPack'),
       credits: 2500,
       price: '$99.99',
-      description: '~25 AI Videos',
+      description: t('videoCount25'),
       features: [
         '2500 Credits',
-        'No Expiration Date',
-        'Instant Delivery',
-        'Priority Support',
+        t('noExpiration'),
+        t('instantDelivery'),
+        t('prioritySupport'),
       ],
       gradient: 'from-purple-500 to-pink-500',
     },
@@ -128,16 +130,16 @@ export const CreditsModal = ({ isOpen, onClose }: CreditsModalProps) => {
               <div className="bg-gradient-to-r from-purple-600 to-purple-500 px-4 py-5 sm:px-6 sm:py-6">
                 <div className="text-center">
                   <h2 className="text-xl sm:text-2xl font-bold text-white mb-1">
-                    Purchase Credits
+                    {t('purchaseTitle')}
                   </h2>
                   <p className="text-xs sm:text-sm text-white/90">
-                    Choose the perfect credit pack for your needs
+                    {t('choosePackSubtitle')}
                   </p>
                 </div>
 
                 {PRICING_CONFIG.isDevelopment && (
                   <p className="text-xs text-yellow-300 mt-3 text-center">
-                    🧪 Test Mode: ${PRICING_CONFIG.credits.priceValue}
+                    🧪 {t('testMode')}: ${PRICING_CONFIG.credits.priceValue}
                   </p>
                 )}
               </div>
@@ -157,7 +159,7 @@ export const CreditsModal = ({ isOpen, onClose }: CreditsModalProps) => {
                             : 'text-gray-600 hover:text-gray-900'
                         }`}
                       >
-                        Standard
+                        {t('standard')}
                       </button>
                       <button
                         onClick={() => setSelectedPack('premium')}
@@ -167,7 +169,7 @@ export const CreditsModal = ({ isOpen, onClose }: CreditsModalProps) => {
                             : 'text-gray-600 hover:text-gray-900'
                         }`}
                       >
-                        Premium
+                        {t('premium')}
                       </button>
                     </div>
                   </div>
@@ -222,12 +224,12 @@ export const CreditsModal = ({ isOpen, onClose }: CreditsModalProps) => {
                   {isPurchasing ? (
                     <div className="flex items-center justify-center space-x-2">
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      <span className="text-sm">Processing...</span>
+                      <span className="text-sm">{t('processing')}</span>
                     </div>
                   ) : (
                     <div className="flex items-center justify-center space-x-2">
                       <Sparkles className="w-4 h-4" />
-                      <span className="text-sm">Purchase Now</span>
+                      <span className="text-sm">{t('purchaseNow')}</span>
                     </div>
                   )}
                 </Button>
@@ -235,11 +237,11 @@ export const CreditsModal = ({ isOpen, onClose }: CreditsModalProps) => {
                 {/* Footer Note */}
                 <div className="mt-4 text-center">
                   <p className="text-xs text-gray-500">
-                    🔒 Secure payment powered by Stripe
+                    {t('stripeFooter')}
                   </p>
                   {PRICING_CONFIG.isDevelopment && (
                     <p className="text-xs text-gray-400 mt-1">
-                      Test Mode: Use card 4242 4242 4242 4242
+                      {t('testModeHint')}
                     </p>
                   )}
                 </div>

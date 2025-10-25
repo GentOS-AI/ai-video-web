@@ -28,6 +28,9 @@ requests==2.32.3
 openai>=2.4.0  # Sora 2 videos API support (requires 2.4.0+)
 pillow==10.4.0
 
+# Google Cloud Storage
+google-cloud-storage==2.18.2
+
 # Task Queue
 celery==5.3.4
 redis==5.0.1

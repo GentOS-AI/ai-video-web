@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, Video as VideoIcon, Loader2, Film, RefreshCw, Image as ImageIconLucide, Play, MoreVertical, Trash2 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNotification } from "@/contexts/NotificationContext";
 import { VideoCard } from "@/components/VideoCard";
@@ -25,6 +26,9 @@ export default function MediaCenterPage() {
   const router = useRouter();
   const { isAuthenticated, loading: authLoading, user } = useAuth();
   const { showToast, showConfirm } = useNotification();
+  const t = useTranslations('myVideos');
+  const tToast = useTranslations('toast');
+  const tConfirm = useTranslations('confirm');
 
   // Tab state
   const [activeTab, setActiveTab] = useState<TabType>('videos');
@@ -204,10 +208,10 @@ export default function MediaCenterPage() {
     const targetVideo = videos.find(v => v.id === id);
 
     showConfirm({
-      title: 'Delete Video',
-      message: 'Are you sure you want to delete this video? This action cannot be undone.',
-      confirmText: 'Delete',
-      cancelText: 'Cancel',
+      title: tConfirm('deleteVideo.title'),
+      message: tConfirm('deleteVideo.message'),
+      confirmText: tConfirm('deleteVideo.confirm'),
+      cancelText: tConfirm('deleteVideo.cancel'),
       confirmVariant: 'danger',
       onConfirm: async () => {
         try {
@@ -226,7 +230,7 @@ export default function MediaCenterPage() {
           }
           fetchCounts();
           fetchStatusCounts();
-          showToast('Video deleted successfully', 'success');
+          showToast(tToast('videoDeleted'), 'success');
         } catch (err) {
           console.error('Failed to delete video:', err);
           showToast('Failed to delete video', 'error');
@@ -263,7 +267,7 @@ export default function MediaCenterPage() {
     ]);
     setPage(1);
     setHasMoreVideos(true);
-    showToast('Video list refreshed', 'success');
+    showToast(tToast('videoListRefreshed'), 'success');
   };
 
   const handleLoadMoreVideos = () => {
@@ -278,10 +282,10 @@ export default function MediaCenterPage() {
 
   const handleDeleteImage = async (imageId: number) => {
     showConfirm({
-      title: 'Delete Image',
-      message: 'Are you sure you want to delete this image? This action cannot be undone.',
-      confirmText: 'Delete',
-      cancelText: 'Cancel',
+      title: tConfirm('deleteImage.title'),
+      message: tConfirm('deleteImage.message'),
+      confirmText: tConfirm('deleteImage.confirm'),
+      cancelText: tConfirm('deleteImage.cancel'),
       confirmVariant: 'danger',
       onConfirm: async () => {
         try {
@@ -317,7 +321,7 @@ export default function MediaCenterPage() {
               className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-purple-600 transition-colors mb-4"
             >
               <ArrowLeft className="w-4 h-4" />
-              Back to Home
+              {t('backToHome')}
             </button>
 
             <div className="flex items-center gap-4 mb-6">
@@ -340,10 +344,10 @@ export default function MediaCenterPage() {
               )}
               <div>
                 <h1 className="text-3xl sm:text-4xl font-bold text-gray-900">
-                  Media Center
+                  {t('mediaCenter')}
                 </h1>
                 <p className="text-gray-600 mt-1">
-                  {user?.name ? `${user.name}'s media library` : 'Manage your AI-generated content'}
+                  {user?.name ? t('userLibrary', { name: user.name }) : t('manageContent')}
                 </p>
               </div>
             </div>
@@ -368,7 +372,7 @@ export default function MediaCenterPage() {
                 }`}
               >
                 <ImageIconLucide className="w-5 h-5" />
-                <span>Images</span>
+                <span>{t('tabs.images')}</span>
                 <span className={`ml-1 px-2 py-0.5 rounded-full text-xs font-bold ${
                   activeTab === 'images' ? 'bg-white/20' : 'bg-gray-100'
                 }`}>
@@ -393,7 +397,7 @@ export default function MediaCenterPage() {
                 }`}
               >
                 <Play className="w-5 h-5" />
-                <span>Videos</span>
+                <span>{t('tabs.videos')}</span>
                 <span className={`ml-1 px-2 py-0.5 rounded-full text-xs font-bold ${
                   activeTab === 'videos' ? 'bg-white/20' : 'bg-gray-100'
                 }`}>
@@ -424,7 +428,7 @@ export default function MediaCenterPage() {
                       className={`w-4 h-4 text-purple-600 ${loading ? 'animate-spin' : ''}`}
                     />
                     <span className="text-sm font-medium text-purple-700">
-                      {loading ? 'Refreshing...' : 'Refresh'}
+                      {loading ? t('refreshing') : t('refresh')}
                     </span>
                   </motion.button>
                 )}
@@ -445,7 +449,7 @@ export default function MediaCenterPage() {
                 {loading ? (
                   <div className="flex flex-col items-center justify-center py-20">
                     <Loader2 className="w-12 h-12 text-purple-600 animate-spin mb-4" />
-                    <p className="text-gray-600">Loading your videos...</p>
+                    <p className="text-gray-600">{t('loadingVideos')}</p>
                   </div>
                 ) : error ? (
                   <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
@@ -454,7 +458,7 @@ export default function MediaCenterPage() {
                       onClick={() => fetchVideos(1, false)}
                       className="mt-4 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
                     >
-                      Try Again
+                      {t('tryAgain')}
                     </button>
                   </div>
                 ) : filteredVideos.length === 0 ? (
@@ -463,18 +467,18 @@ export default function MediaCenterPage() {
                       <Film className="w-10 h-10 text-purple-400" />
                     </div>
                     <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                      No videos yet
+                      {t('noVideos')}
                     </h3>
                     <p className="text-gray-600 mb-6">
                       {activeStatus === 'all'
-                        ? "Start creating your first AI video!"
-                        : `No ${activeStatus} videos found.`}
+                        ? t('noVideosDescription')
+                        : t('noVideosWithStatus', { status: activeStatus })}
                     </p>
                     <button
                       onClick={() => router.push('/')}
                       className="px-6 py-3 bg-gradient-purple text-white rounded-lg hover:shadow-lg transition-all font-medium"
                     >
-                      Generate Video
+                      {t('generateVideo')}
                     </button>
                   </div>
                 ) : (
@@ -496,7 +500,7 @@ export default function MediaCenterPage() {
 
                     {/* Pagination Info */}
                     <div className="mt-8 text-center text-sm text-gray-600">
-                      Showing {Math.min(filteredVideos.length, totalVideos)} of {totalVideos} videos
+                      {t('showing', { count: Math.min(filteredVideos.length, totalVideos), total: totalVideos })}
                     </div>
 
                     {hasMoreVideos && (
@@ -509,10 +513,10 @@ export default function MediaCenterPage() {
                           {loadingMoreVideos ? (
                             <span className="flex items-center gap-2">
                               <Loader2 className="w-4 h-4 animate-spin" />
-                              Loading...
+                              {t('loadingMore')}
                             </span>
                           ) : (
-                            'Load more videos'
+                            t('loadMoreVideos')
                           )}
                         </button>
                       </div>
@@ -531,7 +535,7 @@ export default function MediaCenterPage() {
                 {imagesLoading ? (
                   <div className="flex flex-col items-center justify-center py-20">
                     <Loader2 className="w-12 h-12 text-purple-600 animate-spin mb-4" />
-                    <p className="text-gray-600">Loading your images...</p>
+                    <p className="text-gray-600">{t('loadingImages')}</p>
                   </div>
                 ) : images.length === 0 ? (
                   <div className="bg-white rounded-2xl shadow-md p-12 text-center border border-gray-200">
@@ -539,16 +543,16 @@ export default function MediaCenterPage() {
                       <ImageIconLucide className="w-10 h-10 text-purple-400" />
                     </div>
                     <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                      No images yet
+                      {t('noImagesYet')}
                     </h3>
                     <p className="text-gray-600 mb-6">
-                      Upload your first image to get started with AI video generation!
+                      {t('uploadFirstImage')}
                     </p>
                     <button
                       onClick={() => router.push('/')}
                       className="px-6 py-3 bg-gradient-purple text-white rounded-lg hover:shadow-lg transition-all font-medium"
                     >
-                      Upload Image
+                      {t('uploadImage')}
                     </button>
                   </div>
                 ) : (
@@ -587,7 +591,7 @@ export default function MediaCenterPage() {
                                   <svg className="w-10 h-10 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
                                   </svg>
-                                  <p className="text-sm font-medium">Click to enlarge</p>
+                                  <p className="text-sm font-medium">{t('clickToEnlarge')}</p>
                                 </div>
                               </div>
 
@@ -630,7 +634,7 @@ export default function MediaCenterPage() {
                                           className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 transition-colors flex items-center gap-2"
                                         >
                                           <Trash2 className="w-4 h-4" />
-                                          Delete
+                                          {t('delete')}
                                         </button>
                                       </div>
                                     </>
@@ -654,7 +658,7 @@ export default function MediaCenterPage() {
                     </div>
 
                     <div className="mt-6 text-center text-sm text-gray-600">
-                      Showing {Math.min(images.length, totalImagesCount)} of {totalImagesCount} images
+                      {t('showingCount', { count: Math.min(images.length, totalImagesCount), total: totalImagesCount, type: t('tabs.images').toLowerCase() })}
                     </div>
 
                     {hasMoreImages && (
@@ -667,10 +671,10 @@ export default function MediaCenterPage() {
                           {loadingMoreImages ? (
                             <span className="flex items-center gap-2">
                               <Loader2 className="w-4 h-4 animate-spin" />
-                              Loading...
+                              {t('loadingMore')}
                             </span>
                           ) : (
-                            'Load more images'
+                            t('loadMoreImages')
                           )}
                         </button>
                       </div>

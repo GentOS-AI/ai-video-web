@@ -3,7 +3,7 @@
 import { useState } from "react";
 import dynamic from "next/dynamic";
 import { Mail } from "lucide-react";
-import { SiTiktok, SiX, SiDiscord, SiLinkedin } from "react-icons/si";
+import { SiX, SiDiscord, SiLinkedin } from "react-icons/si";
 import { useTranslations } from "next-intl";
 import { useParams } from "next/navigation";
 import type { Locale } from "@/lib/i18n/config";
@@ -79,7 +79,7 @@ export const Footer = () => {
           {/* Resource Column */}
           <div className="space-y-4">
             <h3 className="text-sm font-semibold text-text-primary uppercase tracking-wider">
-              Resources
+              {t('resources')}
             </h3>
             <ul className="space-y-2">
               <li>
@@ -87,7 +87,7 @@ export const Footer = () => {
                   href={`/${locale}/help`}
                   className="text-sm text-text-secondary hover:text-primary transition-colors"
                 >
-                  Help Center
+                  {t('helpCenter')}
                 </a>
               </li>
               <li>
@@ -95,7 +95,7 @@ export const Footer = () => {
                   href={`/${locale}/blog`}
                   className="text-sm text-text-secondary hover:text-primary transition-colors"
                 >
-                  Blog
+                  {t('blog')}
                 </a>
               </li>
             </ul>
@@ -158,15 +158,6 @@ export const Footer = () => {
                 aria-label="LinkedIn"
               >
                 <SiLinkedin className="w-5 h-5 sm:w-4 sm:h-4" />
-              </a>
-              <a
-                href="https://tiktok.com/@mokyvideo"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="p-3 sm:p-2 rounded-lg bg-gray-100 hover:bg-primary hover:text-white transition-all hover:scale-110"
-                aria-label="TikTok"
-              >
-                <SiTiktok className="w-5 h-5 sm:w-4 sm:h-4" />
               </a>
               <a
                 href="mailto:contact@mokyvideo.com"

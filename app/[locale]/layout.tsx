@@ -51,22 +51,22 @@ export async function generateMetadata({
       "automated video",
       "professional videos",
     ],
-    authors: [{ name: "AdsVideo" }],
-    creator: "AdsVideo",
-    publisher: "AdsVideo",
+    authors: [{ name: "Video4Ads" }],
+    creator: "Video4Ads",
+    publisher: "Video4Ads",
     openGraph: {
       type: "website",
       locale: locale === "zh" ? "zh_CN" : locale === "zh-TW" ? "zh_TW" : "en_US",
       url: `https://adsvideo.co/${locale === "en" ? "" : locale}`,
       title: t("title"),
       description: t("description"),
-      siteName: "AdsVideo",
+      siteName: "Video4Ads",
       images: [
         {
           url: "/og-image.svg",
           width: 1200,
           height: 630,
-          alt: "AdsVideo - Create Stunning AI-Generated Videos",
+          alt: "Video4Ads - Create Stunning AI-Generated Videos",
         },
       ],
     },
@@ -113,7 +113,7 @@ export default async function LocaleLayout({
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
-    name: "AdsVideo",
+    name: "Video4Ads",
     description:
       "AI-powered video generation platform for creating professional advertising videos",
     url: "https://adsvideo.co",
@@ -153,7 +153,7 @@ export default async function LocaleLayout({
     },
     creator: {
       "@type": "Organization",
-      name: "AdsVideo",
+      name: "Video4Ads",
       url: "https://adsvideo.co",
     },
   };

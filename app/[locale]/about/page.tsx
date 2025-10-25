@@ -5,11 +5,11 @@ import { Target, Users, Zap } from "lucide-react";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "About Us - AdsVideo",
+  title: "About Us - Video4Ads",
   description:
-    "Learn about AdsVideo's mission to democratize professional video creation with AI-powered technology. Discover our story, values, and team.",
+    "Learn about Video4Ads's mission to democratize professional video creation with AI-powered technology. Discover our story, values, and team.",
   openGraph: {
-    title: "About AdsVideo - AI Video Generation Platform",
+    title: "About Video4Ads - AI Video Generation Platform",
     description:
       "Transforming ideas into professional advertising videos with cutting-edge AI technology.",
   },
@@ -25,7 +25,7 @@ export default function AboutPage() {
         <section className="pt-32 sm:pt-40 pb-12 px-4 sm:px-6 lg:px-8">
           <div className="max-w-4xl mx-auto text-center">
             <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-6">
-              About <span className="text-gradient-purple">AdsVideo</span>
+              About <span className="text-gradient-purple">Video4Ads</span>
             </h1>
             <p className="text-xl text-gray-600 leading-relaxed">
               We&apos;re on a mission to democratize professional video creation,
@@ -49,7 +49,7 @@ export default function AboutPage() {
                   </h2>
                 </div>
                 <p className="text-gray-600 leading-relaxed mb-4">
-                  At AdsVideo, we believe that every business deserves access to
+                  At Video4Ads, we believe that every business deserves access to
                   professional-quality video content. Traditional video
                   production is expensive, time-consuming, and requires
                   specialized skills.

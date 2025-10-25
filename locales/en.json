@@ -5,28 +5,42 @@
     "pricing": "Pricing",
     "help": "Help",
     "blog": "Blog",
+    "faq": "FAQ",
     "login": "Login",
     "logout": "Logout",
     "myVideos": "Media Center",
-    "credits": "{count} credits"
+    "credits": "{count} credits",
+    "addCredits": "Add"
   },
   "hero": {
     "title": {
-      "prefix": "Image to",
-      "professional": "Professional",
-      "ads": "Ads",
-      "video": "Video",
-      "by": "by Only",
-      "oneClick": "One Click"
+      "prefix": "From Image to",
+      "aiVideo": "AI Video ",
+      "forAds": "for Ads ",
+      "oneClickAway": "One Click Away"
     },
-    "subtitle": "AI-powered script writing, video generation, and publish to your social media.",
+    "subtitle": "All-in-one AI solution for image enhancement, video scripting and generation for your product advertising.",
+    "whatsShowing": "What's showing:",
     "input": {
       "placeholder": "Describe your product and advertising ideas, let our Ads PRO AI enhance for you."
     },
     "button": {
       "generate": "Generate",
       "generating": "Generating...",
-      "tryFree": "Try for free"
+      "tryFree": "Try for free",
+      "tryForFree": "Try for Free",
+      "allInOneGenerate": "All-In-One Generate",
+      "scripting": "Scripting..."
+    },
+    "modelSelector": {
+      "modelType": "Model Type",
+      "duration": "Duration",
+      "quality": "Quality",
+      "sora2": "Sora 2",
+      "sora2Pro": "Sora2 Pro",
+      "freeTrial": "Free Trial",
+      "basic": "Basic",
+      "premium": "Premium"
     },
     "aiScriptGenerator": {
       "title": "AI Script Generator",
@@ -63,6 +77,28 @@
     },
     "socialProof": {
       "creatorsTrust": "Creators trust us"
+    },
+    "statusMessages": {
+      "preparingPreview": "Preparing preview...",
+      "ready": "Ready",
+      "selected": "Selected",
+      "generating": "Generating...",
+      "scripting": "Scripting...",
+      "generatedSuccess": "Your Video Generated Successfully",
+      "selectedImage": "Selected Image"
+    },
+    "replaceDialog": {
+      "title": "Replace Uploaded Image?",
+      "message": "You currently have an uploaded image. Do you want to replace it with the selected thumbnail?",
+      "cancel": "Cancel",
+      "confirm": "Yes, Continue"
+    },
+    "defaults": {
+      "videoTitle": "AI Generated Video Demo",
+      "generatedVideo": "Generated Video"
+    },
+    "prompts": {
+      "describeProduct": "Please describe your product or any advertising ideas"
     }
   },
   "showcase": {
@@ -86,6 +122,12 @@
     "popular": "POPULAR",
     "billedAnnually": "Billed annually",
     "billedMonthly": "Billed monthly",
+    "billedYearly": "billed yearly",
+    "monthly": "Monthly",
+    "yearly": "Yearly",
+    "processing": "Processing...",
+    "securePayment": "Secure payment powered by Stripe",
+    "testMode": "Test Mode",
     "monthlyCredits": "{count} credits/month",
     "yearlyCredits": "{count} credits/year",
     "basic": {
@@ -121,7 +163,9 @@
   },
   "credits": {
     "title": "Add Credits",
+    "purchaseTitle": "Purchase Credits",
     "subtitle": "Purchase additional credits to generate more videos",
+    "choosePackSubtitle": "Choose the perfect credit pack for your needs",
     "currentBalance": "Current Balance: {balance} credits",
     "packages": {
       "starter": {
@@ -145,9 +189,23 @@
         "description": "~50 videos (Most Popular)"
       }
     },
+    "standardPack": "Standard Pack",
+    "premiumPack": "Premium Pack",
+    "standard": "Standard",
+    "premium": "Premium",
+    "videoCount10": "~10 AI Videos",
+    "videoCount25": "~25 AI Videos",
+    "noExpiration": "No Expiration Date",
+    "instantDelivery": "Instant Delivery",
+    "prioritySupport": "Priority Support",
+    "securePayment": "Secure Payment",
+    "processing": "Processing...",
     "purchaseButton": "Purchase Now",
+    "purchaseNow": "Purchase Now",
     "cancelButton": "Cancel",
-    "paymentNote": "Payment integration coming soon"
+    "paymentNote": "Payment integration coming soon",
+    "stripeFooter": "Secure payment powered by Stripe",
+    "testModeHint": "Test Mode: Use card 4242 4242 4242 4242"
   },
   "toast": {
     "videoGeneratedSuccess": "Video generated successfully! 🎉",
@@ -181,34 +239,63 @@
       "message": "Are you sure you want to delete this video? This action cannot be undone.",
       "confirm": "Delete",
       "cancel": "Cancel"
+    },
+    "deleteImage": {
+      "title": "Delete Image",
+      "message": "Are you sure you want to delete this image? This action cannot be undone.",
+      "confirm": "Delete",
+      "cancel": "Cancel"
     }
   },
   "footer": {
     "companyDescription": "Transform your ideas into professional advertising videos with AI-powered technology.",
     "quickLinks": "Quick Links",
+    "resources": "Resources",
     "policy": "Policy",
     "connectWithUs": "Connect With Us",
-    "copyright": "{year} AdsVideo. All rights reserved.",
+    "copyright": "{year} Video4Ads. All rights reserved.",
     "aboutUs": "About Us",
     "pricing": "Pricing",
     "help": "Help",
+    "helpCenter": "Help Center",
     "blog": "Blog",
     "terms": "Terms of Service",
     "privacy": "Privacy Policy"
   },
   "myVideos": {
     "title": "My Videos",
+    "mediaCenter": "Media Center",
     "subtitle": "{name}'s video collection",
     "subtitleDefault": "Manage your AI-generated videos",
+    "userLibrary": "{name}'s media library",
+    "manageContent": "Manage your AI-generated content",
     "backToHome": "Back to Home",
+    "tabs": {
+      "images": "Images",
+      "videos": "Videos"
+    },
+    "refresh": "Refresh",
+    "refreshing": "Refreshing...",
     "noVideos": "No videos yet",
+    "noImagesYet": "No images yet",
     "noVideosDescription": "Start creating your first AI video!",
     "noVideosWithStatus": "No {status} videos found.",
+    "uploadFirstImage": "Upload your first image to get started with AI video generation!",
     "generateVideo": "Generate Video",
+    "uploadImage": "Upload Image",
     "loading": "Loading your videos...",
-    "refreshing": "Refreshing...",
+    "loadingVideos": "Loading your videos...",
+    "loadingImages": "Loading your images...",
+    "tryAgain": "Try Again",
     "refreshIn": "Refresh in {seconds}s",
     "showing": "Showing {count} of {total} videos",
+    "showingCount": "Showing {count} of {total} {type}",
+    "loadMore": "Load more {type}",
+    "loadMoreVideos": "Load more videos",
+    "loadMoreImages": "Load more images",
+    "loadingMore": "Loading...",
+    "delete": "Delete",
+    "clickToEnlarge": "Click to enlarge",
     "statusAll": "All",
     "statusPending": "Pending",
     "statusProcessing": "Processing",
@@ -226,10 +313,10 @@
     "createdAt": "Created {date}"
   },
   "about": {
-    "title": "About <purple>AdsVideo</purple>",
+    "title": "About <purple>Video4Ads</purple>",
     "heroSubtitle": "We're on a mission to democratize professional video creation, empowering businesses and creators with cutting-edge AI technology.",
     "ourMission": "Our Mission",
-    "missionContent1": "At AdsVideo, we believe that every business deserves access to professional-quality video content. Traditional video production is expensive, time-consuming, and requires specialized skills.",
+    "missionContent1": "At Video4Ads, we believe that every business deserves access to professional-quality video content. Traditional video production is expensive, time-consuming, and requires specialized skills.",
     "missionContent2": "We're changing that by harnessing the power of AI to make video creation as simple as describing your vision. Our platform transforms your ideas into stunning advertising videos in minutes, not weeks.",
     "innovationFirst": "Innovation First",
     "innovationDescription": "Leveraging the latest AI models including Sora 2 for cutting-edge results.",
@@ -261,28 +348,28 @@
       "description": "Transform your ideas into professional advertising videos with AI-powered Sora 2 technology. Perfect for marketers, businesses, and content creators."
     },
     "about": {
-      "title": "About Us - AdsVideo",
-      "description": "Learn about AdsVideo's mission to democratize professional video creation with AI-powered technology. Discover our story, values, and team."
+      "title": "About Us - Video4Ads",
+      "description": "Learn about Video4Ads's mission to democratize professional video creation with AI-powered technology. Discover our story, values, and team."
     },
     "myVideos": {
-      "title": "My Videos - AdsVideo",
+      "title": "My Videos - Video4Ads",
       "description": "Manage your AI-generated video collection. View, download, and organize all your created videos in one place."
     },
     "help": {
-      "title": "Help Center - AdsVideo",
-      "description": "Find answers to frequently asked questions about AdsVideo's AI video generation platform."
+      "title": "Help Center - Video4Ads",
+      "description": "Find answers to frequently asked questions about Video4Ads's AI video generation platform."
     },
     "blog": {
-      "title": "Blog - AdsVideo",
+      "title": "Blog - Video4Ads",
       "description": "Latest news, tips, and insights about AI video generation and digital marketing."
     },
     "terms": {
-      "title": "Terms of Service - AdsVideo",
-      "description": "Read our terms of service and user agreement for using AdsVideo's AI video generation platform."
+      "title": "Terms of Service - Video4Ads",
+      "description": "Read our terms of service and user agreement for using Video4Ads's AI video generation platform."
     },
     "privacy": {
-      "title": "Privacy Policy - AdsVideo",
-      "description": "Learn how AdsVideo protects your privacy and handles your data."
+      "title": "Privacy Policy - Video4Ads",
+      "description": "Learn how Video4Ads protects your privacy and handles your data."
     }
   }
 }

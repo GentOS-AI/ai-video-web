@@ -246,7 +246,7 @@ export const Navbar = () => {
                   : 'text-text-secondary hover:text-primary'
               }`}
             >
-              Blog
+              {t('blog')}
               {pathname.includes('/blog') && (
                 <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-primary rounded-full" />
               )}
@@ -259,7 +259,7 @@ export const Navbar = () => {
                   : 'text-text-secondary hover:text-primary'
               }`}
             >
-              FAQ
+              {t('faq')}
               {isActivePath(`/${locale}/help`) && (
                 <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-primary rounded-full" />
               )}
@@ -383,7 +383,7 @@ export const Navbar = () => {
                             onClick={handleAddCredits}
                             className="px-2 py-0.5 text-[10px] font-bold bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-full hover:from-purple-600 hover:to-pink-600 transition-all shadow-sm hover:shadow-md"
                           >
-                            Add
+                            {t('addCredits')}
                           </button>
                         </div>
                       </div>
@@ -481,7 +481,7 @@ export const Navbar = () => {
                     : 'text-text-secondary hover:text-primary hover:bg-purple-bg'
                 }`}
               >
-                Blog
+                {t('blog')}
               </Link>
               <Link
                 href={`/${locale}/help`}
@@ -492,7 +492,7 @@ export const Navbar = () => {
                     : 'text-text-secondary hover:text-primary hover:bg-purple-bg'
                 }`}
               >
-                FAQ
+                {t('faq')}
               </Link>
               <button
                 onClick={handlePricingClick}

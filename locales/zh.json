@@ -4,29 +4,43 @@
     "about": "关于",
     "pricing": "定价",
     "help": "帮助",
-    "blog": "博客",
+    "blog": "Blog",
+    "faq": "FAQ",
     "login": "登录",
     "logout": "退出",
     "myVideos": "媒体中心",
-    "credits": "{count} 积分"
+    "credits": "{count} 积分",
+    "addCredits": "添加"
   },
   "hero": {
     "title": {
-      "prefix": "图片转",
-      "professional": "专业",
-      "ads": "广告",
-      "video": "视频",
-      "by": "仅需",
-      "oneClick": "一键"
+      "prefix": "轻松从图片到",
+      "aiVideo": "专业",
+      "forAds": "广告视频",
+      "oneClickAway": "一键生成！"
     },
-    "subtitle": "AI驱动的脚本写作、视频生成，并发布到您的社交媒体。",
+    "subtitle": "一站式AI制作方案：从商品图像优化、专业视频脚本、广告视频生成，轻松助力您的社媒广告发布。",
+    "whatsShowing": "正在展示：",
     "input": {
-      "placeholder": "描述您的产品和广告创意，让我们的 Ads PRO AI 为您增强。"
+      "placeholder": "描述您的产品和广告创意，让我们的专属广告AI为您制作！"
     },
     "button": {
       "generate": "生成",
       "generating": "生成中...",
-      "tryFree": "免费试用"
+      "tryFree": "免费试用",
+      "tryForFree": "免费试用",
+      "allInOneGenerate": "一键生成",
+      "scripting": "脚本生成中..."
+    },
+    "modelSelector": {
+      "modelType": "模型类型",
+      "duration": "时长",
+      "quality": "质量",
+      "sora2": "Sora 2",
+      "sora2Pro": "Sora2 Pro",
+      "freeTrial": "免费试用",
+      "basic": "基础版",
+      "premium": "高级版"
     },
     "aiScriptGenerator": {
       "title": "AI脚本生成器",
@@ -63,6 +77,28 @@
     },
     "socialProof": {
       "creatorsTrust": "位创作者信任我们"
+    },
+    "statusMessages": {
+      "preparingPreview": "准备预览中...",
+      "ready": "就绪",
+      "selected": "已选择",
+      "generating": "生成中...",
+      "scripting": "脚本生成中...",
+      "generatedSuccess": "视频生成成功",
+      "selectedImage": "已选择图片"
+    },
+    "replaceDialog": {
+      "title": "替换已上传的图片？",
+      "message": "您当前已上传一张图片。是否要用所选缩略图替换它？",
+      "cancel": "取消",
+      "confirm": "是的，继续"
+    },
+    "defaults": {
+      "videoTitle": "AI生成视频演示",
+      "generatedVideo": "生成的视频"
+    },
+    "prompts": {
+      "describeProduct": "请描述您的产品或任何广告创意"
     }
   },
   "showcase": {
@@ -86,6 +122,12 @@
     "popular": "热门",
     "billedAnnually": "按年收费",
     "billedMonthly": "按月收费",
+    "billedYearly": "按年收费",
+    "monthly": "月付",
+    "yearly": "年付",
+    "processing": "处理中...",
+    "securePayment": "由 Stripe 提供安全支付",
+    "testMode": "测试模式",
     "monthlyCredits": "{count} 积分/月",
     "yearlyCredits": "{count} 积分/年",
     "basic": {
@@ -121,7 +163,9 @@
   },
   "credits": {
     "title": "添加积分",
+    "purchaseTitle": "购买积分",
     "subtitle": "购买额外积分以生成更多视频",
+    "choosePackSubtitle": "选择适合您需求的完美积分包",
     "currentBalance": "当前余额：{balance} 积分",
     "packages": {
       "starter": {
@@ -145,9 +189,23 @@
         "description": "~50个视频（最受欢迎）"
       }
     },
+    "standardPack": "标准包",
+    "premiumPack": "高级包",
+    "standard": "标准",
+    "premium": "高级",
+    "videoCount10": "~10个AI视频",
+    "videoCount25": "~25个AI视频",
+    "noExpiration": "永不过期",
+    "instantDelivery": "即时到账",
+    "prioritySupport": "优先支持",
+    "securePayment": "安全支付",
+    "processing": "处理中...",
     "purchaseButton": "立即购买",
+    "purchaseNow": "立即购买",
     "cancelButton": "取消",
-    "paymentNote": "支付集成即将推出"
+    "paymentNote": "支付集成即将推出",
+    "stripeFooter": "由 Stripe 提供安全支付",
+    "testModeHint": "测试模式：使用卡号 4242 4242 4242 4242"
   },
   "toast": {
     "videoGeneratedSuccess": "视频生成成功！🎉",
@@ -181,34 +239,63 @@
       "message": "确定要删除此视频吗？此操作无法撤销。",
       "confirm": "删除",
       "cancel": "取消"
+    },
+    "deleteImage": {
+      "title": "删除图片",
+      "message": "确定要删除此图片吗？此操作无法撤销。",
+      "confirm": "删除",
+      "cancel": "取消"
     }
   },
   "footer": {
     "companyDescription": "使用AI技术将您的想法转化为专业的广告视频。",
     "quickLinks": "快速链接",
+    "resources": "资源",
     "policy": "政策",
     "connectWithUs": "联系我们",
-    "copyright": "{year} AdsVideo。保留所有权利。",
+    "copyright": "{year} Video4Ads。保留所有权利。",
     "aboutUs": "关于我们",
     "pricing": "定价",
     "help": "帮助",
-    "blog": "博客",
+    "helpCenter": "帮助中心",
+    "blog": "Blog",
     "terms": "服务条款",
     "privacy": "隐私政策"
   },
   "myVideos": {
     "title": "我的视频",
+    "mediaCenter": "媒体中心",
     "subtitle": "{name}的视频集",
     "subtitleDefault": "管理您的AI生成视频",
+    "userLibrary": "{name}的媒体库",
+    "manageContent": "管理您的AI生成内容",
     "backToHome": "返回首页",
+    "tabs": {
+      "images": "图片",
+      "videos": "视频"
+    },
+    "refresh": "刷新",
+    "refreshing": "刷新中...",
     "noVideos": "还没有视频",
+    "noImagesYet": "还没有图片",
     "noVideosDescription": "开始创建您的第一个AI视频！",
     "noVideosWithStatus": "未找到{status}状态的视频。",
+    "uploadFirstImage": "上传您的第一张图片，开始AI视频生成之旅！",
     "generateVideo": "生成视频",
+    "uploadImage": "上传图片",
     "loading": "正在加载您的视频...",
-    "refreshing": "刷新中...",
+    "loadingVideos": "正在加载您的视频...",
+    "loadingImages": "正在加载您的图片...",
+    "tryAgain": "重试",
     "refreshIn": "{seconds}秒后刷新",
     "showing": "显示{count}个，共{total}个视频",
+    "showingCount": "显示 {count} 个，共 {total} 个{type}",
+    "loadMore": "加载更多{type}",
+    "loadMoreVideos": "加载更多视频",
+    "loadMoreImages": "加载更多图片",
+    "loadingMore": "加载中...",
+    "delete": "删除",
+    "clickToEnlarge": "点击放大",
     "statusAll": "全部",
     "statusPending": "等待中",
     "statusProcessing": "处理中",
@@ -226,10 +313,10 @@
     "createdAt": "创建于{date}"
   },
   "about": {
-    "title": "关于<purple>AdsVideo</purple>",
+    "title": "关于<purple>Video4Ads</purple>",
     "heroSubtitle": "我们的使命是让专业视频创作民主化，用尖端AI技术赋能企业和创作者。",
     "ourMission": "我们的使命",
-    "missionContent1": "在AdsVideo，我们相信每家企业都应该能够获得专业品质的视频内容。传统视频制作成本高、耗时长，并且需要专业技能。",
+    "missionContent1": "在Video4Ads，我们相信每家企业都应该能够获得专业品质的视频内容。传统视频制作成本高、耗时长，并且需要专业技能。",
     "missionContent2": "我们通过利用AI的力量来改变这一现状，让视频创作变得像描述您的愿景一样简单。我们的平台可在几分钟内将您的想法转化为令人惊艳的广告视频，而不是几周。",
     "innovationFirst": "创新优先",
     "innovationDescription": "利用包括Sora 2在内的最新AI模型，实现尖端成果。",
@@ -261,28 +348,28 @@
       "description": "使用AI驱动的Sora 2技术将您的想法转化为专业广告视频。适合营销人员、企业和内容创作者。"
     },
     "about": {
-      "title": "关于我们 - AdsVideo",
-      "description": "了解AdsVideo的使命，即通过AI技术使专业视频创作民主化。了解我们的故事、价值观和团队。"
+      "title": "关于我们 - Video4Ads",
+      "description": "了解Video4Ads的使命，即通过AI技术使专业视频创作民主化。了解我们的故事、价值观和团队。"
     },
     "myVideos": {
-      "title": "我的视频 - AdsVideo",
+      "title": "我的视频 - Video4Ads",
       "description": "管理您的AI生成视频集。在一个地方查看、下载和整理所有创建的视频。"
     },
     "help": {
-      "title": "帮助中心 - AdsVideo",
-      "description": "查找有关AdsVideo AI视频生成平台的常见问题解答。"
+      "title": "帮助中心 - Video4Ads",
+      "description": "查找有关Video4Ads AI视频生成平台的常见问题解答。"
     },
     "blog": {
-      "title": "博客 - AdsVideo",
+      "title": "博客 - Video4Ads",
       "description": "有关AI视频生成和数字营销的最新新闻、技巧和见解。"
     },
     "terms": {
-      "title": "服务条款 - AdsVideo",
-      "description": "阅读使用AdsVideo AI视频生成平台的服务条款和用户协议。"
+      "title": "服务条款 - Video4Ads",
+      "description": "阅读使用Video4Ads AI视频生成平台的服务条款和用户协议。"
     },
     "privacy": {
-      "title": "隐私政策 - AdsVideo",
-      "description": "了解AdsVideo如何保护您的隐私和处理您的数据。"
+      "title": "隐私政策 - Video4Ads",
+      "description": "了解Video4Ads如何保护您的隐私和处理您的数据。"
     }
   }
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { useTranslations } from "next-intl";
 
 export type VideoStatusType = 'all' | 'pending' | 'processing' | 'completed' | 'failed';
 
@@ -16,19 +17,20 @@ interface VideoStatusFilterProps {
   };
 }
 
-const statusConfig = [
-  { value: 'all' as const, label: 'All', color: 'text-gray-700' },
-  { value: 'pending' as const, label: 'Pending', color: 'text-yellow-600' },
-  { value: 'processing' as const, label: 'Processing', color: 'text-purple-600' },
-  { value: 'completed' as const, label: 'Completed', color: 'text-green-600' },
-  { value: 'failed' as const, label: 'Failed', color: 'text-red-600' },
-];
-
 export const VideoStatusFilter = ({
   activeStatus,
   onStatusChange,
   counts
 }: VideoStatusFilterProps) => {
+  const t = useTranslations('myVideos');
+
+  const statusConfig = [
+    { value: 'all' as const, label: t('statusAll'), color: 'text-gray-700' },
+    { value: 'pending' as const, label: t('statusPending'), color: 'text-yellow-600' },
+    { value: 'processing' as const, label: t('statusProcessing'), color: 'text-purple-600' },
+    { value: 'completed' as const, label: t('statusCompleted'), color: 'text-green-600' },
+    { value: 'failed' as const, label: t('statusFailed'), color: 'text-red-600' },
+  ];
   return (
     <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-2">
       {statusConfig.map((status) => {

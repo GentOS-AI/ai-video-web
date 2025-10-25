@@ -173,6 +173,16 @@ npm run start
 - ✅ User credits and subscription management
 - ✅ Video generation with streaming download support
 - ✅ CORS configuration for frontend integration
+- ✅ **Google Cloud Storage (GCS) Integration** - All files stored in cloud
+  - 21 existing videos migrated to GCS bucket
+  - Automatic public URL generation
+  - Scalable and secure cloud storage
+  - Local storage mode removed (GCS-only)
+- ✅ **Database Optimization** - Complete data lineage tracking
+  - New `generated_scripts` table with foreign keys
+  - Full relationship chain: uploaded_images → generated_scripts → videos
+  - Enhanced query performance with proper indexing
+  - Script history and regeneration support
 
 #### Video Generation Pipeline
 - ✅ Image-to-video using OpenAI Sora 2 API
@@ -208,6 +218,55 @@ Frontend (Next.js)     Backend (FastAPI)      AI Service
      └─ Delete/Retry ────>  └─ Update DB          │
 ```
 
+### 🗄️ Database Schema & Data Lineage
+
+Complete data relationship tracking from image upload to video generation:
+
+```
+users
+  ├─ id (Primary Key)
+  ├─ email, name, picture
+  ├─ credits, is_subscriber
+  └─ last_login_bonus_date
+
+uploaded_images
+  ├─ id (Primary Key)
+  ├─ user_id (Foreign Key → users.id)
+  ├─ file_path, storage_url
+  └─ created_at
+       │
+       ▼
+generated_scripts (NEW - Database Optimization)
+  ├─ id (Primary Key)
+  ├─ user_id (Foreign Key → users.id)
+  ├─ image_id (Foreign Key → uploaded_images.id)
+  ├─ script_text, credits_used
+  └─ created_at
+       │
+       ▼
+videos
+  ├─ id (Primary Key)
+  ├─ user_id (Foreign Key → users.id)
+  ├─ image_id (Foreign Key → uploaded_images.id)
+  ├─ script_id (Foreign Key → generated_scripts.id) NEW!
+  ├─ status (pending/processing/completed/failed)
+  ├─ file_path, video_url (GCS)
+  ├─ credits_used, duration
+  └─ created_at, completed_at
+```
+
+**Data Flow:**
+1. User uploads image → `uploaded_images` (stores GCS URL)
+2. Generate script → `generated_scripts` (links to image_id, costs 10 credits)
+3. Generate video → `videos` (links to both image_id and script_id, costs 40-360 credits)
+
+**Benefits:**
+- ✅ Complete audit trail from upload to final video
+- ✅ Support for script regeneration without re-upload
+- ✅ Query all videos generated from a specific image
+- ✅ Track total credits spent per image/script
+- ✅ Enable future features like script versioning
+
 ### 🔧 Configuration
 
 - **Models**: `sora-2`, `sora-2-pro`
@@ -224,6 +283,8 @@ See `.env.example` for required configuration:
 - `JWT_SECRET_KEY` - JWT token signing key
 - `REDIS_URL` - Redis connection for Celery
 - `DATABASE_URL` - SQLite database path
+- `GCS_BUCKET_NAME` - Google Cloud Storage bucket name
+- `GOOGLE_APPLICATION_CREDENTIALS` - Path to GCS service account JSON file
 
 ### ✅ Payment System (Stripe Integration)
 - ✅ **Complete Stripe Checkout Integration**
@@ -268,8 +329,12 @@ See `.env.example` for required configuration:
 | **Backend Core** | ✅ Complete | 100% |
 | REST API | ✅ Complete | 100% |
 | Database & ORM | ✅ Complete | 100% |
+| Database Optimization | ✅ Complete | 100% |
 | Task Queue (Celery) | ✅ Complete | 100% |
 | Sora 2 Integration | ✅ Complete | 100% |
+| **Storage System** | ✅ Complete | 100% |
+| Google Cloud Storage | ✅ Complete | 100% |
+| Video Migration to GCS | ✅ Complete | 100% |
 | **Payment System** | ✅ Complete | 100% |
 | Stripe Checkout | ✅ Complete | 100% |
 | Webhook Processing | ✅ Complete | 100% |

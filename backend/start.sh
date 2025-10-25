@@ -27,15 +27,8 @@ if [ ! -f ".env" ]; then
     echo ""
 fi
 
-# Check if database exists
-if [ ! -f "aivideo.db" ]; then
-    echo "🗄️  Initializing database..."
-    python scripts/init_db.py
-    echo ""
-    echo "🌱 Seeding database with sample data..."
-    python scripts/seed_data.py
-    echo ""
-fi
+# Note: Database initialization should be done manually using Alembic migrations
+# Run: alembic upgrade head
 
 # Start server
 echo "✨ Starting FastAPI server..."

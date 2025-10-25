@@ -2,10 +2,13 @@
 Video service - Video generation and management
 """
 import os
+import logging
 from typing import List, Optional
 from datetime import datetime
 from sqlalchemy.orm import Session
 from sqlalchemy import desc
+
+logger = logging.getLogger(__name__)
 
 from app.models.video import Video, VideoStatus, AIModel
 from app.models.user import User
@@ -40,13 +43,24 @@ def create_video_generation_task(
         SubscriptionExpiredException: If user's subscription has expired
         InsufficientCreditsException: If user doesn't have enough credits
     """
+    # === 详细的输入日志 ===
+    logger.info("=" * 80)
+    logger.info("🎬 [Video Generation] Request received")
+    logger.info(f"  👤 User ID: {user.id}")
+    logger.info(f"  📧 User Email: {user.email}")
+    logger.info(f"  🧠 Model: {video_request.model}")
+    logger.info(f"  ⏱️  Duration: {video_request.duration}s")
+    logger.info(f"  💳 Subscription: {user.subscription_plan} ({user.subscription_status})")
+    logger.info(f"  💰 Current credits: {user.credits}")
+    logger.info("=" * 80)
+
     # 🆕 Special case: sora-2 with 4s duration - only check credits (no subscription required)
     is_sora2_4s = video_request.model == "sora-2" and video_request.duration == 4
 
     if is_sora2_4s:
-        print(f"🎁 Special case detected: sora-2 with 4s duration")
-        print(f"   Subscription check: SKIPPED (only credits required)")
-        print(f"   User: {user.email}, Plan: {user.subscription_plan}")
+        logger.info("🎁 Special case detected: sora-2 with 4s duration")
+        logger.info(f"   Subscription check: SKIPPED (only credits required)")
+        logger.info(f"   User: {user.email}, Plan: {user.subscription_plan}")
 
     if not is_sora2_4s:
         # Check if user has a subscription (skip for sora-2 4s)
@@ -107,14 +121,26 @@ def create_video_generation_task(
 
     db.add(video)
 
-    # Deduct credits based on model AND duration
+    # === 积分扣除 ===
+    logger.info("💰 [Video Generation] Deducting credits...")
+    previous_credits = user.credits
+    logger.info(f"  Credits cost: {credits_cost} for {model_id} ({duration}s)")
+    logger.info(f"  Previous balance: {previous_credits}")
+
     user.credits -= credits_cost
 
-    print(f"💰 Credits deducted: {credits_cost} for model {model_id} ({duration}s)")
-    print(f"   Remaining credits: {user.credits}")
+    logger.info(f"  New balance: {user.credits}")
 
     db.commit()
     db.refresh(video)
+
+    # === 成功日志 ===
+    logger.info("=" * 80)
+    logger.info("✅ [Video Generation] Task created successfully")
+    logger.info(f"  📹 Video ID: {video.id}")
+    logger.info(f"  💰 Credits deducted: {credits_cost}")
+    logger.info(f"  💳 Remaining credits: {user.credits}")
+    logger.info("=" * 80)
 
     # TODO: Trigger async video generation task here
     # For now, we'll simulate by setting to processing status

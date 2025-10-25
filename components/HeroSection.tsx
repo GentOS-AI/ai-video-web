@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import dynamic from "next/dynamic";
 import { VideoPlayer } from "./VideoPlayer";
-import { Sparkles, Loader2, AlertCircle, Upload, X, Check, Wand2 } from "lucide-react";
+import { Sparkles, Loader2, AlertCircle, Upload, X } from "lucide-react";
 import { motion, useInView } from "framer-motion";
 import Image from "next/image";
 import { showcaseVideos, trialImages } from "@/lib/assets";
@@ -12,7 +12,6 @@ import type { Video, RecentUsersResponse } from "@/lib/api/services";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNotification } from "@/contexts/NotificationContext";
 import { useVideoStream } from "@/lib/hooks/useVideoStream";
-import { useEnhancementStream } from "@/lib/hooks/useEnhancementStream";
 import { useTranslations, useLocale } from "next-intl";
 
 // Lazy load PricingModal since it's only shown on user interaction
@@ -45,6 +44,8 @@ const defaultHeroVideo = {
 };
 
 const heroBackgroundImage = trialImages[0]?.highResSrc ?? "";
+
+const SCRIPT_GENERATION_CREDIT_COST = 10;
 
 // AI Models configuration - New structured format
 type ModelType = 'sora-2' | 'sora-2-pro';
@@ -91,36 +92,6 @@ const modelTypes: Record<ModelType, ModelTypeConfig> = {
   }
 };
 
-// Legacy format for backward compatibility (与后端配置保持一致)
-const aiModels = [
-  { id: "sora-2", name: "Sora2-4s", version: "Lite", model: "sora-2", duration: 4, credits: 40, enabled: true, type: 'normal' },
-  { id: "sora-2-standard", name: "Sora2-8s", version: "Standard", model: "sora-2", duration: 8, credits: 80, enabled: true, type: 'normal' },
-  { id: "sora-2-premium", name: "Sora2-12s", version: "Premium", model: "sora-2", duration: 12, credits: 120, enabled: true, type: 'normal' },
-  { id: "sora-2-pro", name: "Sora2 Pro-12s", version: "Business", model: "sora-2-pro", duration: 12, credits: 360, enabled: true, type: 'business' },
-];
-
-// Generation modes for dropdown
-type GenerationMode = 'all-in-one' | 'video-only' | 'enhance-script';
-
-const generationModes = [
-  {
-    id: 'all-in-one' as GenerationMode,
-    name: 'All-In-One Generation',
-    buttonLabel: 'All-In-One Generate',
-    description: 'Full workflow: enhance, script & video',
-    icon: Sparkles,
-    requiresPro: false,
-  },
-  {
-    id: 'enhance-script' as GenerationMode,
-    name: 'Pro Enhance',
-    buttonLabel: 'Pro Enhance',
-    description: 'Professional image and scripting',
-    icon: Wand2,
-    requiresPro: true,
-  },
-];
-
 export const HeroSection = () => {
   const t = useTranslations('hero');
   const tToast = useTranslations('toast');
@@ -130,7 +101,6 @@ export const HeroSection = () => {
   const { showToast } = useNotification();
   const [prompt, setPrompt] = useState("");
   const [selectedImage, setSelectedImage] = useState<number | null>(1);
-  const [selectedModel, setSelectedModel] = useState(aiModels[0]);
   const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false);
 
   // New state for model selector UI
@@ -147,10 +117,6 @@ export const HeroSection = () => {
   const [placeholderIndex, setPlaceholderIndex] = useState(0);
   const fullPlaceholder = t('input.placeholder');
 
-  // Generation mode dropdown state
-  const [selectedMode, setSelectedMode] = useState<GenerationMode>('all-in-one');
-  const [isModeDropdownOpen, setIsModeDropdownOpen] = useState(false);
-  const modeDropdownRef = useRef<HTMLDivElement>(null);
 
   // Video generation states
   const [isGenerating, setIsGenerating] = useState(false);
@@ -163,20 +129,12 @@ export const HeroSection = () => {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [uploadedFilePreview, setUploadedFilePreview] = useState<string | null>(null);
   const [isGeneratingScript, setIsGeneratingScript] = useState(false);
-  const [streamingEnhancementId, setStreamingEnhancementId] = useState<number | null>(null);
-  const [enhancementProgress, setEnhancementProgress] = useState<string>("Starting...");
-
-  // AI optimized image state
-  const [aiOptimizedImage, setAiOptimizedImage] = useState<string | null>(null);
 
   // Thumbnail preview state - show selected thumbnail in preview area
   const [showThumbnailPreview, setShowThumbnailPreview] = useState(true);
 
   // Uploaded file preview state - show uploaded file in preview area
   const [showUploadedPreview, setShowUploadedPreview] = useState(false);
-
-  // Workflow stage: 'script' or 'video'
-  const [workflowStage, setWorkflowStage] = useState<'script' | 'video'>('script');
 
   // Replace confirmation dialog state
   const [showReplaceConfirmDialog, setShowReplaceConfirmDialog] = useState(false);
@@ -207,44 +165,6 @@ export const HeroSection = () => {
     }
   });
 
-  // Use SSE Hook for real-time enhancement progress updates
-  const {
-    messages: enhancementMessages,
-    isConnected: isEnhancementConnected,
-    progress: enhancementProgressPercent
-  } = useEnhancementStream({
-    taskId: streamingEnhancementId,
-    onComplete: (result) => {
-      console.log('🎉 Enhancement completed via SSE:', result);
-
-      // Set enhanced image URL
-      if (result.enhanced_image_url) {
-        setAiOptimizedImage(result.enhanced_image_url);
-        console.log("🖼️ Enhanced image received:", result.enhanced_image_url);
-      }
-
-      // Fill the textarea with generated script
-      setPrompt(result.script);
-
-      // Switch to video generation stage
-      setWorkflowStage('video');
-
-      setIsGeneratingScript(false);
-      setStreamingEnhancementId(null);
-      showToast(tToast('scriptGeneratedSuccess'), "success");
-      refreshUser();
-    },
-    onError: (error) => {
-      console.error('❌ Enhancement SSE error:', error);
-      showToast(error, "error");
-      setIsGeneratingScript(false);
-      setStreamingEnhancementId(null);
-    },
-    onProgress: (progress, message) => {
-      console.log(`📊 Enhancement progress: ${progress}% - ${message}`);
-      setEnhancementProgress(message);
-    }
-  });
 
   // Recent users state
   const [recentUsers, setRecentUsers] = useState<RecentUsersResponse | null>(null);
@@ -254,21 +174,6 @@ export const HeroSection = () => {
     const modelConfig = modelTypes[selectedModelType];
     return modelConfig?.durations.find(d => d.value === selectedDuration);
   }, [selectedModelType, selectedDuration]);
-
-  // Sync new state with legacy selectedModel state
-  useEffect(() => {
-    const modelInfo = getCurrentModelInfo();
-    if (modelInfo) {
-      const legacyModel = aiModels.find(
-        m => m.duration === selectedDuration &&
-        ((selectedModelType === 'sora-2' && m.model === 'sora-2') ||
-         (selectedModelType === 'sora-2-pro' && m.model === 'sora-2-pro'))
-      );
-      if (legacyModel) {
-        setSelectedModel(legacyModel);
-      }
-    }
-  }, [selectedModelType, selectedDuration, getCurrentModelInfo]);
 
   const handlePromptChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const text = e.target.value;
@@ -321,58 +226,16 @@ export const HeroSection = () => {
     }
   };
 
-  // Main button handler - routes based on selected mode
+  // Main button handler - All-In-One only
   const handleMainButton = async () => {
-    if (selectedMode === 'all-in-one') {
-      // All-In-One: Direct video generation with auto enhancement
-      await handleAllInOneGeneration();
-    } else if (selectedMode === 'enhance-script') {
-      // Pro Enhance: Two-step workflow
-      if (workflowStage === 'script') {
-        await handleScriptGenerationFlow();
-      } else {
-        await handleVideoGeneration();
-      }
-    }
+    await handleAllInOneGeneration();
   };
 
-  // Script generation flow - simplified
-  const handleScriptGenerationFlow = async () => {
-    // Validation
-    if (!isAuthenticated) {
-      showToast(tToast('loginToUseScriptGenerator'), "warning");
-      const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
-      const redirectUri = `${window.location.origin}/auth/callback`;
-      const scope = 'openid email profile';
-
-      const googleAuthUrl =
-        `https://accounts.google.com/o/oauth2/v2/auth?` +
-        `client_id=${clientId}&` +
-        `redirect_uri=${encodeURIComponent(redirectUri)}&` +
-        `response_type=code&` +
-        `scope=${encodeURIComponent(scope)}&` +
-        `access_type=offline&` +
-        `prompt=consent`;
-
-      window.location.href = googleAuthUrl;
-      return;
-    }
-
-    // Check if image is uploaded
-    if (!uploadedFile) {
-      showToast(tToast('uploadImageForScript'), "warning");
-      return;
-    }
-
-    // Directly generate script with user input (empty or not)
-    await generateScriptFromImage();
-  };
 
   // 🔥 NEW: Auto-generate script on image upload (API A - Fast GPT-4o only)
   const autoGenerateScriptOnUpload = async (file: File) => {
     try {
       setIsGeneratingScript(true);
-      setEnhancementProgress("Analyzing image and generating script...");
       console.log('🤖 Auto-generating script from uploaded image (GPT-4o)...');
 
       // 🆕 Read user input from textarea (if any)
@@ -381,12 +244,20 @@ export const HeroSection = () => {
 
       // Use simple script generation API (no image enhancement)
       // Pass user input as reference for professional script generation
-      const result = await aiService.generateScript(file, selectedModel?.duration || 8, locale, userInput);
+      const result = await aiService.generateScript(
+        file,
+        selectedDuration,
+        locale,
+        userInput,
+        selectedModelType
+      );
 
       console.log("✅ Script generated:", result);
 
       // Fill the textarea with generated script
       setPrompt(result.script);
+
+      await refreshUser();
 
       setIsGeneratingScript(false);
       showToast(tToast('scriptGeneratedSuccess'), "success");
@@ -411,57 +282,6 @@ export const HeroSection = () => {
     }
   };
 
-  // Generate script from image (ASYNC with SSE - for Pro Enhance mode only)
-  const generateScriptFromImage = async () => {
-    try {
-      setIsGeneratingScript(true);
-      setEnhancementProgress("Starting enhancement...");
-      console.log('🤖 Generating enhanced script from image with SSE...');
-
-      // Always use enhanced API (gpt-image-1 + GPT-4o) - ASYNC VERSION
-      console.log("📝 Using ENHANCED API ASYNC (gpt-image-1 + GPT-4o)");
-      console.log("  User Description:", prompt || "Empty (AI will auto-analyze)");
-      console.log("  Auto-detect orientation from uploaded image");
-
-      const task = await aiService.enhanceAndGenerateScriptAsync(
-        uploadedFile!,
-        prompt,  // Pass user input directly (empty string if no input)
-        {
-          duration: selectedModel?.duration || 8,
-          language: locale
-        }
-      );
-
-      console.log("✅ Enhancement task created:", task);
-      console.log("  Task ID:", task.id);
-      console.log("  Status:", task.status);
-      setEnhancementProgress("Connecting to enhancement stream...");
-
-      // Start SSE connection for real-time updates
-      setStreamingEnhancementId(task.id);
-
-      // Note: The SSE hook will handle the completion and errors
-      // No need to set isGeneratingScript to false here - the hook will do it
-
-    } catch (error: unknown) {
-      console.error("❌ Script generation failed:", error);
-
-      // Extract error message from axios error or use fallback
-      let errorMessage = tToast('scriptGenerationFailed');
-
-      if (error && typeof error === 'object' && 'response' in error) {
-        const axiosError = error as { response?: { data?: { detail?: string } } };
-        if (axiosError.response?.data?.detail) {
-          errorMessage = axiosError.response.data.detail;
-        }
-      } else if (error instanceof Error && error.message) {
-        errorMessage = error.message;
-      }
-
-      showToast(errorMessage, "error");
-      setIsGeneratingScript(false);
-    }
-  };
 
   // 🔥 NEW: All-In-One Generation - Uses pre-generated script (API C - generate-simple)
   const handleAllInOneGeneration = async () => {
@@ -502,8 +322,17 @@ export const HeroSection = () => {
       return;
     }
 
+    const currentModelInfo = getCurrentModelInfo();
+    const selectedModelId = selectedModelType;
+
+    if (!currentModelInfo) {
+      showToast("Unable to determine the selected model. Please pick a model and duration again.", "error");
+      return;
+    }
+
+    const requiredCredits = currentModelInfo.credits;
+
     // Check credits - show modal without toast
-    const requiredCredits = selectedModel?.credits || 100;
     if (!user || user.credits < requiredCredits) {
       setIsCreditsOpen(true);
       return;
@@ -515,8 +344,10 @@ export const HeroSection = () => {
       setGenerationProgress(t('startingGeneration'));
       console.log("🎬 All-In-One Generation with PRE-GENERATED SCRIPT:", {
         script: prompt,
-        model: selectedModel?.id || 'sora-2',
+        model: selectedModelId,
         file: uploadedFile.name,
+        duration: currentModelInfo.value,
+        creditsRequired: requiredCredits,
       });
 
       // 🔥 NEW: Use generate-simple API (no GPT-4o, direct video generation)
@@ -524,8 +355,8 @@ export const HeroSection = () => {
         uploadedFile,
         prompt,  // Pre-generated script from auto-generation
         {
-          duration: selectedModel?.duration || 8,
-          model: selectedModel?.model || 'sora-2'
+          duration: currentModelInfo.value,
+          model: selectedModelId
         }
       );
 
@@ -552,145 +383,14 @@ export const HeroSection = () => {
     }
   };
 
-  const handleVideoGeneration = async () => {
-    // Validation with Toast notifications
-    if (!isAuthenticated) {
-      // Redirect to Google OAuth login
-      const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
-      const redirectUri = `${window.location.origin}/auth/callback`;
-      const scope = 'openid email profile';
-
-      const googleAuthUrl =
-        `https://accounts.google.com/o/oauth2/v2/auth?` +
-        `client_id=${clientId}&` +
-        `redirect_uri=${encodeURIComponent(redirectUri)}&` +
-        `response_type=code&` +
-        `scope=${encodeURIComponent(scope)}&` +
-        `access_type=offline&` +
-        `prompt=consent`;
-
-      window.location.href = googleAuthUrl;
-      return;
-    }
-
-    if (!prompt.trim()) {
-      showToast(tToast('enterVideoDescription'), "warning");
-      return;
-    }
-
-    if (prompt.trim().length < 10) {
-      showToast(tToast('descriptionTooShort'), "warning");
-      return;
-    }
-
-    // Check if either uploaded file or thumbnail is selected
-    if (!uploadedFile && selectedImage === null) {
-      showToast(tToast('selectOrUploadImage'), "warning");
-      return;
-    }
-
-    // Check if user has enough credits - show modal without toast
-    const requiredCredits = selectedModel?.credits || 100;
-    if (!user || user.credits < requiredCredits) {
-      setIsCreditsOpen(true);
-      return;
-    }
-
-    // Determine image URL based on upload or thumbnail selection
-    let imageUrl: string;
-
-    if (uploadedFile) {
-      // User uploaded a file - need to upload to backend first
-      try {
-        setGenerationProgress(t('uploadingImage'));
-        const formData = new FormData();
-        formData.append('file', uploadedFile);  // Backend expects 'file' parameter
-
-        const uploadResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/upload/image`, {
-          method: 'POST',
-          body: formData,
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('access_token')}`
-          }
-        });
-
-        if (!uploadResponse.ok) {
-          throw new Error('Failed to upload image');
-        }
-
-        const { url } = await uploadResponse.json();
-        imageUrl = url;
-        console.log("📤 Image uploaded:", imageUrl);
-      } catch (uploadError) {
-        console.error("❌ Image upload failed:", uploadError);
-        showToast(tToast('uploadImageFailed'), "error");
-        setGenerationProgress("");
-        setIsGenerating(false);  // Reset generating state
-        return;
-      }
-    } else if (selectedImage !== null) {
-      // User selected a thumbnail
-      const selectedImageData = trialImages.find(img => img.id === selectedImage);
-      if (!selectedImageData) {
-        showToast(tToast('imageNotFound'), "error");
-        return;
-      }
-      imageUrl = selectedImageData.highResSrc;
-    } else {
-      showToast(tToast('selectOrUploadImage'), "warning");
-      return;
-    }
-
-    try {
-      setIsGenerating(true);
-      setGenerationError(null);
-      setGenerationProgress(t('startingGeneration'));
-      console.log("🎬 Generating video with:", {
-        prompt,
-        model: selectedModel?.id || 'sora-2',
-        imageUrl: imageUrl,  // Use uploaded or selected image URL
-      });
-
-      // Call video generation API with image URL
-      const video = await videoService.generate(
-        prompt,
-        selectedModel?.model || 'sora-2',
-        imageUrl,  // Use uploaded file URL or thumbnail high-res URL
-        selectedModel?.duration || 8
-      );
-
-      console.log("✅ Video generation task created:", video);
-      setGenerationProgress(t('connectingStream'));
-
-      // Set the generated video object with initial data
-      setGeneratedVideo(video);
-
-      // Start SSE connection for real-time updates (replaces polling)
-      setStreamingVideoId(video.id);
-
-      // Refresh user credits
-      await refreshUser();
-
-    } catch (error: unknown) {
-      console.error("❌ Video generation failed:", error);
-      if (error instanceof Error) {
-        setGenerationError(error.message || "Failed to generate video");
-      } else {
-        setGenerationError("Failed to generate video");
-      }
-      setIsGenerating(false);
-    }
-  };
 
   const handleFileUpload = async (file: File) => {
     setUploadedFile(file);
     setSelectedImage(null); // Clear thumbnail selection when file is uploaded
     setShowThumbnailPreview(false); // Hide thumbnail preview when file is uploaded
     setShowUploadedPreview(true); // Show uploaded file preview in right panel
-    setWorkflowStage('script'); // Reset to script generation stage
     // ⚠️ DON'T clear prompt here - keep user input during script generation
     // setPrompt(''); // ❌ Removed - preserve user input
-    setAiOptimizedImage(null); // Clear AI optimized image when new file is uploaded
 
     // Create preview URL for uploaded file
     const reader = new FileReader();
@@ -702,7 +402,15 @@ export const HeroSection = () => {
     console.log("📁 File uploaded:", file.name, `${(file.size / (1024 * 1024)).toFixed(2)}MB`);
 
     // 🔥 NEW: Auto-generate script after image upload (API A)
-    if (isAuthenticated && user && user.subscription_status === 'active') {
+    if (isAuthenticated && user) {
+      // Check credits first
+      if (user.credits < SCRIPT_GENERATION_CREDIT_COST) {
+        showToast(`Script generation requires ${SCRIPT_GENERATION_CREDIT_COST} credits. Your balance is ${user.credits.toFixed(0)}.`, "warning");
+        setIsCreditsOpen(true);
+        setIsGeneratingScript(false);
+        return;
+      }
+      // Backend will handle subscription checks based on model + duration
       await autoGenerateScriptOnUpload(file);
     }
   };
@@ -820,19 +528,16 @@ export const HeroSection = () => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsModelDropdownOpen(false);
       }
-      if (modeDropdownRef.current && !modeDropdownRef.current.contains(event.target as Node)) {
-        setIsModeDropdownOpen(false);
-      }
     };
 
-    if (isModelDropdownOpen || isModeDropdownOpen) {
+    if (isModelDropdownOpen) {
       document.addEventListener("mousedown", handleClickOutside);
     }
 
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [isModelDropdownOpen, isModeDropdownOpen]);
+  }, [isModelDropdownOpen]);
 
   return (
     <section className="relative pt-20 sm:pt-24 pb-12 sm:pb-16 overflow-hidden">
@@ -1101,40 +806,9 @@ export const HeroSection = () => {
               {(isGenerating || isGeneratingScript || generationError) && (
                 <div className="px-4 py-3 sm:px-6 sm:py-4 bg-gray-50 border-t border-gray-100">
                   {isGeneratingScript && (
-                    <div className="space-y-2">
-                      {/* Enhancement Progress with Connection Status */}
-                      <div className="flex items-center gap-2 text-sm text-purple-600">
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        <span className="flex-1">{enhancementProgress}</span>
-                        {isEnhancementConnected && (
-                          <span className="flex items-center gap-1 text-xs text-green-600">
-                            <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-                            Connected
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Progress Bar */}
-                      {enhancementProgressPercent > 0 && (
-                        <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
-                          <div
-                            className="bg-gradient-to-r from-purple-500 to-pink-500 h-full transition-all duration-300 ease-out"
-                            style={{ width: `${enhancementProgressPercent}%` }}
-                          />
-                        </div>
-                      )}
-
-                      {/* Historical Log Messages (Optional - Shows last 5 steps) */}
-                      {enhancementMessages.length > 0 && (
-                        <div className="mt-2 space-y-1 max-h-32 overflow-y-auto text-xs text-gray-600 bg-white rounded-lg p-2 border border-gray-200">
-                          {enhancementMessages.slice(-5).map((msg, index) => (
-                            <div key={index} className="flex items-start gap-2 py-0.5">
-                              <span className="text-purple-500 font-mono text-[10px] mt-0.5">[{msg.progress}%]</span>
-                              <span className="flex-1">{msg.message}</span>
-                            </div>
-                          ))}
-                        </div>
-                      )}
+                    <div className="flex items-center gap-2 text-sm text-purple-600">
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Generating script...</span>
                     </div>
                   )}
                   {isGenerating && (
@@ -1369,131 +1043,33 @@ export const HeroSection = () => {
                   </div>
                 </div>
 
-                  {/* Right: Main Workflow Button with Dropdown */}
-                  <div className="flex items-center gap-2 flex-shrink-0" ref={modeDropdownRef}>
-                    <div className="relative">
-                      {/* Main Generate Button with Dropdown - Separated Design */}
-                      <div className="flex items-center gap-1.5">
-                        {/* Primary Action Button - Original Design */}
-                        <button
-                          onClick={handleMainButton}
-                          disabled={isGenerating || isGeneratingScript}
-                          className="relative bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 shadow-lg hover:shadow-xl px-3 sm:px-4 py-2 rounded-xl flex items-center gap-2 text-xs sm:text-sm font-semibold text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
-                        >
-                          {isGeneratingScript ? (
-                            <>
-                              <Loader2 className="w-4 h-4 sm:w-4.5 sm:h-4.5 animate-spin" />
-                              <span>Scripting...</span>
-                            </>
-                          ) : isGenerating ? (
-                            <>
-                              <Loader2 className="w-4 h-4 sm:w-4.5 sm:h-4.5 animate-spin" />
-                              <span>{t('button.generating')}</span>
-                            </>
-                          ) : (
-                            <>
-                              {(() => {
-                                const CurrentIcon = generationModes.find(m => m.id === selectedMode)?.icon || Sparkles;
-                                return <CurrentIcon className="w-4 h-4 sm:w-4.5 sm:h-4.5" />;
-                              })()}
-                              <span className="hidden sm:inline">
-                                {selectedMode === 'enhance-script' && workflowStage === 'video'
-                                  ? 'Generate Video'
-                                  : user?.is_new_user
-                                    ? 'Try for Free'
-                                    : (generationModes.find(m => m.id === selectedMode)?.buttonLabel || 'Generate')
-                                }
-                              </span>
-                              <span className="sm:hidden">{user?.is_new_user ? 'Try for Free' : 'Generate'}</span>
-                            </>
-                          )}
-                        </button>
-
-                        {/* Dropdown Toggle Button - TEMPORARILY HIDDEN */}
-                        {/* <button
-                          onClick={() => setIsModeDropdownOpen(!isModeDropdownOpen)}
-                          disabled={isGenerating || isGeneratingScript}
-                          className="relative p-2.5 w-9 h-9 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 transition-all flex items-center justify-center group disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg"
-                          title="Select generation mode"
-                        >
-                          <ChevronDown className={`w-4 h-4 text-white transition-all duration-300 ${isModeDropdownOpen ? 'rotate-180' : ''}`} />
-                          <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-white/60"></span>
-                        </button> */}
-                      </div>
-
-                      {/* Dropdown Menu */}
-                      {isModeDropdownOpen && (
-                        <motion.div
-                          initial={{ opacity: 0, y: -10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: -10 }}
-                          transition={{ duration: 0.15 }}
-                          className="absolute right-0 top-full mt-2 w-64 bg-white border border-gray-200 rounded-xl shadow-xl z-30 overflow-hidden"
-                        >
-                          {generationModes.map((mode, index) => {
-                            const Icon = mode.icon;
-                            const isSelected = selectedMode === mode.id;
-                            const isPro = mode.requiresPro;
-                            const hasProAccess = user?.subscription_plan !== 'free';
-
-                            return (
-                              <button
-                                key={mode.id}
-                                onClick={() => {
-                                  if (isPro && !hasProAccess) {
-                                    showToast('Pro subscription required for this feature', 'warning');
-                                    setIsPricingOpen(true);
-                                    setIsModeDropdownOpen(false);
-                                    return;
-                                  }
-                                  setSelectedMode(mode.id);
-                                  setIsModeDropdownOpen(false);
-                                }}
-                                className={`w-full px-4 py-3 text-left hover:bg-purple-50 transition-colors flex items-start gap-3 ${
-                                  index === 0 ? 'rounded-t-xl' : ''
-                                } ${
-                                  index === generationModes.length - 1 ? 'rounded-b-xl' : 'border-b border-gray-100'
-                                } ${
-                                  isSelected ? 'bg-purple-50' : ''
-                                } ${
-                                  isPro && !hasProAccess ? 'opacity-75' : ''
-                                }`}
-                              >
-                                {/* Icon and Checkmark */}
-                                <div className="flex items-center gap-2 flex-shrink-0 pt-0.5">
-                                  <div className={`w-5 h-5 rounded-full flex items-center justify-center ${
-                                    isSelected ? 'bg-purple-500' : 'bg-gray-200'
-                                  }`}>
-                                    {isSelected ? (
-                                      <Check className="w-3 h-3 text-white" strokeWidth={3} />
-                                    ) : (
-                                      <Icon className="w-3 h-3 text-gray-500" />
-                                    )}
-                                  </div>
-                                </div>
-
-                                {/* Text Content */}
-                                <div className="flex-1 min-w-0">
-                                  <div className="flex items-center gap-2 mb-0.5">
-                                    <span className={`text-sm font-semibold ${
-                                      isSelected ? 'text-purple-600' : 'text-gray-900'
-                                    }`}>
-                                      {mode.name}
-                                    </span>
-                                    {isPro && (
-                                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-gradient-to-r from-amber-400 to-orange-500 text-white text-[10px] font-bold shadow-sm">
-                                        Subscribe
-                                      </span>
-                                    )}
-                                  </div>
-                                  <p className="text-xs text-gray-500 line-clamp-1">{mode.description}</p>
-                                </div>
-                              </button>
-                            );
-                          })}
-                        </motion.div>
+                  {/* Right: Main Workflow Button */}
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <button
+                      onClick={handleMainButton}
+                      disabled={isGenerating || isGeneratingScript}
+                      className="relative bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 shadow-lg hover:shadow-xl px-3 sm:px-4 py-2 rounded-xl flex items-center gap-2 text-xs sm:text-sm font-semibold text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+                    >
+                      {isGeneratingScript ? (
+                        <>
+                          <Loader2 className="w-4 h-4 sm:w-4.5 sm:h-4.5 animate-spin" />
+                          <span>Scripting...</span>
+                        </>
+                      ) : isGenerating ? (
+                        <>
+                          <Loader2 className="w-4 h-4 sm:w-4.5 sm:h-4.5 animate-spin" />
+                          <span>{t('button.generating')}</span>
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="w-4 h-4 sm:w-4.5 sm:h-4.5" />
+                          <span className="hidden sm:inline">
+                            {user?.is_new_user ? 'Try for Free' : 'All-In-One Generate'}
+                          </span>
+                          <span className="sm:hidden">{user?.is_new_user ? 'Try for Free' : 'Generate'}</span>
+                        </>
                       )}
-                    </div>
+                    </button>
                   </div>
                 </div>
                 <p className="text-xs text-text-muted mt-2">
@@ -1571,24 +1147,6 @@ export const HeroSection = () => {
                       </div>
                     </>
                   )}
-                </div>
-              ) : aiOptimizedImage ? (
-                /* Priority 2: Show AI optimized image if available (script generation completed) */
-                <div className="relative w-full h-full bg-gradient-to-br from-purple-50 to-pink-50">
-                  <Image
-                    src={aiOptimizedImage}
-                    alt="AI Optimized Image"
-                    fill
-                    className="object-contain"
-                    sizes="(max-width: 768px) 100vw, (max-width: 1024px) 47vw, 560px"
-                    priority
-                    quality={90}
-                  />
-
-                  {/* Status Badge - Light style */}
-                  <div className="absolute top-4 right-4 px-3 py-2 bg-green-50/90 backdrop-blur-sm border border-green-200 text-green-600 rounded-lg shadow-sm flex items-center gap-2">
-                    <span className="text-xs font-semibold">AI Optimized</span>
-                  </div>
                 </div>
               ) : showUploadedPreview && uploadedFilePreview ? (
                 /* Priority 2: Show uploaded file preview */

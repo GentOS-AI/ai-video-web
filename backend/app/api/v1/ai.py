@@ -135,15 +135,20 @@ async def generate_script(
         logger.info(f"  💳 Subscription: {current_user.subscription_plan} ({current_user.subscription_status})")
         logger.info("=" * 60)
 
+        credits_cost = settings.SCRIPT_GENERATION_COST
+
         allow_without_subscription = model == "sora-2" and duration == 4
 
         if allow_without_subscription:
             logger.info("🎁 Special case: sora-2 4s script request – skipping subscription check, validating credits only")
-            if current_user.credits <= 0:
-                logger.warning(f"❌ User {current_user.id} has insufficient credits ({current_user.credits}) for script generation")
+            if current_user.credits < credits_cost:
+                logger.warning(
+                    f"❌ User {current_user.id} has insufficient credits "
+                    f"({current_user.credits}) for script generation (requires {credits_cost})"
+                )
                 raise HTTPException(
                     status_code=status.HTTP_402_PAYMENT_REQUIRED,
-                    detail="Insufficient credits. Please top up to continue."
+                    detail=f"Insufficient credits. Requires {credits_cost}, available {current_user.credits}."
                 )
         else:
             # Validate user subscription status
@@ -159,6 +164,16 @@ async def generate_script(
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
                     detail="Your subscription has expired. Please renew to continue."
+                )
+
+            if current_user.credits < credits_cost:
+                logger.warning(
+                    f"❌ User {current_user.id} has insufficient credits "
+                    f"({current_user.credits}) for script generation (requires {credits_cost})"
+                )
+                raise HTTPException(
+                    status_code=status.HTTP_402_PAYMENT_REQUIRED,
+                    detail=f"Insufficient credits. Requires {credits_cost}, available {current_user.credits}."
                 )
 
         # Read file content
@@ -217,7 +232,7 @@ async def generate_script(
 
         except Exception as save_error:
             logger.warning(f"  ⚠️  Failed to save image to database: {str(save_error)}")
-            db.rollback()
+            # Note: Do NOT rollback here! We need the same session for credit deduction
             # Continue with script generation even if image save fails
 
         # Generate script using GPT-4o
@@ -237,22 +252,31 @@ async def generate_script(
 
         # === 🆕 脚本生成成功后扣除积分 ===
         logger.info("💰 [Script Generation] Deducting credits...")
-        credits_cost = settings.SCRIPT_GENERATION_COST  # 10积分
         previous_credits = current_user.credits
-        current_user.credits -= credits_cost
 
-        # 🆕 更新新用户标识 (如果是新用户,第一次生成脚本后设为False)
-        if current_user.is_new_user:
-            logger.info(f"  🎉 First-time user {current_user.id} completed script generation")
-            current_user.is_new_user = False
+        try:
+            current_user.credits -= credits_cost
 
-        db.commit()
-        db.refresh(current_user)
+            # 🆕 更新新用户标识 (如果是新用户,第一次生成脚本后设为False)
+            if current_user.is_new_user:
+                logger.info(f"  🎉 First-time user {current_user.id} completed script generation")
+                current_user.is_new_user = False
 
-        logger.info(f"  ✅ Credits deducted: {credits_cost}")
-        logger.info(f"  💳 Previous balance: {previous_credits}")
-        logger.info(f"  💳 New balance: {current_user.credits}")
-        logger.info(f"  👤 Is new user: {current_user.is_new_user}")
+            db.commit()
+            db.refresh(current_user)
+
+            logger.info(f"  ✅ Credits deducted: {credits_cost}")
+            logger.info(f"  💳 Previous balance: {previous_credits}")
+            logger.info(f"  💳 New balance: {current_user.credits}")
+            logger.info(f"  👤 Is new user: {current_user.is_new_user}")
+
+        except Exception as credit_error:
+            logger.error(f"❌ Failed to deduct credits: {str(credit_error)}")
+            db.rollback()
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to process credits. Please contact support."
+            )
 
         # === 详细的输出日志 ===
         logger.info("=" * 60)
@@ -289,6 +313,11 @@ async def generate_script(
         logger.warning(f"  🔴 Status Code: {http_ex.status_code}")
         logger.warning(f"  💬 Detail: {http_ex.detail}")
         logger.warning("=" * 60)
+        # Ensure database rollback on HTTP errors (before credit deduction)
+        try:
+            db.rollback()
+        except Exception:
+            pass
         raise
 
     except Exception as e:
@@ -303,6 +332,12 @@ async def generate_script(
         logger.error(f"  💬 Error Message: {str(e)}")
         logger.error("=" * 60)
         logger.error("Stack trace:", exc_info=True)
+
+        # Ensure database rollback on unexpected errors
+        try:
+            db.rollback()
+        except Exception:
+            pass
 
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,

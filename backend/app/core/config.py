@@ -13,8 +13,8 @@ class Settings(BaseSettings):
     DEBUG: bool = True
     API_V1_PREFIX: str = "/api/v1"
 
-    # Database
-    DATABASE_URL: str = "sqlite:///./aivideo.db"
+    # Database (PostgreSQL - must be set in .env)
+    DATABASE_URL: str
 
     # Database Connection Pool Settings (PostgreSQL only)
     DB_POOL_SIZE: int = 5  # Number of connections in pool

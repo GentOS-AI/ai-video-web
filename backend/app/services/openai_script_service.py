@@ -430,7 +430,9 @@ Translate the following advertising video script from English to {target_lang_na
 【Ending Shot】({logo_start}-{logo_end}s) Final Shot
 - If the user has specified an ending shot in their description, follow their requirements exactly
 - If not specified, create an appropriate ending shot based on the product and advertising style
-- This should be a memorable closing that reinforces the brand message
+- **DO NOT default to a logo shot** - create a memorable closing that fits the product (e.g., product in use, lifestyle shot, artistic angle, final benefit visualization)
+- Only include a logo/brand visual if the user explicitly requests it or if you can clearly see a logo in the uploaded image
+- This should be a memorable closing that reinforces the advertising message
 - Duration: 0.5 seconds
 - Audio: Complete silence (no music, no voiceover, no sound effects)
 
